@@ -8,15 +8,6 @@ This README would normally document whatever steps are necessary to get your app
 * Version
 * [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
 
-### How do I get set up? ###
-
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
 ### Marketing activities ###
 
 * Market size research - https://medium.com/@pavel.penchev/market-size-for-product-management-software-edd7b38e8034, ~$500m worldwide
