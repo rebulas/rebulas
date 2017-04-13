@@ -17,17 +17,17 @@ This README would normally document whatever steps are necessary to get your app
 * How to run tests
 * Deployment instructions
 
-
 ### Marketing activities ###
-Market size research - https://medium.com/@pavel.penchev/market-size-for-product-management-software-edd7b38e8034, ~$500m worldwide
-Competition - ProdPad, Wrike, InnovateNow, Evernote, memo.ai
-Go to market - Atlassian marketplace & GitHub
-Market validation - Drive traffic to rebulas.com & analyze
-Pricing model - free tier, payment for AI related parts
+
+* Market size research - https://medium.com/@pavel.penchev/market-size-for-product-management-software-edd7b38e8034, ~$500m worldwide
+* Competition - ProdPad, Wrike, InnovateNow, Evernote, memo.ai
+* Go to market - Atlassian marketplace & GitHub
+* Market validation - Drive traffic to rebulas.com & analyze
+* Pricing model - free tier, payment for AI related parts
 
 ### Product & Technology ###
 
-Automated assistant system running behind the scenes:
+* Automated assistant system running behind the scenes
 * Analyzes information and suggest relevant tagging.
 * Stores enriched information at its existing location
 * Allows information exploration through intuitive UI 
@@ -40,6 +40,6 @@ Automated assistant system running behind the scenes:
 
 ### Links ###
 
-https://square.github.io/crossfilter/
-http://gun.js.org/
-https://staltz.com/an-off-grid-social-network.html - note the authentication
+* https://square.github.io/crossfilter/
+* http://gun.js.org/
+* https://staltz.com/an-off-grid-social-network.html - note the authentication
