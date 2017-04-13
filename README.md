@@ -19,7 +19,6 @@ This README would normally document whatever steps are necessary to get your app
 
 
 ### Marketing activities ###
-
 Market size research - https://medium.com/@pavel.penchev/market-size-for-product-management-software-edd7b38e8034, ~$500m worldwide
 Competition - ProdPad, Wrike, InnovateNow, Evernote, memo.ai
 Go to market - Atlassian marketplace & GitHub
@@ -28,13 +27,11 @@ Pricing model - free tier, payment for AI related parts
 
 ### Product & Technology ###
 
-Automated assistant system running behind the scenes to:
-* Analyze information and suggest relevant tagging.
-* Store enriched information at its existing location
-* Allow information exploration through untuitive UI 
-
-Technology
-* Serverless
+Automated assistant system running behind the scenes:
+* Analyzes information and suggest relevant tagging.
+* Stores enriched information at its existing location
+* Allows information exploration through intuitive UI 
+* Server-less
 * No data lock-in
 * Offline first, web worker implementation
 * GitHub extension and Confluence plugin
