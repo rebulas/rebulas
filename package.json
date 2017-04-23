@@ -7,12 +7,14 @@
     "email": "pavel.penchev@gmail.com"
   },
   "dependencies": {
-    "minimist": "latest",
     "fs-extra": "latest",
-    "nodegit" : "latest", 
-    "promisify-node" : "latest"
-  }, 
-  "scripts" : {
-    "list" : "NODE_PATH=src/main node list.js"
+    "minimist": "latest",
+    "nodegit": "latest",
+    "nodeunit": "latest",
+    "promisify-node": "latest"
+  },
+  "scripts": {
+    "list": "NODE_PATH=src/main node list.js",
+    "test": "nodeunit lib/index/index-test.js"
   }
 }
