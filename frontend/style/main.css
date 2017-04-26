@@ -1,0 +1,129 @@
+body {
+	padding: 0px;
+	margin: 0px;
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+  font-family: Arial;
+}
+
+#head-container {
+	background-color: #475F77;
+	min-height: 100%;
+	top: 0px;
+	border-right: 1px solid #2A3A48;
+	color: #FFFAFA;
+}
+
+#countContainer {
+	font-size: 16px;
+}
+
+#right-container {
+	padding-top: 5px;
+}
+
+.facet {
+	padding: 20px 0 0 15px;
+}
+
+#facets-container {
+	padding: 20px 0 0 15px;
+}
+
+.facet-title {
+	color: #B2D4DC;
+	font-weight: bold;
+	text-transform:uppercase;
+	font-size: 0.9em;
+}
+
+.facet-title-search-input {
+	height: 20px !important;
+	padding: 2px 2px;
+	font-size: 12px;
+	border-radius: 3px;
+	width: 140px !important;
+	display: inline-block;
+	margin: -4px 0 0 6px !important;
+}
+
+.facet-title-search-icon {
+	margin-left: 3px;
+	font-size: 0.9em;
+	color: white;
+	cursor: pointer;
+}
+
+.facet-value {
+	margin: 3px 0 0 3px;
+}
+
+.facet-value > a {
+	color: #FFFAFA !important;
+	padding: 2px 0 0 0 !important;
+}
+
+.facet-value > a:hover, .facet-value > a:focus {
+	background-color: transparent !important;
+}
+
+.facet-value > em {
+	color: #CCCCCC;
+}
+
+.facet-value > a.facet-value-or-selected {
+	color: #B2D4DC !important;
+}
+
+.facet-drag-icon, .facet-drag-icon:hover {
+	font-size: 0.9em;
+	margin-left: 5px;
+	cursor: move;
+	text-decoration: none;
+}
+
+.breadcrumbs-container {
+	background-color: #FFFFFF;
+	padding-left: 0px;
+}
+
+.breadcrumbs-container > li > a {
+	color: #3E6372;
+	font-size: 1em;
+	text-transform: uppercase;
+}
+
+.breadcrumbs-container > li > div > a {
+	color: #3E6372;
+	font-size: 1em;
+	text-transform: uppercase;
+}
+
+.breadcrumbs-container > li.or + li::before {
+	padding: 0px 5px;
+	color: #CCC;
+	content: "or ";
+}
+
+.btn-primary, .btn-primary:hover, .btn-primary:focus {
+	background-color: #FF4B00;
+	border-color: rgb(230, 68, 0);
+	color: #FFFAFA !important;
+	text-transform: none !important;
+	margin-right: 5px;
+}
+
+.search-container {
+	color: #3E6372;
+	margin: 8px 5px 0 0;
+	cursor: pointer;
+}
+
+.search-field {
+	margin: 5px 5px 0 0;
+	width: 200px;
+	height: 25px;
+}

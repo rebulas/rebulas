@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Rebulas - Productivity for the technically minded</title>
+
+<link type="text/css" rel="stylesheet" href="style/bootstrap/css/bootstrap.css" />
+<link type="text/css" rel="stylesheet" href="style/main.css" />
+<script type="text/javascript" src="style/jquery.min.js"></script>
+
+<script type="text/javascript" src="js/util/util.js"></script>
+<script type="text/javascript" src="js/ui/facet-renderer.js"></script>
+<script type="text/javascript" src="js/ui/item-renderer.js"></script>
+<script type="text/javascript" src="js/ui/breadcrumbs-renderer.js"></script>
+<script type="text/javascript" src="js/query/query.js"></script>
+<script type="text/javascript" src="js/query/query-executor.js"></script>
+
+<script>
+
+$(document).ready(function() {
+	var q = Util.parseQueryString();
+
+	var searchBox = $("#search-box")
+	searchBox.keypress(function(e) {
+		if (e.which == 13) {
+			var queryObject = Util.parseQueryString();
+			var q = new Query(queryObject.q);
+
+			var term = searchBox.val();
+			if (term) {
+				q.setSearch(term);
+				queryObject.q = q.toString();
+			} else if (q.hasSelection("$s")) {
+				q.removeSelection("$s");
+				queryObject.q = q.toString();
+			}
+
+			QueryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
+				renderResult(result);
+			});
+		}
+	});
+
+	QueryExecutor.execute(q, function(result) {
+		renderResult(result);
+	});
+
+	// Register the current URL in the history stack in order to get a proper state later
+	history.replaceState({"queryObject" : q}, "", "?" + Util.queryObjectToString(q));
+
+	// React on back/forward when we have state enabled
+	window.onpopstate = function(event) {
+		if (event.state) {
+			QueryExecutor.execute(event.state.queryObject, function(result) {
+				renderResult(result);
+			});
+		}
+	};
+
+	// Fired in QueryExecutor.navigate
+	window.addEventListener("navigationStep", function(e){
+		if (e && e.detail && e.detail.navigationType == "sort") {
+			// Don't clear the view if we're just resorting
+		} else {
+			// Clear state
+		}
+	}, false);
+
+	$(document).ajaxStart(function() {
+		$(this).css({'cursor' : "wait"});
+	}).ajaxStop(function() {
+		$(this).css({'cursor' : "default"});
+	});
+});
+
+function renderResult(result) {
+	if (!result) {
+		return;
+	}
+
+	var catalog = result.catalog;
+	var queryString = Util.parseQueryString();
+
+	if (!queryString.catalog) {
+		queryString.catalog = catalog.id;
+	}
+
+	var q = new Query(result.query);
+	if (q.hasSelection("id")) {
+		renderDetails(result);
+	} else {
+		renderResultList(result);
+	}
+
+
+	var breadcrumbsContainer = $(document.createElement("ul"));
+	breadcrumbsContainer.addClass("breadcrumb breadcrumbs-container");
+
+	var catalogs = [];
+	BreadcrumbsRenderer.render(breadcrumbsContainer, catalog, result.breadcrumbs, q, catalogs, renderResult);
+
+	// Render the breadcrumbs
+	var container = $("#breadcrumbsContainer");
+	container.empty();
+	container.append(breadcrumbsContainer);
+}
+
+function renderResultList(result) {
+	var catalog = result.catalog;
+
+	var facetContainer = $("#facets-container");
+	FacetRenderer.renderFacets({
+		"container" : facetContainer,
+		"facets" : result.facets,
+		"catalog" : catalog,
+		"clickCallback" : renderResult
+	});
+
+	// Render the items
+	var countContainer = $("#countContainer");
+	countContainer.empty();
+
+	var listerSize = result.catalog.listerSize || 40;
+
+	if (result.count > listerSize) {
+		countContainer.append("Showing " + listerSize + " out of " + result.count + " results");
+	} else {
+		countContainer.append("Showing " + result.count + " results");
+	}
+
+	var container = $(document.createElement("div"));
+	ItemRenderer.renderList({
+		"container" : container,
+		"items" : result.items,
+		"fields" : result.fields,
+		"values" : result.values,
+		"query" : result.query,
+		"catalog" : catalog,
+		"clickListener" : renderResult
+	});
+
+	var itemsContainer = $("#itemsContainer");
+	itemsContainer.empty();
+	itemsContainer.append(container);
+}
+
+function renderDetails(result) {
+	var facetContainer = $("#facets-container");
+	FacetRenderer.renderFacets({
+		"container" : facetContainer,
+		"facets" : result.facets,
+		"catalog" : result.catalog,
+		"clickCallback" : renderResult
+	});
+
+
+	// Render the items
+	var countContainer = $("#countContainer");
+	countContainer.empty();
+
+	var catalog = result.catalog;
+
+	var container = $(document.createElement("div"));
+	container.css("text-align", "center");
+
+	var item = result.items[0];
+	ItemRenderer.renderItemDetails(item, {
+		"container" : container,
+		"fields" : result.fields,
+		"values" : result.values,
+		"query" : result.query,
+		"catalog" : catalog
+	});
+
+	var itemsContainer = $("#itemsContainer");
+	itemsContainer.empty();
+	itemsContainer.append(container);
+}
+
+function renderResultResort(result) {
+	var container = $(document.createElement("div"));
+
+	ItemRenderer.renderTable({
+		"container" : container,
+		"sideStepContainer" : $("#sideStepContainer"),
+		"items" : result.items,
+		"fields" : result.fields,
+		"values" : result.values,
+		"query" : result.query,
+		"catalog" : result.catalog,
+		"sortCallback" : renderResultResort
+	});
+
+	var itemsContainer = $("#itemsContainer");
+	itemsContainer.empty();
+	itemsContainer.append(container);
+}
+
+</script>
+
+</head>
+<body>
+	<div class="row" style="height:100%">
+		<div class="col-lg-2" id="head-container">
+			<div id="header-entries-container"></div>
+			<p class="clearfix"></p>
+			<div id="left-container">
+				<div id="facet-views"></div>
+				<ul id="facets-container" class="nav nav-list"></ul>
+			</div>
+		</div>
+		<div class="col-lg-10" id="right-container">
+			<span id="searchContainer" class="glyphicon glyphicon-search pull-left search-container"></span>
+			<input type="search" id="search-box" class="search-field pull-left form-control input-sm"/>
+			<div id="breadcrumbsContainer"><ul class="breadcrumb breadcrumbs-container"></ul></div>
+			<p class="clearfix"/>
+			<h4 id="countContainer"></h4>
+			<div id="itemsContainer" class="items"></div>
+		</div>
+	</div>
+
+
+</body>
+</html>
