@@ -9,16 +9,46 @@ html, body {
   font-family: Arial;
 }
 
+.title {
+  font-family: Lora;
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #313332;
+  margin: 15px 0 0 15px;
+}
+
+.item-summary-panel {
+  margin-right : 15px;
+  overflow : hidden;
+  background-color: #eff4f2;
+  width: 240px;
+  height : 260px;
+  cursor: pointer;
+}
+
+.item-details {
+  height: 600px;
+  background-color: #eff4f2;
+  margin-right: 10px;
+}
+
+.item-details-textarea {
+  border : 0px;
+  width : 100%;
+  height : 100%;
+  background-color : #eff4f2;
+}
+
 #head-container {
-	background-color: #475F77;
+	background-color: #eff4f2;
 	min-height: 100%;
 	top: 0px;
-	border-right: 1px solid #2A3A48;
+	border-right: 1px solid #DDD;
 	color: #FFFAFA;
 }
 
 #countContainer {
-	font-size: 16px;
+	font-size: 1.1em;
 }
 
 #right-container {
@@ -34,7 +64,7 @@ html, body {
 }
 
 .facet-title {
-	color: #B2D4DC;
+	color: #5cb85c;
 	font-weight: bold;
 	text-transform:uppercase;
 	font-size: 0.9em;
@@ -62,7 +92,7 @@ html, body {
 }
 
 .facet-value > a {
-	color: #FFFAFA !important;
+	color: #313332 !important;
 	padding: 2px 0 0 0 !important;
 }
 
@@ -71,7 +101,7 @@ html, body {
 }
 
 .facet-value > em {
-	color: #CCCCCC;
+	color: #6d706f;
 }
 
 .facet-value > a.facet-value-or-selected {
@@ -91,13 +121,13 @@ html, body {
 }
 
 .breadcrumbs-container > li > a {
-	color: #3E6372;
+	color: #64b491;
 	font-size: 1em;
 	text-transform: uppercase;
 }
 
 .breadcrumbs-container > li > div > a {
-	color: #3E6372;
+	color: #64b491;
 	font-size: 1em;
 	text-transform: uppercase;
 }
@@ -109,7 +139,7 @@ html, body {
 }
 
 .btn-primary, .btn-primary:hover, .btn-primary:focus {
-	background-color: #FF4B00;
+	background-color: #1CD67C;
 	border-color: rgb(230, 68, 0);
 	color: #FFFAFA !important;
 	text-transform: none !important;
