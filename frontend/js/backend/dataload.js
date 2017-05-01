@@ -1,4 +1,5 @@
 (function() {
+  // Useful link for jsgit: https://github.com/LivelyKernel/js-git-browser
   function createRepo(githubName, githubToken) {
     var repo = {};
     jsgit.mixins.memDb(repo);
@@ -12,6 +13,25 @@
   }
 
   window.RebulasBackend = {
+    createIndex: async function (githubName, githubToken) {
+      let repo = new RebulasBackend.DataRepo(githubName, githubToken);
+      await repo.clone();
+
+      let objects = await repo.readObjects(),
+          index = new elasticlunr.Index();
+
+      index.addField('path');
+      index.addField('content');
+
+      objects.forEach((object, id) => {
+        index.addDoc({
+          path: object.path,
+          content: object.content,
+          id: id
+        });
+      });
+      return index;
+    },
     DataRepo: class {
       constructor(githubName, githubToken) {
         this.githubName = githubName;
