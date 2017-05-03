@@ -20,6 +20,7 @@
 <script type="text/javascript" src="js/ui/facet-renderer.js"></script>
 <script type="text/javascript" src="js/ui/item-renderer.js"></script>
 <script type="text/javascript" src="js/ui/breadcrumbs-renderer.js"></script>
+<script type="text/javascript" src="js/ui/result-renderer.js"></script>
 <script type="text/javascript" src="js/query/query.js"></script>
 <script type="text/javascript" src="js/query/query-executor.js"></script>
 <script type="text/javascript" src="js/terminal/cli.js"></script>
@@ -43,14 +44,23 @@ $(document).ready(function() {
 	// All changes in the result set go through the QueryExecutor. The query execution could be
 	// triggered from within UI components, this reference will be passed there.
 	var queryExecutor = QueryExecutor.create(resultModel);
-
+	
+	// Overarching renderer for the result, all these pieces need to be updated upon result update
+	var resultRenderer = ResultRenderer.create({
+		"queryExecutor" : queryExecutor,
+		"facetsContainer" : $("#facets-container"),
+		"countContainer" : $("#countContainer"),
+		"itemsContainer" : $("#itemsContainer"),
+		"detailsContainer" : $("#itemDetails")
+	});
+	
 	// Register the current URL in the history stack in order to get a proper state in case of direct link
 	history.replaceState({"queryObject" : q}, "", "?" + Util.queryObjectToString(q));
 
 	// React on back/forward when we have state enabled
 	window.onpopstate = function(event) {
 		if (event.state) {
-			queryExecutor.execute(event.state.queryObject, renderResult);
+			queryExecutor.execute(event.state.queryObject, resultRenderer.render);
 		}
 	};
 
@@ -67,7 +77,7 @@ $(document).ready(function() {
 
 				var evaluated = current;
 				if (result) {
-					//evaluated += BreadcrumbsRenderer.toText(result.breadcrumbs);
+					//evaluated += BreadcrumbsRenderer.render(result.breadcrumbs);
 				}
 
 				callback(evaluated);
@@ -78,80 +88,22 @@ $(document).ready(function() {
 			"name" : 'rebulas',
 			"prompt": prompt
 		};
-
+		
+		// The Terminal 
+		// The listener is required for cases where commands require re-rendering of the result
 		$("#terminal").terminal(function(command) {
 			CommandLineInterpreter.process({
 				"command" : command,
 				"terminal" : this,
 				"queryExecutor" : queryExecutor,
-				"listener" : renderResult
+				"listener" : resultRenderer.render
 			});
 		}, settings);
 
-		renderResult(result);
+		// Render the initial result
+		resultRenderer.render(result);
 	});
 });
-
-function renderResult(result) {
-	if (!result) {
-		return;
-	}
-
-	var catalog = result.catalog;
-
-	var facetContainer = $("#facets-container");
-	FacetRenderer.renderFacets({
-		"container" : facetContainer,
-		"facets" : result.facets,
-		"catalog" : catalog,
-		"clickCallback" : renderResult
-	});
-
-	// Render the items
-	var countContainer = $("#countContainer");
-	countContainer.empty();
-
-	var listerSize = result.catalog.listerSize || 40;
-
-	if (result.count > listerSize) {
-		countContainer.append("Showing " + listerSize + " out of " + result.count + " results");
-	} else {
-		countContainer.append("Showing " + result.count + " results");
-	}
-
-	var container = $(document.createElement("div"));
-	ItemRenderer.renderList({
-		"container" : container,
-		"items" : result.items,
-		"fields" : result.fields,
-		"catalog" : catalog,
-		"clickListener" : renderDetails
-	});
-
-	var itemsContainer = $("#itemsContainer");
-	itemsContainer.empty();
-	itemsContainer.append(container);
-}
-
-function renderDetails(item, catalog) {
-	var container = $("#itemDetails");
-
-	ItemRenderer.renderDetails({
-		"container" : container,
-		"item" : item,
-		"catalog" : catalog,
-		"saveCallback" : saveCallback,
-		"cancelCallback" : saveCallback
-	});
-
-	$("#itemsContainer").hide();
-	$("#itemDetails").fadeIn();
-}
-
-function saveCallback() {
-	$("#itemDetails").empty().hide();
-	$("#itemsContainer").fadeIn();
-}
 
 </script>
 
@@ -174,7 +126,5 @@ function saveCallback() {
 			<div id="itemDetails" class="item-details well" style="display:none"></div>
 		</div>
 	</div>
-
-
 </body>
 </html>
