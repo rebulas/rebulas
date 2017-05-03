@@ -8,6 +8,7 @@ var FacetRenderer = {
         var catalog = args.catalog;
         var facets = args.facets;
         var clickCallback = args.clickCallback;
+		var queryExecutor = args.queryExecutor;
 
         var self = this;
 
@@ -186,7 +187,7 @@ var FacetRenderer = {
                 if (e.keyCode == 17) {
                     if (self.orQueue.length > 0) {
                         var queryObject = self.buildOrQuery(self.orQueue);
-                        QueryExecutor.navigate("?" + Util.queryObjectToString(queryObject), clickCallback);
+                        queryExecutor.navigate("?" + Util.queryObjectToString(queryObject), clickCallback);
                     }
 
                     self.orQueue = [];
@@ -230,7 +231,7 @@ var FacetRenderer = {
                 self.orQueue.push({"field" : facet.field, "value" : valueId});
                 link.addClass("facet-value-or-selected");
             } else {
-                QueryExecutor.navigate("?" + Util.queryObjectToString(facetLink), clickCallback);
+                queryExecutor.navigate("?" + Util.queryObjectToString(facetLink), clickCallback);
             }
         });
         link.attr("draggable", true);
