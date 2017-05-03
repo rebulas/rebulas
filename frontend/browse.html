@@ -22,87 +22,69 @@
 <script type="text/javascript" src="js/ui/breadcrumbs-renderer.js"></script>
 <script type="text/javascript" src="js/query/query.js"></script>
 <script type="text/javascript" src="js/query/query-executor.js"></script>
+<script type="text/javascript" src="js/terminal/cli.js"></script>
+<script type="text/javascript" src="js/query/result-model.js"></script>
 
 <script>
 
 $(document).ready(function() {
 
-	$("#terminal").terminal(function(command) {
-		var queryObject = Util.parseQueryString();
-		var q = new Query(queryObject.q);
-
-		var term = command; // strip the leading s
-		if (term) {
-			q.setSearch(term);
-			queryObject.q = q.toString();
-		} else if (q.hasSelection("$s")) {
-			q.removeSelection("$s");
-			queryObject.q = q.toString();
-		}
-
-		var self = this;
-		QueryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
-			renderResult(result);
-			self.echo("Showing 2 results");
-		});
-	}, {
-		greetings: 'Welcome to Rebulas. Enter help or h for a list of commands.',
-		name: 'rebulas',
-		prompt: 'rebulas@git:github.com/rebulas> '
-	});
-
+	// Query parameters and the item query representation
 	var q = Util.parseQueryString();
 
-	var searchBox = $("#search-box")
-	searchBox.keypress(function(e) {
-		if (e.which == 13) {
-			var queryObject = Util.parseQueryString();
-			var q = new Query(queryObject.q);
+	// Model holding the current query result, to be written inside the QueryExecutor
+	// and read from UI components
+	var resultModel = ResultModel.create();
 
-			var term = searchBox.val();
-			if (term) {
-				q.setSearch(term);
-				queryObject.q = q.toString();
-			} else if (q.hasSelection("$s")) {
-				q.removeSelection("$s");
-				queryObject.q = q.toString();
-			}
+	// All changes in the result set go through the QueryExecutor. The query execution could be
+	// triggered from within UI components, this reference will be passed there.
+	var queryExecutor = QueryExecutor.create(resultModel);
 
-			QueryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
-				renderResult(result);
-			});
-		}
-	});
-
-	QueryExecutor.execute(q, function(result) {
-		renderResult(result);
-	});
-
-	// Register the current URL in the history stack in order to get a proper state later
+	// Register the current URL in the history stack in order to get a proper state in case of direct link
 	history.replaceState({"queryObject" : q}, "", "?" + Util.queryObjectToString(q));
 
 	// React on back/forward when we have state enabled
 	window.onpopstate = function(event) {
 		if (event.state) {
-			QueryExecutor.execute(event.state.queryObject, function(result) {
-				renderResult(result);
-			});
+			queryExecutor.execute(event.state.queryObject, renderResult);
 		}
 	};
 
-	// Fired in QueryExecutor.navigate
-	window.addEventListener("navigationStep", function(e){
-		if (e && e.detail && e.detail.navigationType == "sort") {
-			// Don't clear the view if we're just resorting
-		} else {
-			// Clear state
-		}
-	}, false);
+	queryExecutor.execute(q, function(result) {
 
-	$(document).ajaxStart(function() {
-		$(this).css({'cursor' : "wait"});
-	}).ajaxStop(function() {
-		$(this).css({'cursor' : "default"});
+		// Initial state
+		// TODO must include the repository information, maybe reuse the catalog concept
+		var currentPrompt = 'rebulas@github.com/rebulas:~/$s=test/client=waitrose> ';
+
+		// The terminal prompt should reflect the current result set
+		var prompt = function(callback) {
+				var result = resultModel.get();
+				var current = currentPrompt;
+
+				var evaluated = current;
+				if (result) {
+					//evaluated += BreadcrumbsRenderer.toText(result.breadcrumbs);
+				}
+
+				callback(evaluated);
+		};
+
+		var settings = {
+			"greetings" : 'Welcome to Rebulas. Enter help or h for a list of commands.',
+			"name" : 'rebulas',
+			"prompt": prompt
+		};
+
+		$("#terminal").terminal(function(command) {
+			CommandLineInterpreter.process({
+				"command" : command,
+				"terminal" : this,
+				"queryExecutor" : queryExecutor,
+				"listener" : renderResult
+			});
+		}, settings);
+
+		renderResult(result);
 	});
 });
 
@@ -111,34 +93,6 @@ function renderResult(result) {
 		return;
 	}
 
-	var catalog = result.catalog;
-	var queryString = Util.parseQueryString();
-
-	if (!queryString.catalog) {
-		queryString.catalog = catalog.id;
-	}
-
-	var q = new Query(result.query);
-	if (q.hasSelection("id")) {
-		renderDetails(result);
-	} else {
-		renderResultList(result);
-	}
-
-
-	var breadcrumbsContainer = $(document.createElement("ul"));
-	breadcrumbsContainer.addClass("breadcrumb breadcrumbs-container");
-
-	var catalogs = [];
-	BreadcrumbsRenderer.render(breadcrumbsContainer, catalog, result.breadcrumbs, q, catalogs, renderResult);
-
-	// Render the breadcrumbs
-	var container = $("#breadcrumbsContainer");
-	container.empty();
-	container.append(breadcrumbsContainer);
-}
-
-function renderResultList(result) {
 	var catalog = result.catalog;
 
 	var facetContainer = $("#facets-container");
@@ -210,9 +164,6 @@ function saveCallback() {
 		</div>
 		<div class="col-lg-10" id="right-container">
 			<div id="terminal" class="terminal-container"></div>
-			<span id="searchContainer" class="glyphicon glyphicon-search pull-left search-container" style="display: none"></span>
-			<input  style="display: none" type="search" id="search-box" class="search-field pull-left form-control input-sm"/>
-			<div  style="display: none" id="breadcrumbsContainer"><ul class="breadcrumb breadcrumbs-container"></ul></div>
 			<p class="clearfix"/>
 			<h4 id="countContainer"></h4>
 			<div id="itemsContainer" class="items"></div>
