@@ -8,7 +8,7 @@ var FacetRenderer = {
         var catalog = args.catalog;
         var facets = args.facets;
         var clickCallback = args.clickCallback;
-		var queryExecutor = args.queryExecutor;
+		    var queryExecutor = args.queryExecutor;
 
         var self = this;
 
@@ -108,7 +108,7 @@ var FacetRenderer = {
 
             var total = facet.values.length;
             facet.values.forEach(function(value) {
-                var facetValueContainer = self.renderFacetValue(catalog, facet, value, "facet-full-", clickCallback);
+                var facetValueContainer = self.renderFacetValue(catalog, facet, value, "facet-full-", clickCallback, queryExecutor);
                 div.append(facetValueContainer);
             });
 
@@ -134,7 +134,7 @@ var FacetRenderer = {
             for (var v in facet.values) {
                 var value = facet.values[v];
 
-                var facetValueContainer = self.renderFacetValue(catalog, facet, value, "facet-short-", clickCallback);
+                var facetValueContainer = self.renderFacetValue(catalog, facet, value, "facet-short-", clickCallback, queryExecutor);
                 divShortened.append(facetValueContainer);
 
                 if (i++ == 10) {
@@ -204,7 +204,7 @@ var FacetRenderer = {
         facetContainer.append(container);
     },
 
-    "renderFacetValue" : function (catalog, facet, value, prefix, clickCallback) {
+    "renderFacetValue" : function (catalog, facet, value, prefix, clickCallback, queryExecutor) {
         var self = this;
 
         var innerLi = $(document.createElement("li"));

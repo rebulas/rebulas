@@ -23,7 +23,7 @@
 <script type="text/javascript" src="js/ui/result-renderer.js"></script>
 <script type="text/javascript" src="js/query/query.js"></script>
 <script type="text/javascript" src="js/query/query-executor.js"></script>
-<script type="text/javascript" src="js/terminal/cli.js"></script>
+<script type="text/javascript" src="js/terminal/terminal.js"></script>
 <script type="text/javascript" src="js/query/result-model.js"></script>
 
 <script type="text/javascript" src="js/backend/jsgit.js"></script>
@@ -44,7 +44,7 @@ $(document).ready(function() {
 	// All changes in the result set go through the QueryExecutor. The query execution could be
 	// triggered from within UI components, this reference will be passed there.
 	var queryExecutor = QueryExecutor.create(resultModel);
-	
+
 	// Overarching renderer for the result, all these pieces need to be updated upon result update
 	var resultRenderer = ResultRenderer.create({
 		"queryExecutor" : queryExecutor,
@@ -53,7 +53,7 @@ $(document).ready(function() {
 		"itemsContainer" : $("#itemsContainer"),
 		"detailsContainer" : $("#itemDetails")
 	});
-	
+
 	// Register the current URL in the history stack in order to get a proper state in case of direct link
 	history.replaceState({"queryObject" : q}, "", "?" + Util.queryObjectToString(q));
 
@@ -66,39 +66,11 @@ $(document).ready(function() {
 
 	queryExecutor.execute(q, function(result) {
 
-		// Initial state
-		// TODO must include the repository information, maybe reuse the catalog concept
-		var currentPrompt = 'rebulas@github.com/rebulas:~/$s=test/client=waitrose> ';
-
-		// The terminal prompt should reflect the current result set
-		var prompt = function(callback) {
-				var result = resultModel.get();
-				var current = currentPrompt;
-
-				var evaluated = current;
-				if (result) {
-					//evaluated += BreadcrumbsRenderer.render(result.breadcrumbs);
-				}
-
-				callback(evaluated);
-		};
-
-		var settings = {
-			"greetings" : 'Welcome to Rebulas. Enter help or h for a list of commands.',
-			"name" : 'rebulas',
-			"prompt": prompt
-		};
-		
-		// The Terminal 
-		// The listener is required for cases where commands require re-rendering of the result
-		$("#terminal").terminal(function(command) {
-			CommandLineInterpreter.process({
-				"command" : command,
-				"terminal" : this,
-				"queryExecutor" : queryExecutor,
-				"listener" : resultRenderer.render
-			});
-		}, settings);
+		var terminal = Terminal.create({
+				"resultModel" : resultModel,
+				"resultRenderer" : resultRenderer,
+				"queryExecutor" : queryExecutor
+		});
 
 		// Render the initial result
 		resultRenderer.render(result);
