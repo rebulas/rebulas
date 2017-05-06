@@ -26,8 +26,7 @@ var Terminal = {
   },
 
   "calculatePrompt" : function(result) {
-    // TODO change base on catalog
-		var base = 'rebulas@github.com/rebulas';
+		var base = 'rebulas@' + result.catalog.name;
 
     var crumbs = BreadcrumbsRenderer.render(result.breadcrumbs);
     if (crumbs) {

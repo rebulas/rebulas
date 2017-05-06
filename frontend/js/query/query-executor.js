@@ -1,11 +1,12 @@
 var QueryExecutor = {
 
-		create : function(resultModel) {
+		create : function() {
 
 			var staticResult = {
 				"count" : 2,
 				"catalog" : {
 					"id" : 1,
+					"name" : "",
 					"displayFields" : [
 						{"field" : "name", "type" : "text"},
 						{"field" : "details", "type" : "text"}
@@ -58,6 +59,10 @@ var QueryExecutor = {
 						var value = selection.field + selection.operation + selection.value;
 						result.breadcrumbs.push({"field" : selection.field, "valueLocalized" : value, "query" : value});
 					});
+
+					// TODO handle initial state i.e. no catalogs
+					var catalog = queryObject.catalog ? RepositoryManager.getCatalog(queryObject.catalog) : RepositoryManager.getCatalogs()[0];
+					result.catalog.name = catalog.uri;
 
 					this.listeners.forEach(function(listener) {
 						if (listener.onResultChange) {

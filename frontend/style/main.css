@@ -17,6 +17,10 @@ html, body {
   margin: 15px 0 0 15px;
 }
 
+#itemsContainer {
+  padding-left: 10px;
+}
+
 .item-summary-panel {
   margin-right : 15px;
   overflow : hidden;
@@ -47,12 +51,62 @@ html, body {
 	color: #FFFAFA;
 }
 
+@media(max-width: 1650px) {
+  #head-container {
+    display: none;
+  }
+}
+
 #countContainer {
 	font-size: 1.1em;
+  padding-left: 10px;
 }
 
 #right-container {
 	padding-top: 5px;
+}
+
+.terminal-container {
+  height: 100px;
+  width: 80%;
+  margin-bottom: 10px;
+}
+
+.terminal {
+  --color: #5cb85c;
+  --background: white;
+  --animation: terminal-underline;
+  --size: 1.2;
+  /* better then return false in onBlur */
+  margin: 0; /* body margin */
+}
+
+#repository-button {
+    margin: 10px 20px 0 0;
+}
+
+#repository-button > button {
+  background-color: #5cb85c;
+  border-color: #DDD;
+  color: #FFFAFA !important;
+  text-transform: none !important;
+}
+
+#repository-button > ul {
+  width: 400px;
+}
+
+#repository-button > ul > li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+#repository-button > ul > li > a:hover {
+  background-color: white;
+}
+
+#repository-button > ul > .divider {
+  padding: 0px;
 }
 
 .facet {
@@ -115,45 +169,10 @@ html, body {
 	text-decoration: none;
 }
 
-.breadcrumbs-container {
-	background-color: #FFFFFF;
-	padding-left: 0px;
-}
-
-.breadcrumbs-container > li > a {
-	color: #64b491;
-	font-size: 1em;
-	text-transform: uppercase;
-}
-
-.breadcrumbs-container > li > div > a {
-	color: #64b491;
-	font-size: 1em;
-	text-transform: uppercase;
-}
-
-.breadcrumbs-container > li.or + li::before {
-	padding: 0px 5px;
-	color: #CCC;
-	content: "or ";
-}
-
 .btn-primary, .btn-primary:hover, .btn-primary:focus {
 	background-color: #1CD67C;
 	border-color: rgb(230, 68, 0);
 	color: #FFFAFA !important;
 	text-transform: none !important;
 	margin-right: 5px;
-}
-
-.search-container {
-	color: #3E6372;
-	margin: 8px 5px 0 0;
-	cursor: pointer;
-}
-
-.search-field {
-	margin: 5px 5px 0 0;
-	width: 200px;
-	height: 25px;
 }

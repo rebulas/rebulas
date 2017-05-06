@@ -9,6 +9,7 @@
 <link type="text/css" rel="stylesheet" href="style/main.css" />
 <link type="text/css" rel="stylesheet" href="style/terminal.css" />
 <script type="text/javascript" src="style/jquery.min.js"></script>
+<script type="text/javascript" src="style/bootstrap/js/bootstrap.min.js"></script>
 
 <script src="style/terminal/jquery.terminal-1.2.0.min.js"></script>
 <script src="style/terminal/jquery.mousewheel.min.js"></script>
@@ -24,7 +25,8 @@
 <script type="text/javascript" src="js/query/query.js"></script>
 <script type="text/javascript" src="js/query/query-executor.js"></script>
 <script type="text/javascript" src="js/terminal/terminal.js"></script>
-<script type="text/javascript" src="js/query/result-model.js"></script>
+<script type="text/javascript" src="js/repository/repository-configurator.js"></script>
+<script type="text/javascript" src="js/repository/repository-manager.js"></script>
 
 <script type="text/javascript" src="js/backend/jsgit.js"></script>
 <script type="text/javascript" src="js/backend/dataload.js"></script>
@@ -77,6 +79,13 @@ $(document).ready(function() {
 		queryExecutor.addListener(terminal);
 		queryExecutor.addListener(resultRenderer);
 	});
+
+
+	RepositoryConfigurator.render({
+		"container" : $("#repository-button"),
+		"queryExecutor" : queryExecutor,
+		"catalogs" : RepositoryManager.getCatalogs()
+	});
 });
 
 </script>
@@ -93,10 +102,20 @@ $(document).ready(function() {
 			</div>
 		</div>
 		<div class="col-lg-10" id="right-container">
-			<div id="terminal" class="terminal-container"></div>
+			<div class="row">
+				<div class="col-lg-10">
+					<div id="terminal" class="terminal-container"></div>
+				</div>
+				<div class="col-lg-2">
+					<div class="btn-group pull-right" id="repository-button">
+						<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">rebulas@github.com/rebulas <span class="caret"></span></button>
+						<ul class="dropdown-menu repositories-container"></ul>
+					</div>
+				</div>
+			</div>
 			<p class="clearfix"/>
 			<h4 id="countContainer"></h4>
-			<div id="itemsContainer" class="items"></div>
+			<div id="itemsContainer"></div>
 			<div id="itemDetails" class="item-details well" style="display:none"></div>
 		</div>
 	</div>
