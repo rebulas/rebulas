@@ -7,7 +7,6 @@ var FacetRenderer = {
         var facetContainer = args.container;;
         var catalog = args.catalog;
         var facets = args.facets;
-        var clickCallback = args.clickCallback;
 		    var queryExecutor = args.queryExecutor;
 
         var self = this;
@@ -108,7 +107,7 @@ var FacetRenderer = {
 
             var total = facet.values.length;
             facet.values.forEach(function(value) {
-                var facetValueContainer = self.renderFacetValue(catalog, facet, value, "facet-full-", clickCallback, queryExecutor);
+                var facetValueContainer = self.renderFacetValue(catalog, facet, value, "facet-full-", queryExecutor);
                 div.append(facetValueContainer);
             });
 
@@ -134,7 +133,7 @@ var FacetRenderer = {
             for (var v in facet.values) {
                 var value = facet.values[v];
 
-                var facetValueContainer = self.renderFacetValue(catalog, facet, value, "facet-short-", clickCallback, queryExecutor);
+                var facetValueContainer = self.renderFacetValue(catalog, facet, value, "facet-short-", queryExecutor);
                 divShortened.append(facetValueContainer);
 
                 if (i++ == 10) {
@@ -187,7 +186,7 @@ var FacetRenderer = {
                 if (e.keyCode == 17) {
                     if (self.orQueue.length > 0) {
                         var queryObject = self.buildOrQuery(self.orQueue);
-                        queryExecutor.navigate("?" + Util.queryObjectToString(queryObject), clickCallback);
+                        queryExecutor.navigate("?" + Util.queryObjectToString(queryObject));
                     }
 
                     self.orQueue = [];
@@ -204,7 +203,7 @@ var FacetRenderer = {
         facetContainer.append(container);
     },
 
-    "renderFacetValue" : function (catalog, facet, value, prefix, clickCallback, queryExecutor) {
+    "renderFacetValue" : function (catalog, facet, value, prefix, queryExecutor) {
         var self = this;
 
         var innerLi = $(document.createElement("li"));
@@ -231,7 +230,7 @@ var FacetRenderer = {
                 self.orQueue.push({"field" : facet.field, "value" : valueId});
                 link.addClass("facet-value-or-selected");
             } else {
-                queryExecutor.navigate("?" + Util.queryObjectToString(facetLink), clickCallback);
+                queryExecutor.navigate("?" + Util.queryObjectToString(facetLink));
             }
         });
         link.attr("draggable", true);

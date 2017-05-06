@@ -1,13 +1,18 @@
 var ResultRenderer = {
-	
+
 	"create" : function(args) {
 		var queryExecutor = args.queryExecutor;
 		var facetsContainer = args.facetsContainer;
 		var countContainer = args.countContainer;
 		var itemsContainer = args.itemsContainer;
 		var detailsContainer = args.detailsContainer;
-		
+
 		return {
+
+			"onResultChange" : function(result) {
+				this.render(result);
+			},
+
 			"render" : function(result) {
 				if (!result) {
 					return;
@@ -19,7 +24,6 @@ var ResultRenderer = {
 					"container" : facetsContainer,
 					"facets" : result.facets,
 					"catalog" : catalog,
-					"clickCallback" : this.render,
 					"queryExecutor" : queryExecutor
 				});
 
@@ -31,12 +35,12 @@ var ResultRenderer = {
 				} else {
 					countContainer.append("Showing " + result.count + " results");
 				}
-				
+
 				var saveCallback = function() {
 					detailsContainer.empty().hide();
 					itemsContainer.fadeIn();
 				};
-				
+
 				// TODO Extract as a separate file
 				var renderDetails = function(item, catalog) {
 					ItemRenderer.renderDetails({
@@ -48,9 +52,9 @@ var ResultRenderer = {
 					});
 
 					itemsContainer.hide();
-					detailsContainer.fadeIn();					
+					detailsContainer.fadeIn();
 				}
-				
+
 				var container = $(document.createElement("div"));
 				ItemRenderer.renderList({
 					"container" : container,

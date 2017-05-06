@@ -37,13 +37,12 @@ $(document).ready(function() {
 	// Query parameters and the item query representation
 	var q = Util.parseQueryString();
 
-	// Model holding the current query result, to be written inside the QueryExecutor
-	// and read from UI components
-	var resultModel = ResultModel.create();
+	// Register the current URL in the history stack in order to get a proper state in case of direct link
+	history.replaceState({"queryObject" : q}, "", "?" + Util.queryObjectToString(q));
 
 	// All changes in the result set go through the QueryExecutor. The query execution could be
 	// triggered from within UI components, this reference will be passed there.
-	var queryExecutor = QueryExecutor.create(resultModel);
+	var queryExecutor = QueryExecutor.create();
 
 	// Overarching renderer for the result, all these pieces need to be updated upon result update
 	var resultRenderer = ResultRenderer.create({
@@ -54,26 +53,29 @@ $(document).ready(function() {
 		"detailsContainer" : $("#itemDetails")
 	});
 
-	// Register the current URL in the history stack in order to get a proper state in case of direct link
-	history.replaceState({"queryObject" : q}, "", "?" + Util.queryObjectToString(q));
 
 	// React on back/forward when we have state enabled
 	window.onpopstate = function(event) {
 		if (event.state) {
-			queryExecutor.execute(event.state.queryObject, resultRenderer.render);
+			// Does not alter the history state, does trigger the onResultChange listeners
+			queryExecutor.execute(event.state.queryObject);
 		}
 	};
 
 	queryExecutor.execute(q, function(result) {
 
 		var terminal = Terminal.create({
-				"resultModel" : resultModel,
-				"resultRenderer" : resultRenderer,
-				"queryExecutor" : queryExecutor
+				"queryExecutor" : queryExecutor,
+				"initialResult" : result
 		});
 
 		// Render the initial result
 		resultRenderer.render(result);
+
+		// Following the initial rendering, the rendering coordination will be done via listeners
+		// The listeners define onResultChange method triggered within queryExecutor
+		queryExecutor.addListener(terminal);
+		queryExecutor.addListener(resultRenderer);
 	});
 });
 
