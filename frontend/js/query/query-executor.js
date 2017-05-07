@@ -49,7 +49,7 @@ var QueryExecutor = {
 						this.listeners.push(object);
 				},
 
-				"execute" : function(queryObject, callback) {
+				"execute" : async function(queryObject, callback) {
 					var result = staticResult;
 
 					// Temporary breadcrumb composition based on the query
@@ -62,6 +62,10 @@ var QueryExecutor = {
 
 					// TODO handle initial state i.e. no catalogs
 					var catalog = queryObject.catalog ? RepositoryManager.getCatalog(queryObject.catalog) : RepositoryManager.getCatalogs()[0];
+
+					var index = await RebulasBackend.getCatalogIndex(catalog);
+					result.items = index.search(queryObject);
+
 					result.catalog.name = catalog.uri;
 
 					this.listeners.forEach(function(listener) {

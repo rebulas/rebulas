@@ -1,66 +1,83 @@
-(function() {
-  // Useful link for jsgit: https://github.com/LivelyKernel/js-git-browser
-  function createRepo(githubName, githubToken) {
-    var repo = {};
-    jsgit.mixins.memDb(repo);
-    jsgit.mixins.github(repo, githubName, githubToken);
-    jsgit.mixins.createTree(repo);
-    jsgit.mixins.packOps(repo);
-    jsgit.mixins.walkers(repo);
-    jsgit.mixins.readCombiner(repo);
-    jsgit.mixins.formats(repo);
-    return jsgit.promisify(repo);
+(function(window) {
+  class AuthRequests {
+    constructor(user, pass) {
+      this.user = user;
+      this.pass = pass;
+    }
+    get(url) {
+      let method = 'GET', self = this;
+      return new Promise(function (resolve, reject) {
+          var xhr = new XMLHttpRequest();
+          xhr.open(method, url);
+          xhr.setRequestHeader("Authorization", "Basic " + btoa(self.user + ":" + self.pass));
+          xhr.onload = resolve;
+          xhr.onerror = reject;
+          xhr.send();
+      });
+    }
   }
 
-  window.RebulasBackend = {
-    createIndex: async function (githubName, githubToken) {
-      let repo = new RebulasBackend.DataRepo(githubName, githubToken);
-      await repo.clone();
+  class IndexWrapper {
+    constructor(index) {
+      this.index = index;
+    }
 
-      let objects = await repo.readObjects(),
-          index = new elasticlunr.Index();
+    search(queryObject) {
+      return this.index.search(queryObject.q);
+    }
+  }
 
-      index.addField('path');
-      index.addField('content');
+  async function getDropboxIndex(catalog) {
+    let dbx = new Dropbox({ accessToken: '' });
+    let files = await dbx.filesListFolder({path: ''});
+    let index = new elasticlunr.Index();
 
-      objects.forEach((object, id) => {
+    index.addField('path');
+    index.addField('name');
+    index.addField('content');
+
+    var folders = [];
+    for (let i = 0; i < files.entries.length; i++) {
+      let entry = files.entries[i];
+      if (entry['.tag'] == 'folder') {
+        folders.push(entry);
+      } else {
+        console.log('Reading', entry.path_lower);
+        let content = await readEntryContent(entry);
         index.addDoc({
-          path: object.path,
-          content: object.content,
-          id: id
+          id: entry.path_lower,
+          name: entry.path_display,
+          content: content
         });
+      }
+    };
+
+    function readEntryContent(entry) {
+      return new Promise(async (resolve, reject) => {
+        let dlResponse = await dbx.filesDownload({ path: entry.path_lower });
+        let blob = dlResponse.fileBlob;
+        let reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsText(blob);
       });
-      return index;
-    },
-    DataRepo: class {
-      constructor(githubName, githubToken) {
-        this.githubName = githubName;
-        this.githubToken = githubToken;
+    }
+
+    return new IndexWrapper(index);
+  }
+
+  var openedCatalogs = {};
+  window.RebulasBackend = {
+    getCatalogIndex: async function(catalog) {
+      if(openedCatalogs[catalog.id]) {
+        return openedCatalogs[catalog.id];
       }
 
-      async clone() {
-        this.repo = createRepo(this.githubName, this.githubToken);
+      let url = new URL(catalog.uri);
+      if(url.protocol === 'dropbox:') {
+        return getDropboxIndex(catalog);
       }
-
-      async readObjects() {
-        let repo = this.repo,
-            headHash = await repo.readRef('refs/heads/master'),
-            reader = await repo.treeWalk(headHash),
-            objects = [],
-            obj;
-
-        while (obj = await reader.read()) {
-          if (obj.mode !== jsgit.modes.file) {
-            continue;
-          }
-
-          let content = await repo.loadAs('text', obj.hash);
-          obj.content = content;
-          objects.push(obj);
-        }
-
-        return objects;
-      }
+      return undefined;
     }
   };
-}());
+}(window));
