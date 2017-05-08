@@ -80,12 +80,22 @@ $(document).ready(function() {
 		queryExecutor.addListener(resultRenderer);
 	});
 
-
 	RepositoryConfigurator.render({
 		"container" : $("#repository-button"),
 		"queryExecutor" : queryExecutor,
-		"catalogs" : RepositoryManager.getCatalogs()
+		"modalContainer" : $("#repositoryConfiguratorModal")
 	});
+
+	// Register on-going OAuth sessions for mapping to OAuth callbacks
+	window.OAuthSessions = [];
+	window.OAuthCallback = function(args) {
+		var state = args.state;
+
+		if (window.OAuthSessions[state]) {
+			var callback = window.OAuthSessions[state];
+			callback(args);
+		}
+	}
 });
 
 </script>
@@ -119,5 +129,23 @@ $(document).ready(function() {
 			<div id="itemDetails" class="item-details well" style="display:none"></div>
 		</div>
 	</div>
+
+	<div class="modal fade" id="repositoryConfiguratorModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="modalLabel">Configure repository</h4>
+      </div>
+      <div class="modal-body">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

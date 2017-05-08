@@ -1,22 +1,69 @@
 var RepositoryManager = {
 
-  "catalogs" : [{"id" : 12398, "uri" : "github:github.com/rebulas"}, {"id" : 99283, "uri" : "dropbox:dropbox.com"}],
+  "default" : {"id" : 0, "uri" : "localhost"},
 
   "getCatalogs" : function() {
+    var catalogs = [this.default];
 
-    // TODO get these from local storage and OAUTH sessions
-    return this.catalogs;
+    var storedCatalogsRaw = localStorage.getItem("catalogs");
+    if (storedCatalogsRaw) {
+      var storedCatalogs = JSON.parse(storedCatalogsRaw);
+      storedCatalogs.forEach(function(catalog) {
+        catalogs.push(catalog);
+      });
+    }
+
+    return catalogs;
   },
 
   "getCatalog" : function(id) {
     var catalog = undefined;
 
-    this.catalogs.forEach(function(c) {
+    this.getCatalogs().forEach(function(c) {
       if (id == c.id) {
         catalog = c;
       }
     });
 
     return catalog;
+  },
+
+  "addCatalog" : function(id, type, token) {
+    var uri = type == "dropbox" ? "dropbox.com/rebulas" : "localhost";
+
+    var storedCatalogs = [];
+
+    var storedCatalogsRaw = localStorage.getItem("catalogs");
+    if (storedCatalogsRaw) {
+      storedCatalogs = JSON.parse(storedCatalogsRaw);
+    }
+
+    storedCatalogs.push({
+      "id" : id,
+      "uri" : uri,
+      "token" : token
+    });
+
+    localStorage.setItem("catalogs", JSON.stringify(storedCatalogs));
+  },
+
+  "removeCatalog" : function(id) {
+    var storedCatalogsRaw = localStorage.getItem("catalogs");
+    if (storedCatalogsRaw) {
+      storedCatalogs = JSON.parse(storedCatalogsRaw);
+
+      var index = -1;
+      for (var i = 0; i < storedCatalogs.length; i++) {
+        var c = storedCatalogs[i];
+        if (c.id == id) {
+          index = i;
+        }
+      }
+
+      if (index > -1) {
+          Util.arrayRemove(storedCatalogs, index);
+          localStorage.setItem("catalogs", JSON.stringify(storedCatalogs));
+      }
+    }
   }
 }

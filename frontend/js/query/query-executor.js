@@ -5,7 +5,7 @@ var QueryExecutor = {
 			var staticResult = {
 				"count" : 2,
 				"catalog" : {
-					"id" : 1,
+					"id" : 0,
 					"name" : "",
 					"displayFields" : [
 						{"field" : "name", "type" : "text"},
@@ -41,7 +41,10 @@ var QueryExecutor = {
 
 					this.execute(queryObject, function(result) {
 						history.pushState({"queryObject" : queryObject}, "Title", queryString);
-						callback(result);
+
+						if (callback) {
+							callback(result);
+						}
 					});
 				},
 
