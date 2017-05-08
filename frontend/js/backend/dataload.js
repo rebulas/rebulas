@@ -22,35 +22,54 @@
       this.index = index;
     }
 
+    adaptSearchResult(item) {
+      return {
+        id: item.ref.substring(1),
+        _md: this.index.documentStore.getDoc(item.ref).content
+      };
+    }
+
     search(queryObject) {
-      return this.index.search(queryObject.q);
+      let query = new Query(queryObject.q),
+          searchSelection = query.getSelection('$s'),
+          searchPhrase = (searchSelection && searchSelection.value) || '';
+      return this.index.search(searchPhrase).map((item) => this.adaptSearchResult(item));
     }
   }
 
   async function getDropboxIndex(catalog) {
     let dbx = new Dropbox({ accessToken: '' });
-    let files = await dbx.filesListFolder({path: ''});
     let index = new elasticlunr.Index();
 
     index.addField('path');
     index.addField('name');
     index.addField('content');
 
-    var folders = [];
-    for (let i = 0; i < files.entries.length; i++) {
-      let entry = files.entries[i];
-      if (entry['.tag'] == 'folder') {
-        folders.push(entry);
-      } else {
-        console.log('Reading', entry.path_lower);
-        let content = await readEntryContent(entry);
-        index.addDoc({
-          id: entry.path_lower,
-          name: entry.path_display,
-          content: content
-        });
+    let folders = [''];
+    let promises = [];
+    while(folders.length !== 0) {
+      let folder = folders[0];
+      folders.splice(0, 1);
+      let files = await dbx.filesListFolder({ path: folder });
+
+      for (let i = 0; i < files.entries.length; i++) {
+        let entry = files.entries[i];
+        if (entry['.tag'] == 'folder') {
+          folders.push(entry.path_lower);
+        } else {
+          console.log('Reading', entry.path_lower);
+          promises.push(readEntryContent(entry).then((content) => {
+            console.log('Done reading', entry.path_lower);
+            index.addDoc({
+              id: entry.path_lower,
+              name: entry.path_display,
+              content: content
+            });
+          }));
+        }
       }
-    };
+    }
+    await Promise.all(promises);
 
     function readEntryContent(entry) {
       return new Promise(async (resolve, reject) => {
@@ -75,9 +94,12 @@
 
       let url = new URL(catalog.uri);
       if(url.protocol === 'dropbox:') {
-        return getDropboxIndex(catalog);
+        return getDropboxIndex(catalog).then((index) => {
+          openedCatalogs[catalog.id] = index;
+          return index;
+        });
       }
-      return undefined;
+      return Promise.resolve(undefined);
     }
   };
 }(window));
