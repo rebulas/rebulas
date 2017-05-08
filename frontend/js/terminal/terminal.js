@@ -51,7 +51,7 @@ var Terminal = {
   		}
 
   		queryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
-  			terminal.echo("Showing 2 results");
+        terminal.echo("Showing " + result.count + " results");
   		});
   }
 }
