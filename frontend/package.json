@@ -1,0 +1,8 @@
+{
+  "name": "rebulas",
+  "version": "0.0.1",
+  "description": "Rebulas - Productivity for the technically minded",
+  "scripts" : {
+    "start" : "node server.js"
+  }
+}
