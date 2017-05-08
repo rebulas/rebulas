@@ -39,37 +39,67 @@
 
   async function getDropboxIndex(catalog) {
     let dbx = new Dropbox({ accessToken: '' });
-    let index = new elasticlunr.Index();
+    let existingIndex;
+    try {
+      existingIndex = await dbx.filesDownload({ path: '/.rebulas_index' });
+    } catch(e) {}
 
-    index.addField('path');
-    index.addField('name');
-    index.addField('content');
+    if(existingIndex) {
+      let existingIndexContent = await readEntryContent(existingIndex);
+      existingIndexContent = JSON.parse(existingIndexContent);
+      return new IndexWrapper(elasticlunr.Index.load(existingIndexContent));
+    } else {
+      let newIndex = await rebuildIndex(dbx);
+      let serializedIndex = writeIndex(newIndex);
+      await dbx.filesUpload({
+        path: '/.rebulas_index',
+        contents: serializedIndex,
+        mute: true,
+        mode: {
+          '.tag': 'overwrite'
+        }
+      });
+      return new IndexWrapper(newIndex);
+    }
 
-    let folders = [''];
-    let promises = [];
-    while(folders.length !== 0) {
-      let folder = folders[0];
-      folders.splice(0, 1);
-      let files = await dbx.filesListFolder({ path: folder });
+    async function rebuildIndex(dbx) {
+      let index = new elasticlunr.Index();
 
-      for (let i = 0; i < files.entries.length; i++) {
-        let entry = files.entries[i];
-        if (entry['.tag'] == 'folder') {
-          folders.push(entry.path_lower);
-        } else {
-          console.log('Reading', entry.path_lower);
-          promises.push(readEntryContent(entry).then((content) => {
-            console.log('Done reading', entry.path_lower);
-            index.addDoc({
-              id: entry.path_lower,
-              name: entry.path_display,
-              content: content
-            });
-          }));
+      index.addField('path');
+      index.addField('name');
+      index.addField('content');
+
+      let folders = [''];
+      let promises = [];
+      while(folders.length !== 0) {
+        let folder = folders[0];
+        folders.splice(0, 1);
+        let files = await dbx.filesListFolder({ path: folder });
+
+        for (let i = 0; i < files.entries.length; i++) {
+          let entry = files.entries[i];
+          if (entry['.tag'] == 'folder') {
+            folders.push(entry.path_lower);
+          } else {
+            console.log('Reading', entry.path_lower);
+            promises.push(readEntryContent(entry).then((content) => {
+              console.log('Done reading', entry.path_lower);
+              index.addDoc({
+                id: entry.path_lower,
+                name: entry.path_display,
+                content: content
+              });
+            }));
+          }
         }
       }
+      await Promise.all(promises);
+      return index;
     }
-    await Promise.all(promises);
+
+    function writeIndex(index) {
+      return new Blob([JSON.stringify(index.toJSON())], { type: 'application/json' });
+    }
 
     function readEntryContent(entry) {
       return new Promise(async (resolve, reject) => {
@@ -81,8 +111,6 @@
         reader.readAsText(blob);
       });
     }
-
-    return new IndexWrapper(index);
   }
 
   var openedCatalogs = {};

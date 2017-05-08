@@ -65,7 +65,7 @@ var QueryExecutor = {
 
 					var index = await RebulasBackend.getCatalogIndex(catalog);
 					result.items = index.search(queryObject);
-
+					result.count = result.items.length;
 					result.catalog.name = catalog.uri;
 
 					this.listeners.forEach(function(listener) {
