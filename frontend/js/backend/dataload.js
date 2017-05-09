@@ -37,8 +37,14 @@
     }
   }
 
+  function emptyIndex() {
+    let index = new IndexWrapper();
+    index.search = () => [];
+    return index;
+  }
+
   async function getDropboxIndex(catalog) {
-    let dbx = new Dropbox({ accessToken: '' });
+    let dbx = new Dropbox({ accessToken: catalog.token });
     let existingIndex;
     try {
       existingIndex = await dbx.filesDownload({ path: '/.rebulas_index' });
@@ -120,14 +126,13 @@
         return openedCatalogs[catalog.id];
       }
 
-      let url = new URL(catalog.uri);
-      if(url.protocol === 'dropbox:') {
+      if(catalog.uri.startsWith('dropbox.com')) {
         return getDropboxIndex(catalog).then((index) => {
           openedCatalogs[catalog.id] = index;
           return index;
         });
       }
-      return Promise.resolve(undefined);
+      return emptyIndex();
     }
   };
 }(window));
