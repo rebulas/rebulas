@@ -1,5 +1,8 @@
 <html>
-<head>
+<head></head>
+<body>
+<p id="message" align="center"></p>
+
 <script>
 var params = window.location.hash.substr(1);
 var q = parseQueryString(params);
@@ -14,7 +17,7 @@ if (window.opener.OAuthCallback) {
   });
   window.close();
 } else {
-    alert(JSON.stringify(q));
+	document.getElementById("message").innerHTML = "Your access token is " + q.access_token;
 }
 
 function parseQueryString(string) {
@@ -27,8 +30,5 @@ function parseQueryString(string) {
     return queryString;
 }
 </script>
-</head>
-<body>
-
 </body>
 <html>

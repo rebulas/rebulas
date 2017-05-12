@@ -109,6 +109,13 @@ html, body {
   padding: 0px;
 }
 
+.add-repository-link {
+	display : inline !important;
+	cursor: pointer;
+	text-decoration: underline;
+	padding: 0 5px 0 5px !important;
+}
+
 .facet {
 	padding: 20px 0 0 15px;
 }

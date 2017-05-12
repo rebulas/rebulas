@@ -64,10 +64,17 @@ var QueryExecutor = {
 					});
 
 					// TODO handle initial state i.e. no catalogs
-					var catalog = queryObject.catalog ? RepositoryManager.getCatalog(queryObject.catalog) : RepositoryManager.getCatalogs()[0];
+					// TODO handle non existing catalogs with a warning instead of silent fallback to default
+					// TODO alter once we start remembering the last used repository
+					var defaultCatalog = RepositoryManager.getCatalogs()[0];
+					var catalog = queryObject.catalog ? RepositoryManager.getCatalog(queryObject.catalog) : defaultCatalog;
+					
+					// TODO are we going to index items added to a local/static catalog
+					if (catalog.id != defaultCatalog.id) {
+						var index = await RebulasBackend.getCatalogIndex(catalog);
+						result.items = index.search(queryObject);
+					}
 
-					var index = await RebulasBackend.getCatalogIndex(catalog);
-					result.items = index.search(queryObject);
 					result.count = result.items.length;
 					result.catalog.name = catalog.uri;
 

@@ -1,6 +1,6 @@
 var RepositoryManager = {
 
-  "default" : {"id" : 0, "uri" : "localhost"},
+  "default" : {"id" : 0, "uri" : "localhost", "type" : "stat"},
 
   "getCatalogs" : function() {
     var catalogs = [this.default];
@@ -8,7 +8,8 @@ var RepositoryManager = {
     var storedCatalogsRaw = localStorage.getItem("catalogs");
     if (storedCatalogsRaw) {
       var storedCatalogs = JSON.parse(storedCatalogsRaw);
-      storedCatalogs.forEach(function(catalog) {
+      
+	  storedCatalogs.forEach(function(catalog) {
         catalogs.push(catalog);
       });
     }
@@ -37,8 +38,11 @@ var RepositoryManager = {
     if (storedCatalogsRaw) {
       storedCatalogs = JSON.parse(storedCatalogsRaw);
     }
-
-    storedCatalogs.push({
+	
+	// TODO check if the id exists already. If it does we need to display a warning to the user
+	// For now leave the user to add multiple times the same repository
+	
+	storedCatalogs.push({
       "id" : id,
       "uri" : uri,
       "token" : token

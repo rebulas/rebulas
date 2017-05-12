@@ -7,7 +7,6 @@
 <link href='https://fonts.googleapis.com/css?family=Lora|Titillium+Web|Open+Sans:300' rel='stylesheet' type='text/css'>
 <link type="text/css" rel="stylesheet" href="style/bootstrap/css/bootstrap.css" />
 <link type="text/css" rel="stylesheet" href="style/main.css" />
-<link type="text/css" rel="stylesheet" href="style/terminal.css" />
 <script type="text/javascript" src="style/jquery.min.js"></script>
 <script type="text/javascript" src="style/bootstrap/js/bootstrap.min.js"></script>
 
@@ -27,6 +26,7 @@
 <script type="text/javascript" src="js/terminal/terminal.js"></script>
 <script type="text/javascript" src="js/repository/repository-configurator.js"></script>
 <script type="text/javascript" src="js/repository/repository-manager.js"></script>
+<script type="text/javascript" src="js/repository/repository-controller.js"></script>
 
 <script type="text/javascript" src="js/backend/jsgit.js"></script>
 <script type="text/javascript" src="js/backend/dataload.js"></script>
@@ -83,20 +83,8 @@ $(document).ready(function() {
 
 	RepositoryConfigurator.render({
 		"container" : $("#repository-button"),
-		"queryExecutor" : queryExecutor,
-		"modalContainer" : $("#repositoryConfiguratorModal")
+		"queryExecutor" : queryExecutor
 	});
-
-	// Register on-going OAuth sessions for mapping to OAuth callbacks
-	window.OAuthSessions = [];
-	window.OAuthCallback = function(args) {
-		var state = args.state;
-
-		if (window.OAuthSessions[state]) {
-			var callback = window.OAuthSessions[state];
-			callback(args);
-		}
-	}
 });
 
 </script>
@@ -118,8 +106,9 @@ $(document).ready(function() {
 					<div id="terminal" class="terminal-container"></div>
 				</div>
 				<div class="col-lg-2">
-					<div class="btn-group pull-right" id="repository-button">
-						<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">rebulas@github.com/rebulas <span class="caret"></span></button>
+					<div class="btn-group pull-right" style="display:none" id="repository-button">
+						<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						<span class="current-repository"></span> <span class="caret"></span></button>
 						<ul class="dropdown-menu repositories-container"></ul>
 					</div>
 				</div>
@@ -130,23 +119,5 @@ $(document).ready(function() {
 			<div id="itemDetails" class="item-details well" style="display:none"></div>
 		</div>
 	</div>
-
-	<div class="modal fade" id="repositoryConfiguratorModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="modalLabel">Configure repository</h4>
-      </div>
-      <div class="modal-body">
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Next</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
