@@ -37,26 +37,65 @@
     }
   }
 
+  function verifyUpToDate(lunrIndex, files) {
+    if(files.length != lunrIndex.documentStore.length) {
+      return false;
+    }
+    let upToDate = files.every((entry) => {
+      let doc = lunrIndex.documentStore.getDoc(entry.path_lower);
+      return doc && doc.rev === entry.rev;
+    });
+    return upToDate;
+  }
+
   function emptyIndex() {
     let index = new IndexWrapper();
     index.search = () => [];
     return index;
   }
 
+  async function listAllFiles(dbx) {
+    let allFiles = [];
+
+    let folders = [''];
+    while(folders.length !== 0) {
+      let folder = folders[0];
+      folders.splice(0, 1);
+      let files = await dbx.filesListFolder({ path: folder });
+
+      files.entries.forEach((entry) => {
+        if (entry['.tag'] == 'folder') {
+          folders.push(entry.path_lower);
+        } else {
+          allFiles.push(entry);
+        }
+      });
+    }
+
+    return allFiles;
+  }
+
   async function getDropboxIndex(catalog) {
     let dbx = new Dropbox({ accessToken: catalog.token });
-    let existingIndex;
-    try {
-      existingIndex = await dbx.filesDownload({ path: '/.rebulas_index' });
-    } catch(e) {}
+    let allFiles = await listAllFiles(dbx);
+    let fileIndex = allFiles.findIndex((entry) => entry.path_lower === '/.rebulas_index');
+    let existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
+    let lunrIndex;
 
-    if(existingIndex) {
-      let existingIndexContent = await readEntryContent(existingIndex);
+    if(existingIndexEntry) {
+      let existingIndexContent = await readEntryContent(existingIndexEntry);
       existingIndexContent = JSON.parse(existingIndexContent);
-      return new IndexWrapper(elasticlunr.Index.load(existingIndexContent));
+      lunrIndex = elasticlunr.Index.load(existingIndexContent);
+      if(!verifyUpToDate(lunrIndex, allFiles)) {
+        lunrIndex = null;
+      }
+    }
+
+    if(lunrIndex) {
+      return new IndexWrapper(lunrIndex);
     } else {
-      let newIndex = await rebuildIndex(dbx);
-      let serializedIndex = writeIndex(newIndex);
+      let newIndex = await rebuildIndex(dbx, allFiles);
+      let serializedIndex = serializeIndex(newIndex);
       await dbx.filesUpload({
         path: '/.rebulas_index',
         contents: serializedIndex,
@@ -68,42 +107,31 @@
       return new IndexWrapper(newIndex);
     }
 
-    async function rebuildIndex(dbx) {
+    async function rebuildIndex(dbx, allFiles) {
       let index = new elasticlunr.Index();
 
       index.addField('path');
       index.addField('name');
       index.addField('content');
 
-      let folders = [''];
       let promises = [];
-      while(folders.length !== 0) {
-        let folder = folders[0];
-        folders.splice(0, 1);
-        let files = await dbx.filesListFolder({ path: folder });
+      allFiles.forEach((entry) => {
+        promises.push(readEntryContent(entry).then((content) => {
+          console.log('Done reading', entry.path_lower);
+          index.addDoc({
+            id: entry.path_lower,
+            name: entry.path_display,
+            rev: entry.rev,
+            content: content
+          });
+        }));
+      });
 
-        for (let i = 0; i < files.entries.length; i++) {
-          let entry = files.entries[i];
-          if (entry['.tag'] == 'folder') {
-            folders.push(entry.path_lower);
-          } else {
-            console.log('Reading', entry.path_lower);
-            promises.push(readEntryContent(entry).then((content) => {
-              console.log('Done reading', entry.path_lower);
-              index.addDoc({
-                id: entry.path_lower,
-                name: entry.path_display,
-                content: content
-              });
-            }));
-          }
-        }
-      }
       await Promise.all(promises);
       return index;
     }
 
-    function writeIndex(index) {
+    function serializeIndex(index) {
       return new Blob([JSON.stringify(index.toJSON())], { type: 'application/json' });
     }
 
