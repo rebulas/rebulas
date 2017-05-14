@@ -53,7 +53,8 @@ var QueryExecutor = {
 				},
 
 				"execute" : async function(queryObject, callback) {
-					var result = staticResult;
+					// Ahem...clone
+					var result = JSON.parse(JSON.stringify(staticResult));
 
 					// Temporary breadcrumb composition based on the query
 					result.breadcrumbs = [];
@@ -68,7 +69,7 @@ var QueryExecutor = {
 					// TODO alter once we start remembering the last used repository
 					var defaultCatalog = RepositoryManager.getCatalogs()[0];
 					var catalog = queryObject.catalog ? RepositoryManager.getCatalog(queryObject.catalog) : defaultCatalog;
-					
+
 					// TODO are we going to index items added to a local/static catalog
 					if (catalog.id != defaultCatalog.id) {
 						var index = await RebulasBackend.getCatalogIndex(catalog);
