@@ -69,7 +69,8 @@ $(document).ready(function() {
 
 		var terminal = Terminal.create({
 				"queryExecutor" : queryExecutor,
-				"initialResult" : result
+				"initialResult" : result,
+				"container" : $("#terminal")
 		});
 
 		// Render the initial result
@@ -114,7 +115,7 @@ $(document).ready(function() {
 				</div>
 			</div>
 			<p class="clearfix"/>
-			<h4 id="countContainer"></h4>
+			<h4 id="countContainer" style="display:none"></h4>
 			<div id="itemsContainer"></div>
 			<div id="itemDetails" class="item-details well" style="display:none"></div>
 		</div>

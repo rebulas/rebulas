@@ -1,8 +1,10 @@
 var Terminal = {
+	"container" : undefined,
 
   "create" : function(args) {
     var queryExecutor = args.queryExecutor;
     var initialResult = args.initialResult;
+		this.container = args.container;
 
 		var settings = {
 			"greetings" : 'Welcome to Rebulas. Enter help or h for a list of commands.',
@@ -10,11 +12,16 @@ var Terminal = {
 			"prompt": this.calculatePrompt(initialResult)
 		};
 
+		var height = this.getHeight();
+		if (!isNaN(height)) {
+			this.container.height(height);
+		}
+
     var self = this;
 
 		// The Terminal
 		// The listener is required for cases where commands require re-rendering of the result
-		var terminal = $("#terminal").terminal(function(command, term) {
+		var terminal = this.container.terminal(function(command, term) {
       self.processCommand(command, term, queryExecutor);
 		}, settings);
 
@@ -74,14 +81,29 @@ var Terminal = {
             terminal.echo("Showing " + result.count + " results");
           });
         }
-      }
+      } else if (c.command == "height") {
+				var height = parseInt(c.args[0]);
+				if (!isNaN(height)) {
+					this.container.height(height);
+					this.setHeight(height);
+				}
+			}
   },
 
+	"setHeight" : function(height) {
+		localStorage.setItem("terminalHeight", height);
+	},
+
+	"getHeight" : function() {
+		return localStorage.getItem("terminalHeight");
+	},
+
   "printHelp" : function(terminal) {
-    terminal.echo("Usage:");
+		terminal.echo("Usage:");
     terminal.echo("\"s keywords\"\tSearch for the specified keywords within the catalog of documents");
     terminal.echo("\"cd field value\"\tFilter the result with the specified value for the given field");
     terminal.echo("\"cd ../\"\tRemove the last filtering step");
+		terminal.echo("\"height x\tSet the height of the terminal in px");
     terminal.echo();
   },
 

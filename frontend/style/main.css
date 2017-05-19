@@ -67,8 +67,8 @@ html, body {
 }
 
 .terminal-container {
-  height: 100px;
-  width: 80%;
+  min-height: 100px;
+	height: 150px;
   margin-bottom: 10px;
 }
 
