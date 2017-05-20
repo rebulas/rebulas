@@ -109,6 +109,13 @@ html, body {
   padding: 0px;
 }
 
+#help {
+	width: 500px;
+	font-family: monospace;
+	color:#5cb85c;
+	display: none;
+}
+
 .add-repository-link {
 	display : inline !important;
 	cursor: pointer;

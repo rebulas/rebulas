@@ -5,6 +5,7 @@ var Terminal = {
     var queryExecutor = args.queryExecutor;
     var initialResult = args.initialResult;
 		this.container = args.container;
+		this.helpContainer = args.helpContainer;
 
 		var settings = {
 			"greetings" : 'Welcome to Rebulas. Enter help or h for a list of commands.',
@@ -28,7 +29,11 @@ var Terminal = {
     return {
       "onResultChange" : function(result) {
           terminal.set_prompt(self.calculatePrompt(result));
-      }
+      },
+
+			"focus" : function() {
+					terminal.focus(true);
+			}
     }
   },
 
@@ -50,7 +55,7 @@ var Terminal = {
 
       var c = this.parseCommand(command);
       if (c.command == "h" || c.command == "help") {
-        this.printHelp(terminal);
+				this.helpContainer.fadeIn();
       } else if (c.command == "s") {
           var term = c.args.join(" ");
 
@@ -69,11 +74,13 @@ var Terminal = {
         if (c.args[0] == ".." || c.args[0] == "../") {
           q.removeSelectionAt(q.getSelections().length - 1);
           queryObject.q = q.toString();
-
-          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
-            terminal.echo("Showing " + result.count + " results");
-          });
-        } else {
+          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject));
+				} else if (c.args.length == 0 || c.args[0] == '') {
+					delete queryObject.q;
+          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject));
+				} else if (c.args[0] == '-') {
+					window.history.back();
+        } else if (c.args.length == 2){
           q.addSelection(c.args[0], "=", c.args[1]);
           queryObject.q = q.toString();
 

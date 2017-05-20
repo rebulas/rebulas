@@ -70,7 +70,8 @@ $(document).ready(function() {
 		var terminal = Terminal.create({
 				"queryExecutor" : queryExecutor,
 				"initialResult" : result,
-				"container" : $("#terminal")
+				"container" : $("#terminal"),
+				"helpContainer" : $("#help")
 		});
 
 		// Render the initial result
@@ -80,6 +81,11 @@ $(document).ready(function() {
 		// The listeners define onResultChange method triggered within queryExecutor
 		queryExecutor.addListener(terminal);
 		queryExecutor.addListener(resultRenderer);
+
+		$("#helpButton").click(function() {
+			setTimeout(terminal.focus, 100);
+			$("#help").fadeOut();
+		});
 	});
 
 	RepositoryConfigurator.render({
@@ -116,8 +122,44 @@ $(document).ready(function() {
 			</div>
 			<p class="clearfix"/>
 			<h4 id="countContainer" style="display:none"></h4>
-			<div id="itemsContainer"></div>
-			<div id="itemDetails" class="item-details well" style="display:none"></div>
+			<div id="itemsContainer" class="pull-left"></div>
+			<div id="itemDetails" class="item-details well pull-left" style="display:none"></div>
+
+			<div id="help" class="pull-right">
+				<b>Rebulas Terminal Reference</b>
+				<br/><br/>
+				<div>Filtering commands
+						<table class="help-table">
+							<tr>
+									<td width="30%" style="padding-left: 10px"><b>s <i>keyword</i></b></td>
+									<td width="5%"></td>
+									<td wdith="65%">Search within the catalog of documents</td>
+							</tr>
+							<tr>
+									<td style="padding-left: 10px;vertical-align: top; padding-top: 10px"><b>cd <i>field value</i></b></td>
+									<td></td>
+									<td style="padding-top: 10px">Filter the result with the specified field/value pair.</td>
+							</tr>
+							<tr>
+									<td style="padding-left: 10px;vertical-align: top; padding-top: 10px"><b>cd <i>../</i></b></td>
+									<td></td>
+									<td style="padding-top: 10px">Drop the last filtering step, if no argument is provided drop all filtering steps</td>
+							</tr>
+						</table>
+				</div>
+				<br/><br/>
+				<div>Styling commands
+						<table>
+							<tr>
+									<td width="30%" style="padding-left: 10px"><b>height <i>x</i></b></td>
+									<td width="5%"></td>
+									<td wdith="65%">Set the height of the terminal in pixels</td>
+							</tr>
+						</table>
+				</div>
+				<br><br>
+				<button class="btn btn-success pull-left" id="helpButton">Got it</button>
+			</div>
 		</div>
 	</div>
 </body>
