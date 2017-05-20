@@ -1,4 +1,7 @@
 (function(window) {
+  var INDEX_FILE_NAME = '.rebulas_index',
+      DBX_INDEX_FILE_PATH = '/' + INDEX_FILE_NAME;
+
   class AuthRequests {
     constructor(user, pass) {
       this.user = user;
@@ -47,6 +50,26 @@
       return allFiles;
     }
 
+    saveDocument(path, content) {
+      let blob = new Blob([content], { type: 'application/json' });
+      return this.dbx.filesUpload({
+        path: path,
+        contents: blob,
+        mute: true,
+        mode: {
+          '.tag': 'overwrite'
+        }
+      }).then((entry) => {
+        let saved = {
+          id: entry.path,
+          name: entry.name,
+          rev: entry.rev,
+          content: content
+        };
+        return saved;
+      });
+    }
+
     getEntryContent(entry) {
       let self = this;
       return new Promise((resolve, reject) =>
@@ -59,10 +82,11 @@
         }, reject));
     }
 
-    saveIndex(path, serializedIndex) {
+    saveIndex(index) {
+      let blob = new Blob([JSON.stringify(index.toJSON())], { type: 'application/json' });
       return this.dbx.filesUpload({
-        path: path,
-        contents: serializedIndex,
+        path: DBX_INDEX_FILE_PATH,
+        contents: blob,
         mute: true,
         mode: {
           '.tag': 'overwrite'
@@ -82,6 +106,19 @@
         id: item.ref.substring(1),
         _md: this.index.documentStore.getDoc(item.ref).content
       };
+    }
+
+    saveItem(item) {
+      // Reverse of adaptSearchResult
+      let content = item._md,
+          id = '/' + item.id,
+          indexOps = this.indexOperations,
+          index = this.index;
+      this.indexOperations.saveDocument(id, content).then((savedItem) => {
+        index.removeDoc(id);
+        index.addDoc(savedItem);
+        indexOps.saveIndex(index);
+      });
     }
 
     search(queryObject) {
@@ -111,7 +148,7 @@
 
   async function getIndexWithOps(indexOps, catalog) {
     let allFiles = await indexOps.listAllFiles();
-    let fileIndex = allFiles.findIndex((entry) => entry.path === '/.rebulas_index');
+    let fileIndex = allFiles.findIndex((entry) => entry.path === DBX_INDEX_FILE_PATH);
     let existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
     let lunrIndex;
 
@@ -126,8 +163,7 @@
 
     if(!lunrIndex) {
       let newIndex = await rebuildIndex(indexOps, allFiles);
-      let serializedIndex = serializeIndex(newIndex);
-      await indexOps.saveIndex('/.rebulas_index', serializedIndex);
+      await indexOps.saveIndex(newIndex);
       lunrIndex = newIndex;
     }
     return new IndexWrapper(lunrIndex, indexOps);
@@ -161,17 +197,16 @@
     }
   }
 
-  var openedCatalogs = {};
   window.RebulasBackend = {
     getCatalogIndex: async function(catalog) {
-      if(openedCatalogs[catalog.id]) {
-        return openedCatalogs[catalog.id];
+      if(catalog.searchIndex) {
+        return catalog.searchIndex;
       }
 
       if(catalog.uri.startsWith('dropbox.com')) {
         let indexOps = new DropboxOperations(catalog.token);
         return getIndexWithOps(indexOps, catalog).then((index) => {
-          openedCatalogs[catalog.id] = index;
+          catalog.searchIndex = index;
           return index;
         });
       }

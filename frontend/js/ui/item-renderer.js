@@ -102,7 +102,7 @@ var ItemRenderer = {
 		var saveButton = $(document.createElement("button"));
 		saveButton.addClass("btn btn-success pull-right");
 		saveButton.append("  Save  ");
-		saveButton.click(saveCallback);
+		saveButton.click(() => saveCallback(textarea.val()));
 		container.append(saveButton);
 
 		var cancelButton = $(document.createElement("button"));

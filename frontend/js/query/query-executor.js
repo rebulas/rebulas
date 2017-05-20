@@ -78,6 +78,7 @@ var QueryExecutor = {
 
 					result.count = result.items.length;
 					result.catalog.name = catalog.uri;
+					result.catalog.searchIndex = catalog.searchIndex;
 
 					this.listeners.forEach(function(listener) {
 						if (listener.onResultChange) {

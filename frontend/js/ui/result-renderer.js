@@ -36,9 +36,13 @@ var ResultRenderer = {
 					countContainer.append("Showing " + result.count + " results");
 				}
 
-				var saveCallback = function() {
+				var saveCallback = function(item, newContent) {
 					detailsContainer.empty().hide();
 					itemsContainer.fadeIn();
+					if (newContent) {
+						item._md = newContent;
+						catalog.searchIndex.saveItem(item);
+					}
 				};
 
 				// TODO Extract as a separate file
@@ -47,7 +51,7 @@ var ResultRenderer = {
 						"container" : detailsContainer,
 						"item" : item,
 						"catalog" : catalog,
-						"saveCallback" : saveCallback,
+						"saveCallback" : saveCallback.bind(null, item),
 						"cancelCallback" : saveCallback
 					});
 
