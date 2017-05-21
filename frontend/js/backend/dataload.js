@@ -83,6 +83,7 @@
     }
 
     saveIndex(index) {
+      Util.log('Saving index');
       let blob = new Blob([JSON.stringify(index.toJSON())], { type: 'application/json' });
       return this.dbx.filesUpload({
         path: DBX_INDEX_FILE_PATH,
@@ -102,13 +103,16 @@
     }
 
     adaptSearchResult(item) {
+      let doc = this.index.documentStore.getDoc(item.ref);
       return {
         id: item.ref.substring(1),
-        _md: this.index.documentStore.getDoc(item.ref).content
+        _md: doc.content,
+        details: doc.content
       };
     }
 
     saveItem(item) {
+      Util.log('Saving', item.id);
       // Reverse of adaptSearchResult
       let content = item._md,
           id = '/' + item.id,
@@ -125,7 +129,9 @@
       let query = new Query(queryObject.q),
           searchSelection = query.getSelection('$s'),
           searchPhrase = (searchSelection && searchSelection.value) || '';
-      return this.index.search(searchPhrase).map((item) => this.adaptSearchResult(item));
+      let result = this.index.search(searchPhrase).map((item) => this.adaptSearchResult(item));
+      Util.log(searchPhrase, ' -> ', result.length, '/', index.documentStore.length, 'items');
+      return result;
     }
   }
 
@@ -153,10 +159,12 @@
     let lunrIndex;
 
     if(existingIndexEntry) {
+      Util.log('Found existing index');
       let existingIndexContent = await indexOps.getEntryContent(existingIndexEntry);
       existingIndexContent = JSON.parse(existingIndexContent);
       lunrIndex = elasticlunr.Index.load(existingIndexContent);
       if(!verifyUpToDate(lunrIndex, allFiles)) {
+        Util.log('Existing index outdated');
         lunrIndex = null;
       }
     }
@@ -169,6 +177,7 @@
     return new IndexWrapper(lunrIndex, indexOps);
 
     async function rebuildIndex(indexOps, allFiles) {
+      Util.log('Rebuilding index');
       let index = new elasticlunr.Index();
 
       index.addField('path');
@@ -189,6 +198,7 @@
       });
 
       await Promise.all(promises);
+      Util.log('Entries in index:', index.documentStore.length);
       return index;
     }
 
@@ -200,11 +210,13 @@
   window.RebulasBackend = {
     getCatalogIndex: async function(catalog) {
       if(catalog.searchIndex) {
+        Util.log('Found existing search index for catalog ', catalog.id);
         return catalog.searchIndex;
       }
 
       if(catalog.uri.startsWith('dropbox.com')) {
         let indexOps = new DropboxOperations(catalog.token);
+        Util.log('Loading Dropbox index');
         return getIndexWithOps(indexOps, catalog).then((index) => {
           catalog.searchIndex = index;
           return index;

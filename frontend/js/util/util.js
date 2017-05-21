@@ -113,5 +113,7 @@ var Util = {
 	    hash |= 0; // Convert to 32bit integer
 	  }
 	  return hash;
-	}
+	},
+
+  log: console.log
 }
