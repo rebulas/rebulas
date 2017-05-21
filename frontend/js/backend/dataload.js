@@ -126,11 +126,21 @@
     }
 
     search(queryObject) {
-      let query = new Query(queryObject.q),
+      let self = this,
+          query = new Query(queryObject.q),
           searchSelection = query.getSelection('$s'),
-          searchPhrase = (searchSelection && searchSelection.value) || '';
-      let result = this.index.search(searchPhrase).map((item) => this.adaptSearchResult(item));
-      Util.log(searchPhrase, ' -> ', result.length, '/', index.documentStore.length, 'items');
+          searchPhrase = (searchSelection && searchSelection.value) || '',
+          index = this.index;
+      let result = index.search(searchPhrase);
+      if(!searchPhrase) {
+        result = [];
+        let keys = Object.keys(index.documentStore.docs).sort();
+        keys.forEach((key) => result.push({
+          ref: key
+        }));
+      }
+      result = result.map((item) => self.adaptSearchResult(item));
+      Util.log(searchPhrase, ' -> ', result.length, '/', this.index.documentStore.length, 'items');
       return result;
     }
   }
