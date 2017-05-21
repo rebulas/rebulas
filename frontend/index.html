@@ -66,11 +66,13 @@ $(document).ready(function() {
 
 	queryExecutor.execute(q, function(result) {
 
+		var newItemListener = resultRenderer.newItem.bind(resultRenderer);
 		var terminal = Terminal.create({
 				"queryExecutor" : queryExecutor,
 				"initialResult" : result,
 				"container" : $("#terminal"),
-				"helpContainer" : $("#help")
+				"helpContainer" : $("#help"),
+				"newItemListener" : newItemListener
 		});
 
 		// Render the initial result
@@ -147,6 +149,16 @@ $(document).ready(function() {
 						</table>
 				</div>
 				<br/><br/>
+				<div>Flow commands
+						<table width="100%">
+							<tr>
+									<td width="30%" style="padding-left: 10px"><b>new</b></td>
+									<td width="5%"></td>
+									<td wdith="65%">Open the new item dialog</td>
+							</tr>
+						</table>
+				</div>
+				<br/><br/>
 				<div>Styling commands
 						<table>
 							<tr>
@@ -157,7 +169,7 @@ $(document).ready(function() {
 						</table>
 				</div>
 				<br><br>
-				<button class="btn btn-success pull-left" id="helpButton">Got it</button>
+				<button class="btn btn-success pull-right" id="helpButton">Got it</button>
 			</div>
 		</div>
 	</div>

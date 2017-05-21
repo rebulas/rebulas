@@ -6,6 +6,8 @@ var Terminal = {
     var initialResult = args.initialResult;
 		this.container = args.container;
 		this.helpContainer = args.helpContainer;
+		this.newItemListener = args.newItemListener;
+		this.catalog = initialResult.catalog;
 
 		var settings = {
 			"greetings" : 'Welcome to Rebulas. Enter help or h for a list of commands.',
@@ -28,6 +30,7 @@ var Terminal = {
 
     return {
       "onResultChange" : function(result) {
+					this.catalog = result.catalog;
           terminal.set_prompt(self.calculatePrompt(result));
       },
 
@@ -88,6 +91,9 @@ var Terminal = {
             terminal.echo("Showing " + result.count + " results");
           });
         }
+			} else if (c.command == "new") {
+				terminal.focus(false);
+				this.newItemListener(this.catalog);
       } else if (c.command == "height") {
 				var height = parseInt(c.args[0]);
 				if (!isNaN(height)) {

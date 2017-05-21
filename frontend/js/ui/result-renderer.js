@@ -36,40 +36,46 @@ var ResultRenderer = {
 					countContainer.append("Showing " + result.count + " results");
 				}
 
-				var saveCallback = function(item, newContent) {
-					detailsContainer.empty().hide();
-					itemsContainer.fadeIn();
-					if (newContent) {
-						item._md = newContent;
-						catalog.searchIndex.saveItem(item);
-					}
-				};
-
-				// TODO Extract as a separate file
-				var renderDetails = function(item, catalog) {
-					ItemRenderer.renderDetails({
-						"container" : detailsContainer,
-						"item" : item,
-						"catalog" : catalog,
-						"saveCallback" : saveCallback.bind(null, item),
-						"cancelCallback" : saveCallback
-					});
-
-					itemsContainer.hide();
-					detailsContainer.fadeIn();
-				}
-
 				var container = $(document.createElement("div"));
 				ItemRenderer.renderList({
 					"container" : container,
 					"items" : result.items,
 					"fields" : result.fields,
 					"catalog" : catalog,
-					"clickListener" : renderDetails
+					"clickListener" : this.details
 				});
 
 				itemsContainer.empty();
 				itemsContainer.append(container);
+			},
+
+			"details" : function(existingItem, catalog) {
+				var item = existingItem ? existingItem : {"id" : Util.uniqueId()};
+
+				var saveCallback = function(item, newContent) {
+					detailsContainer.empty().hide();
+					itemsContainer.fadeIn();
+
+					if (newContent) {
+						item._md = newContent;
+						catalog.searchIndex.saveItem(item);
+					}
+				};
+
+				ItemRenderer.renderDetails({
+					"container" : detailsContainer,
+					"item" : item,
+					"catalog" : catalog,
+					"saveCallback" : saveCallback.bind(null, item),
+					"cancelCallback" : saveCallback
+				});
+
+				itemsContainer.hide();
+				detailsContainer.fadeIn();
+			},
+
+			"newItem" : function(catalog) {
+				this.details(null, catalog);
 			}
 		}
 	}
