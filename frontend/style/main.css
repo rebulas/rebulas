@@ -115,6 +115,18 @@ html, body {
 	font-family: monospace;
 	color:#5cb85c;
 	display: none;
+	position: absolute;
+	top:0;
+	right: 0;
+	background-color: white;
+	padding: 10px;
+	border-radius: 8px;
+	border-left: 1px solid #DDD;
+	border-bottom: 1px solid #DDD;
+}
+
+#helpButton {
+	margin-right: 20px;
 }
 
 .add-repository-link {
