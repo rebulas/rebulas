@@ -24,6 +24,70 @@ var ItemRenderer = {
 		return undefined;
 	},
 
+	renderTable : function(args) {
+		args.catalog.displayFields.sort(function(a, b) {
+			return a.position - b.position;
+		});
+
+		var container = args.container;
+		var clickListener = args.clickListener;
+		var fields = args.fields;
+		var catalog = args.catalog;
+
+		var table = $(document.createElement("table"));
+		table.addClass("table table-hover");
+		container.append(table);
+
+		var thead = $(document.createElement("thead"));	
+		var tr = $(document.createElement("tr"));
+		for (var a in catalog.displayFields) {
+			if (counter++ >= 4) {
+				break;
+			}
+
+			var displayField = catalog.displayFields[a];
+			var th = $(document.createElement("th"));
+			th.addClass("text-capitalize");
+			th.append(displayField.field);
+			tr.append(th);
+		}
+		thead.append(tr);
+		table.append(thead);
+
+		var tbody = $(document.createElement("tbody"));	
+		table.append(tbody);
+		
+		var items = args.items;
+		for (var f in items) {
+			var item = items[f];
+			
+			var tr = $(document.createElement("tr"));
+			tr.click({"item" : item, "catalog" : catalog}, function(event) {
+				clickListener(event.data.item, event.data.catalog);
+			});
+			tr.css("cursor", "pointer");
+			tbody.append(tr);
+
+			var counter = 0;
+			for (var a in catalog.displayFields) {
+				if (counter++ >= 4) {
+					break;
+				}
+
+				var displayField = catalog.displayFields[a];
+				var renderedField = this.renderField(item, displayField);
+				
+				var td = $(document.createElement("td"));
+				td.append(renderedField);
+				if (counter == 1) {
+					td.attr("width", "30%");
+				}
+				tr.append(td);
+			}
+		}
+		
+	},
+	
 	renderSummary : function(item, args) {
 		var container = args.container;
 		var clickListener = args.clickListener;

@@ -19,6 +19,7 @@ html, body {
 
 #itemsContainer {
   padding-left: 10px;
+  padding-right: 30px;
 }
 
 .item-summary-panel {

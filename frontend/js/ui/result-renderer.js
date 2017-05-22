@@ -60,7 +60,7 @@ var ResultRenderer = {
 				}
 
 				var container = $(document.createElement("div"));
-				ItemRenderer.renderList({
+				ItemRenderer.renderTable({
 					"container" : container,
 					"items" : result.items,
 					"fields" : result.fields,
