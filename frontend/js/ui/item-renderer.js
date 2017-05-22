@@ -35,10 +35,10 @@ var ItemRenderer = {
 		var catalog = args.catalog;
 
 		var table = $(document.createElement("table"));
-		table.addClass("table table-hover");
+		table.addClass("table table-hover table-striped");
 		container.append(table);
 
-		var thead = $(document.createElement("thead"));	
+		var thead = $(document.createElement("thead"));
 		var tr = $(document.createElement("tr"));
 		for (var a in catalog.displayFields) {
 			if (counter++ >= 4) {
@@ -54,13 +54,13 @@ var ItemRenderer = {
 		thead.append(tr);
 		table.append(thead);
 
-		var tbody = $(document.createElement("tbody"));	
+		var tbody = $(document.createElement("tbody"));
 		table.append(tbody);
-		
+
 		var items = args.items;
 		for (var f in items) {
 			var item = items[f];
-			
+
 			var tr = $(document.createElement("tr"));
 			tr.click({"item" : item, "catalog" : catalog}, function(event) {
 				clickListener(event.data.item, event.data.catalog);
@@ -76,18 +76,22 @@ var ItemRenderer = {
 
 				var displayField = catalog.displayFields[a];
 				var renderedField = this.renderField(item, displayField);
-				
+				renderedField.css("white-space", "nowrap");
+				renderedField.css("text-overflow", "ellipsis");
+
 				var td = $(document.createElement("td"));
 				td.append(renderedField);
 				if (counter == 1) {
 					td.attr("width", "30%");
 				}
+				td.css("padding", "25px");
+
 				tr.append(td);
 			}
 		}
-		
+
 	},
-	
+
 	renderSummary : function(item, args) {
 		var container = args.container;
 		var clickListener = args.clickListener;

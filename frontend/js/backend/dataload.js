@@ -100,15 +100,52 @@
     constructor(index, indexOperations) {
       this.index = index;
       this.indexOperations = indexOperations;
+      this.lexer = new marked.Lexer();
     }
 
     adaptSearchResult(item) {
       let doc = this.index.documentStore.getDoc(item.ref);
-      return {
+
+      var item = {
         id: item.ref.substring(1),
-        _md: doc.content,
-        details: doc.content
+        _md: doc.content
       };
+
+      // TODO extract as a separate routine.
+      // TODO add tests
+      // TODO do we do this at indexing time i.e. in the documentStore?
+      var tokens = this.lexer.lex(doc.content);
+      if (tokens.length > 0) {
+
+        // This is how we identify attributes for now, any level 1 heading followed by a paragraph of text
+        // ex.
+        //
+        // ------------ Markdown -----------------
+        // # Name
+        // Constitutionalism in early modern europe
+        // ------------ Markdown -----------------
+        //
+        // will result in item.name = "Constitutionalism in early modern europe"
+        var key = undefined;
+        var value = "";
+        tokens.forEach((token) => {
+          if (token.type == "heading" && token.depth == 1) {
+            if (key) {
+              item[key] = value;
+            }
+            key = token.text.toLowerCase();
+            value = "";
+          } else if (token.type == "paragraph") {
+            value += token.text;
+          }
+        });
+
+        if (key) {
+          item[key] = value;
+        }
+      }
+
+      return item;
     }
 
     saveItem(item) {

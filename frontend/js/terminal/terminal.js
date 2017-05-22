@@ -92,6 +92,7 @@ var Terminal = {
           });
         }
 			} else if (c.command == "new") {
+				// Give away the focus, the opening of the add/edit screen will capture it
 				terminal.focus(false);
 				this.newItemListener(this.catalog);
       } else if (c.command == "height") {
