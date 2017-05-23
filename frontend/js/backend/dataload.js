@@ -20,6 +20,53 @@
     }
   }
 
+  function addDocToIndex(doc, content, index) {
+    doc = analyzeDoc(doc, content);
+    Object.keys(doc).forEach((key) => {
+      if(key !== 'id' && index._fields.indexOf(key) < 0) {
+        index.addField(key);
+      }
+    });
+
+    doc._content = content;
+    index.addDoc(doc);
+  }
+
+  function analyzeDoc(doc, content) {
+    let tokens = new marked.Lexer().lex(content);
+
+    if (tokens.length > 0) {
+      // This is how we identify attributes for now, any level 1 heading followed by a paragraph of text
+      // ex.
+      //
+      // ------------ Markdown -----------------
+      // # Name
+      // Constitutionalism in early modern europe
+      // ------------ Markdown -----------------
+      //
+      // will result in item.name = "Constitutionalism in early modern europe"
+      var key = undefined;
+      var value = "";
+      tokens.forEach((token) => {
+        if (token.type == "heading" && token.depth == 1) {
+          if (key) {
+            doc[key] = value;
+          }
+          key = token.text.toLowerCase();
+          value = "";
+        } else if (token.type == "paragraph") {
+          value += token.text;
+        }
+      });
+
+      if (key) {
+        doc[key] = value;
+      }
+    }
+
+    return doc;
+  }
+
   class DropboxOperations {
     constructor(token) {
       this.dbx = new Dropbox({ accessToken: token });
@@ -100,52 +147,15 @@
     constructor(index, indexOperations) {
       this.index = index;
       this.indexOperations = indexOperations;
-      this.lexer = new marked.Lexer();
     }
 
     adaptSearchResult(item) {
-      let doc = this.index.documentStore.getDoc(item.ref);
+      let doc = item.doc,
+          adapted = Object.assign({}, doc);
+      adapted.id = item.ref.substring(1);
+      adapted._md = doc._content;
 
-      var item = {
-        id: item.ref.substring(1),
-        _md: doc.content
-      };
-
-      // TODO extract as a separate routine.
-      // TODO add tests
-      // TODO do we do this at indexing time i.e. in the documentStore?
-      var tokens = this.lexer.lex(doc.content);
-      if (tokens.length > 0) {
-
-        // This is how we identify attributes for now, any level 1 heading followed by a paragraph of text
-        // ex.
-        //
-        // ------------ Markdown -----------------
-        // # Name
-        // Constitutionalism in early modern europe
-        // ------------ Markdown -----------------
-        //
-        // will result in item.name = "Constitutionalism in early modern europe"
-        var key = undefined;
-        var value = "";
-        tokens.forEach((token) => {
-          if (token.type == "heading" && token.depth == 1) {
-            if (key) {
-              item[key] = value;
-            }
-            key = token.text.toLowerCase();
-            value = "";
-          } else if (token.type == "paragraph") {
-            value += token.text;
-          }
-        });
-
-        if (key) {
-          item[key] = value;
-        }
-      }
-
-      return item;
+      return adapted;
     }
 
     saveItem(item) {
@@ -157,27 +167,60 @@
           index = this.index;
       this.indexOperations.saveDocument(id, content).then((savedItem) => {
         index.removeDoc(id);
-        index.addDoc(savedItem);
+        addDocToIndex(savedItem, content, index);
         indexOps.saveIndex(index);
       });
     }
 
+    processSelectionResults(selectionResults) {
+      let minimalSelection = selectionResults.reduce(
+                              (acc, val) => acc.length < val.length ? acc : val,
+                              selectionResults[0]);
+      let selectionMaps = [];
+      selectionResults.forEach((result) => {
+        let map = {};
+        result.forEach((doc) => map[doc.ref] = true);
+        selectionMaps.push(map);
+      });
+
+      return minimalSelection.filter((doc) => selectionMaps.every((map) => map[doc.ref]));
+    }
+
     search(queryObject) {
+      let startMark = performance.now();
       let self = this,
           query = new Query(queryObject.q),
-          searchSelection = query.getSelection('$s'),
-          searchPhrase = (searchSelection && searchSelection.value) || '',
-          index = this.index;
-      let result = index.search(searchPhrase);
-      if(!searchPhrase) {
+          index = this.index,
+          searchQuery = {};
+
+      // Perform a search for every selection
+      let searchResults = [];
+      query.getSelections().forEach((selection) => {
+        let selectionResults, searchQuery = {};
+        if(selection.field == '$s') {
+          searchQuery['any'] = selection.value;
+        } else {
+          searchQuery[selection.field] = selection.value;
+        }
+        selectionResults = index.search(searchQuery, {});
+        searchResults.push(selectionResults);
+      });
+
+      // Leave only docs that matched ALL the selections
+      let result = this.processSelectionResults(searchResults);
+      if(!query.getSelections()) {
         result = [];
         let keys = Object.keys(index.documentStore.docs).sort();
         keys.forEach((key) => result.push({
           ref: key
         }));
       }
+
       result = result.map((item) => self.adaptSearchResult(item));
-      Util.log(searchPhrase, ' -> ', result.length, '/', this.index.documentStore.length, 'items');
+
+      Util.log(JSON.stringify(searchQuery), ' -> ', result.length, '/',
+               this.index.documentStore.length, 'items,',
+               'took', performance.now() - startMark, 'ms');
       return result;
     }
   }
@@ -227,20 +270,18 @@
       Util.log('Rebuilding index');
       let index = new elasticlunr.Index();
 
-      index.addField('path');
       index.addField('name');
-      index.addField('content');
 
       let promises = [];
       allFiles.forEach((entry) => {
         promises.push(indexOps.getEntryContent(entry).then((content) => {
           console.log('Done reading', entry.path);
-          index.addDoc({
+          let doc = {
             id: entry.path,
             name: entry.name,
-            rev: entry.rev,
-            content: content
-          });
+            rev: entry.rev
+          };
+          addDocToIndex(doc, content, index);
         }));
       });
 
@@ -254,9 +295,11 @@
     }
   }
 
+  let loadedIndices = {};
   window.RebulasBackend = {
     getCatalogIndex: async function(catalog) {
-      if(catalog.searchIndex) {
+      if(loadedIndices[catalog.id]) {
+        catalog.searchIndex = loadedIndices[catalog.id];
         Util.log('Found existing search index for catalog ', catalog.id);
         return catalog.searchIndex;
       }
@@ -266,6 +309,7 @@
         Util.log('Loading Dropbox index');
         return getIndexWithOps(indexOps, catalog).then((index) => {
           catalog.searchIndex = index;
+          loadedIndices[catalog.id] = index;
           return index;
         });
       }
