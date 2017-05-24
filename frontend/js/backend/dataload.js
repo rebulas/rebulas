@@ -193,27 +193,30 @@
           index = this.index,
           searchQuery = {};
 
-      // Perform a search for every selection
-      let searchResults = [];
-      query.getSelections().forEach((selection) => {
-        let selectionResults, searchQuery = {};
-        if(selection.field == '$s') {
-          searchQuery['any'] = selection.value;
-        } else {
-          searchQuery[selection.field] = selection.value;
-        }
-        selectionResults = index.search(searchQuery, {});
-        searchResults.push(selectionResults);
-      });
-
-      // Leave only docs that matched ALL the selections
-      let result = this.processSelectionResults(searchResults);
-      if(!query.getSelections()) {
+      let result = [];
+      if (query.getSelections().length < 1) {
         result = [];
         let keys = Object.keys(index.documentStore.docs).sort();
         keys.forEach((key) => result.push({
-          ref: key
+          ref: key,
+          doc: index.documentStore.docs[key]
         }));
+      } else {
+        // Perform a search for every selection
+        let searchResults = [];
+        query.getSelections().forEach((selection) => {
+          let selectionResults, searchQuery = {};
+          if(selection.field == '$s') {
+            searchQuery['any'] = selection.value;
+          } else {
+            searchQuery[selection.field] = selection.value;
+          }
+          selectionResults = index.search(searchQuery, {});
+          searchResults.push(selectionResults);
+        });
+
+        // Leave only docs that matched ALL the selections
+        result = this.processSelectionResults(searchResults);
       }
 
       result = result.map((item) => self.adaptSearchResult(item));
