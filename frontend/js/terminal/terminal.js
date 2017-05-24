@@ -70,9 +70,7 @@ var Terminal = {
       			queryObject.q = q.toString();
       		}
 
-          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
-            terminal.echo("Showing " + result.count + " results");
-          });
+          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject));
       } else  if (c.command == "cd") {
         if (c.args[0] == ".." || c.args[0] == "../") {
           q.removeSelectionAt(q.getSelections().length - 1);
@@ -87,9 +85,7 @@ var Terminal = {
           q.addSelection(c.args[0], "=", c.args[1]);
           queryObject.q = q.toString();
 
-          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
-            terminal.echo("Showing " + result.count + " results");
-          });
+          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject));
         }
 			} else if (c.command == "new") {
 				// Give away the focus, the opening of the add/edit screen will capture it
@@ -111,15 +107,6 @@ var Terminal = {
 	"getHeight" : function() {
 		return localStorage.getItem("terminalHeight");
 	},
-
-  "printHelp" : function(terminal) {
-		terminal.echo("Usage:");
-    terminal.echo("\"s keywords\"\tSearch for the specified keywords within the catalog of documents");
-    terminal.echo("\"cd field value\"\tFilter the result with the specified value for the given field");
-    terminal.echo("\"cd ../\"\tRemove the last filtering step");
-		terminal.echo("\"height x\tSet the height of the terminal in px");
-    terminal.echo();
-  },
 
   "parseCommand" : function(command) {
     var split = [];

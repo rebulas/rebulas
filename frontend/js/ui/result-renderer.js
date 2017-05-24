@@ -37,7 +37,7 @@ var ResultRenderer = {
 				}
 
 				var container = $(document.createElement("div"));
-				ItemRenderer.renderTable({
+				ItemRenderer.renderPlainList({
 					"container" : container,
 					"items" : result.items,
 					"fields" : result.fields,
@@ -47,6 +47,9 @@ var ResultRenderer = {
 
 				itemsContainer.empty();
 				itemsContainer.append(container);
+
+				detailsContainer.hide();
+				$("#itemDetailsPlaceholder").show();
 			},
 
 			"details" : function(existingItem, catalog) {
@@ -70,7 +73,7 @@ var ResultRenderer = {
 					"cancelCallback" : saveCallback
 				});
 
-				itemsContainer.hide();
+				$("#itemDetailsPlaceholder").hide();
 				detailsContainer.fadeIn();
 			},
 

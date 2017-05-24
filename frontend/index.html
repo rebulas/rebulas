@@ -122,10 +122,17 @@ $(document).ready(function() {
 					</div>
 				</div>
 			</div>
-			<p class="clearfix"/>
-			<h4 id="countContainer" style="display:none"></h4>
-			<div id="itemsContainer" class="pull-left"></div>
-			<div id="itemDetails" class="item-details well pull-left" style="display:none"></div>
+			<div class="row">
+				<div class="col-lg-3">
+					<h4 id="countContainer"></h4>
+					<div id="itemsContainer" class="pull-left"></div>
+				</div>
+				<div class="col-lg-9">
+					<div id="itemDetails" class="pull-left well" style="display:none"></div>
+					<div id="itemDetailsPlaceholder">Select element to show details</div>
+				</div>
+			</div>
+
 
 			<div id="help" class="pull-right">
 				<b>Rebulas Terminal Reference</b>

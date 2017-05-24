@@ -18,8 +18,15 @@ html, body {
 }
 
 #itemsContainer {
-  padding-left: 10px;
-  padding-right: 30px;
+	padding: 0 30px 0 10px;
+}
+
+#itemDetailsPlaceholder {
+	font-size: 1.5em;
+	width:90%;
+	margin-top:100px;
+	text-align: center;
+	color: #DDD;
 }
 
 .item-summary-panel {
@@ -31,17 +38,30 @@ html, body {
   cursor: pointer;
 }
 
-.item-details {
-  height: 600px;
+#itemDetails {
   background-color: #eff4f2;
-  margin-right: 10px;
+  margin: 10px 10px;
+	min-height: 400px;
+	min-width: 400px;
+	width: 100%;
+	height: 100%;
 }
 
 .item-details-textarea {
   border : 0px;
   width : 100%;
-  height : 100%;
+  min-height : 600px;
   background-color : #eff4f2;
+}
+
+ul.item-list {
+    list-style: circle;
+		padding-left: 20px;
+}
+
+ul.item-list > li {
+	padding: 3px;
+	width: 300px;
 }
 
 #head-container {

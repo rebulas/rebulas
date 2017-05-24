@@ -24,6 +24,46 @@ var ItemRenderer = {
 		return undefined;
 	},
 
+	renderPlainList : function(args) {
+		args.catalog.displayFields.sort(function(a, b) {
+			return a.position - b.position;
+		});
+
+		var container = args.container;
+		var clickListener = args.clickListener;
+		var fields = args.fields;
+		var catalog = args.catalog;
+
+		var ul = $(document.createElement("ul"));
+		ul.addClass("item-list");
+
+		var items = args.items;
+		items.forEach((item) => {
+			var li = $(document.createElement("li"));
+			li.click({"item" : item, "catalog" : catalog}, function(event) {
+				clickListener(event.data.item, event.data.catalog);
+
+				$(this).siblings().css("font-style", "normal").css("font-weight", "normal");
+				$(this).css("font-style", "italic").css("font-weight", "bold");
+			});
+			li.css("cursor", "pointer");
+			ul.append(li);
+
+			var counter = 0;
+			for (var a in catalog.displayFields) {
+				if (counter++ >= 1) {
+					break;
+				}
+
+				var displayField = catalog.displayFields[a];
+				var renderedField = this.renderField(item, displayField);
+				li.append(renderedField);
+			}
+		});
+
+		container.append(ul);
+	},
+
 	renderTable : function(args) {
 		args.catalog.displayFields.sort(function(a, b) {
 			return a.position - b.position;
@@ -133,6 +173,8 @@ var ItemRenderer = {
 		var item = args.item;
 		var saveCallback = args.saveCallback;
 		var cancelCallback = args.cancelCallback;
+
+		container.empty();
 
 		var detailContainer = $(document.createElement("div"));
 		detailContainer.css("display", "inline-block");
