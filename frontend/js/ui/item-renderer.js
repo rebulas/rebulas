@@ -7,28 +7,6 @@ var ItemRenderer = {
 			return a.position - b.position;
 		});
 
-		var items = args.items;
-		for (var f in items) {
-			var item = items[f];
-			this.renderSummary(item, args);
-		}
-	},
-
-	getFieldValue : function(item, field) {
-		for (a in item) {
-			if (field == a) {
-				return item[a];
-			}
-		}
-
-		return undefined;
-	},
-
-	renderPlainList : function(args) {
-		args.catalog.displayFields.sort(function(a, b) {
-			return a.position - b.position;
-		});
-
 		var container = args.container;
 		var clickListener = args.clickListener;
 		var fields = args.fields;
@@ -62,109 +40,6 @@ var ItemRenderer = {
 		});
 
 		container.append(ul);
-	},
-
-	renderTable : function(args) {
-		args.catalog.displayFields.sort(function(a, b) {
-			return a.position - b.position;
-		});
-
-		var container = args.container;
-		var clickListener = args.clickListener;
-		var fields = args.fields;
-		var catalog = args.catalog;
-
-		var table = $(document.createElement("table"));
-		table.addClass("table table-hover table-striped");
-		container.append(table);
-
-		var thead = $(document.createElement("thead"));
-		var tr = $(document.createElement("tr"));
-		for (var a in catalog.displayFields) {
-			if (counter++ >= 4) {
-				break;
-			}
-
-			var displayField = catalog.displayFields[a];
-			var th = $(document.createElement("th"));
-			th.addClass("text-capitalize");
-			th.append(displayField.field);
-			tr.append(th);
-		}
-		thead.append(tr);
-		table.append(thead);
-
-		var tbody = $(document.createElement("tbody"));
-		table.append(tbody);
-
-		var items = args.items;
-		for (var f in items) {
-			var item = items[f];
-
-			var tr = $(document.createElement("tr"));
-			tr.click({"item" : item, "catalog" : catalog}, function(event) {
-				clickListener(event.data.item, event.data.catalog);
-			});
-			tr.css("cursor", "pointer");
-			tbody.append(tr);
-
-			var counter = 0;
-			for (var a in catalog.displayFields) {
-				if (counter++ >= 4) {
-					break;
-				}
-
-				var displayField = catalog.displayFields[a];
-				var renderedField = this.renderField(item, displayField);
-				renderedField.css("white-space", "nowrap");
-				renderedField.css("text-overflow", "ellipsis");
-
-				var td = $(document.createElement("td"));
-				td.append(renderedField);
-				if (counter == 1) {
-					td.attr("width", "30%");
-				}
-				td.css("padding", "25px");
-
-				tr.append(td);
-			}
-		}
-
-	},
-
-	renderSummary : function(item, args) {
-		var container = args.container;
-		var clickListener = args.clickListener;
-		var fields = args.fields;
-		var catalog = args.catalog;
-
-		var detailContainer = $(document.createElement("div"));
-		detailContainer.css("display", "inline-block");
-
-		var well = $(document.createElement("div"));
-		well.addClass("well item-summary-panel");
-		detailContainer.append(well);
-
-		var idField = this.renderField(item, {"type" : "text", "field" : "id"});
-		idField.css("font-weight", "bold");
-		well.append(idField);
-
-		var counter = 0;
-		for (var a in catalog.displayFields) {
-			if (counter++ >= 4) {
-				break;
-			}
-
-			var displayField = catalog.displayFields[a];
-			var renderedField = this.renderField(item, displayField);
-			well.append(renderedField);
-		}
-
-		well.click({"item" : item, "catalog" : catalog}, function(event) {
-			clickListener(event.data.item, event.data.catalog);
-		});
-
-		container.append(detailContainer);
 	},
 
 	renderDetails : function(args) {
@@ -234,6 +109,16 @@ var ItemRenderer = {
 				cancelCallback();
 			}
 		});
+	},
+
+	getFieldValue : function(item, field) {
+		for (a in item) {
+			if (field == a) {
+				return item[a];
+			}
+		}
+
+		return undefined;
 	},
 
 	renderField : function(item, displayField) {

@@ -37,7 +37,7 @@ var ResultRenderer = {
 				}
 
 				var container = $(document.createElement("div"));
-				ItemRenderer.renderPlainList({
+				ItemRenderer.renderList({
 					"container" : container,
 					"items" : result.items,
 					"fields" : result.fields,
