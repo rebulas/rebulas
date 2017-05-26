@@ -1,73 +1,46 @@
 var RepositoryManager = {
 
-  "default" : {"id" : 0, "uri" : "localhost", "type" : "stat"},
+  "default" : {"id" : 0, "uri" : "localhost", "path" : "default"},
 
   "getCatalogs" : function() {
     var catalogs = [this.default];
+    var storedCatalogs = localStorage.getItem("catalogs");
 
-    var storedCatalogsRaw = localStorage.getItem("catalogs");
-    if (storedCatalogsRaw) {
-      var storedCatalogs = JSON.parse(storedCatalogsRaw);
-      
-	  storedCatalogs.forEach(function(catalog) {
-        catalogs.push(catalog);
-      });
-    }
-
-    return catalogs;
+    return storedCatalogs ? catalogs.concat(JSON.parse(storedCatalogs)) : catalogs;
   },
 
   "getCatalog" : function(id) {
-    var catalog = undefined;
-
-    this.getCatalogs().forEach(function(c) {
-      if (id == c.id) {
-        catalog = c;
-      }
-    });
-
-    return catalog;
+    return this.getCatalogs().find(c => c.id == id);
   },
 
-  "addCatalog" : function(id, type, token) {
-    var uri = type == "dropbox" ? "dropbox.com/rebulas" : "localhost";
+  "addCatalog" : function(id, type, token, path) {
+    // var p = path ? "rebulas/" + path : "rebulas";
+    var p = "rebulas";
+    var uri = type == "dropbox" ? "dropbox.com/" + p : "localhost";
 
-    var storedCatalogs = [];
+    var c = localStorage.getItem("catalogs");
+    var storedCatalogs = c ? JSON.parse(c) : [];
 
-    var storedCatalogsRaw = localStorage.getItem("catalogs");
-    if (storedCatalogsRaw) {
-      storedCatalogs = JSON.parse(storedCatalogsRaw);
-    }
-	
-	// TODO check if the id exists already. If it does we need to display a warning to the user
-	// For now leave the user to add multiple times the same repository
-	
-	storedCatalogs.push({
+    // TODO check if the id exists already. If it does we need to display a warning to the user
+    // For now leave the user to add multiple times the same repository
+    storedCatalogs.push({
       "id" : id,
       "uri" : uri,
-      "token" : token
+      "token" : token,
+      "path" : path
     });
 
     localStorage.setItem("catalogs", JSON.stringify(storedCatalogs));
   },
 
   "removeCatalog" : function(id) {
-    var storedCatalogsRaw = localStorage.getItem("catalogs");
-    if (storedCatalogsRaw) {
-      storedCatalogs = JSON.parse(storedCatalogsRaw);
+    var catalogs = localStorage.getItem("catalogs");
 
-      var index = -1;
-      for (var i = 0; i < storedCatalogs.length; i++) {
-        var c = storedCatalogs[i];
-        if (c.id == id) {
-          index = i;
-        }
-      }
+    if (catalogs) {
+      var storedCatalogs = JSON.parse(catalogs);
+      var filtered = storedCatalogs.filter(c => c.id != id);
 
-      if (index > -1) {
-          Util.arrayRemove(storedCatalogs, index);
-          localStorage.setItem("catalogs", JSON.stringify(storedCatalogs));
-      }
+      localStorage.setItem("catalogs", JSON.stringify(filtered));
     }
   }
 }
