@@ -43,7 +43,7 @@ var Terminal = {
   "calculatePrompt" : function(result) {
 		var base = 'rebulas@' + result.catalog.name;
 
-    var crumbs = BreadcrumbsRenderer.render(result.breadcrumbs);
+    var crumbs = this.renderBreadcrumbs(result.breadcrumbs);
     if (crumbs) {
         base += "/" + crumbs;
     }
@@ -51,6 +51,29 @@ var Terminal = {
 
     return base;
   },
+
+	renderBreadcrumbs : function(crumbs) {
+		var buffer = "";
+
+		for (var i = 0; i < crumbs.length; i++) {
+			var crumb = crumbs[i];
+			var next = crumbs[i + 1];
+			var value = crumb.valueLocalized;
+
+			var renderOr = false;
+			if (next && "or" == next.aggregation) {
+				renderOr = true;
+			}
+
+			if (buffer.length > 0) {
+				buffer += "/";
+			}
+
+			buffer += value;
+		}
+
+		return buffer;
+	},
 
   "processCommand" : function(command, terminal, queryExecutor) {
       var queryObject = Util.parseQueryString();
