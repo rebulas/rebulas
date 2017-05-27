@@ -24,7 +24,7 @@ var QueryExecutor = {
 						{"id" : "screwfix", "title" : "Screwfix", "link" : "client=screwfix", "count" : 1}
 					]},
 					{"id" : 2, "title" : "Releases", "field" : "releases", "values" : [
-						{"id" : "fas8.2", "title" : "FAS 8.2", "link" : "relese=8.2", "count": 1},
+						{"id" : "fas8.2", "title" : "FAS 8.2", "link" : "release=8.2", "count": 1},
 						{"id" : "fas8.3", "title" : "FAS 8.3", "link" : "release=8.3", "count" : 1}
 					]}
 				],
@@ -76,8 +76,10 @@ var QueryExecutor = {
 
 					// TODO are we going to index items added to a local/static catalog
 					if (catalog.id != defaultCatalog.id) {
-						var index = await RebulasBackend.getCatalogIndex(catalog);
-						result.items = index.search(queryObject);
+						let index = await RebulasBackend.getCatalogIndex(catalog);
+            let searchResult = index.search(queryObject);
+            result.items = searchResult.items;
+            result.facets = searchResult.facets;
 					}
 
 					result.count = result.items.length;
