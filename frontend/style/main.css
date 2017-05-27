@@ -20,11 +20,11 @@ html, body {
 	padding: 0 30px 0 10px;
 }
 
-#itemDetailsPlaceholder {
+#hintPlaceholder {
 	font-size: 1.5em;
 	width:90%;
 	margin-top:100px;
-	text-align: center;
+	padding-left: 200px;
 	color: #DDD;
 }
 

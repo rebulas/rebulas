@@ -1,6 +1,7 @@
 var QueryExecutor = {
 
-		create : function() {
+		create : function(args) {
+			var waitStatePlaceholder = args.waitStatePlaceholder;
 
 			var staticResult = {
 				"count" : 2,
@@ -53,6 +54,9 @@ var QueryExecutor = {
 				},
 
 				"execute" : async function(queryObject, callback) {
+
+					waitStatePlaceholder.empty().append("Loading data, please wait...").show();
+
 					// Ahem...clone
 					var result = JSON.parse(JSON.stringify(staticResult));
 
@@ -79,6 +83,8 @@ var QueryExecutor = {
 					result.count = result.items.length;
 					result.catalog.name = catalog.uri;
 					result.catalog.searchIndex = catalog.searchIndex;
+
+					waitStatePlaceholder.empty().hide();
 
 					this.listeners.forEach(function(listener) {
 						if (listener.onResultChange) {

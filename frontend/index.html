@@ -43,7 +43,9 @@ $(document).ready(function() {
 
 	// All changes in the result set go through the QueryExecutor. The query execution could be
 	// triggered from within UI components, this reference will be passed there.
-	var queryExecutor = QueryExecutor.create();
+	var queryExecutor = QueryExecutor.create({
+		"waitStatePlaceholder" : $("#hintPlaceholder")
+	});
 
 	// Overarching renderer for the result, all these pieces need to be updated upon result update
 	var resultRenderer = ResultRenderer.create({
@@ -51,7 +53,8 @@ $(document).ready(function() {
 		"facetsContainer" : $("#facets-container"),
 		"countContainer" : $("#countContainer"),
 		"itemsContainer" : $("#itemsContainer"),
-		"detailsContainer" : $("#itemDetails")
+		"detailsContainer" : $("#itemDetails"),
+		"hintPlaceholder" : $("#hintPlaceholder")
 	});
 
 
@@ -127,7 +130,7 @@ $(document).ready(function() {
 				</div>
 				<div class="col-lg-9">
 					<div id="itemDetails" class="pull-left well" style="display:none"></div>
-					<div id="itemDetailsPlaceholder">Select element to show details</div>
+					<div id="hintPlaceholder"></div>
 				</div>
 			</div>
 

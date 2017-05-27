@@ -6,6 +6,7 @@ var ResultRenderer = {
 		var countContainer = args.countContainer;
 		var itemsContainer = args.itemsContainer;
 		var detailsContainer = args.detailsContainer;
+		var hintPlaceholder = args.hintPlaceholder;
 
 		return {
 
@@ -49,7 +50,7 @@ var ResultRenderer = {
 				itemsContainer.append(container);
 
 				detailsContainer.hide();
-				$("#itemDetailsPlaceholder").show();
+				hintPlaceholder.empty().append("Select element to show details").show();
 			},
 
 			"details" : function(existingItem, catalog) {
@@ -73,7 +74,7 @@ var ResultRenderer = {
 					"cancelCallback" : saveCallback
 				});
 
-				$("#itemDetailsPlaceholder").hide();
+				hintPlaceholder.empty().hide();
 				detailsContainer.fadeIn();
 			},
 
