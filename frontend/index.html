@@ -29,7 +29,7 @@
 
 <script type="text/javascript" src="js/backend/dataload.js"></script>
 <script type="text/javascript" src="js/backend/elasticlunr.js"></script>
-<script type="text/javascript" src="https://unpkg.com/dropbox/dist/Dropbox-sdk.min.js"></script>
+<script type="text/javascript" src="style/Dropbox-sdk.min.js"></script>
 
 <script>
 
@@ -95,6 +95,17 @@ $(document).ready(function() {
 		"container" : $("#repository-button"),
 		"queryExecutor" : queryExecutor
 	});
+
+	// Offline support, disabled for now until the rest of the pieces are in place
+	/*
+	if ("serviceWorker" in navigator) {
+		navigator.serviceWorker
+			.register('/service-worker.js')
+			.then(function() {
+				Util.log("Service Worker Registered");
+			});
+	}
+	*/
 });
 
 </script>
