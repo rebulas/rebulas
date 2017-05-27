@@ -8,11 +8,11 @@ var RepositoryConfigurator = {
 
 			var currentCatalogContainer = container.find(".current-repository").first();
 			var q = Util.parseQueryString();
-			
+
 			// TODO alter once we start remembering the last used repository
 			var currentCatalog = q.catalog ? RepositoryManager.getCatalog(q.catalog) : RepositoryManager.getCatalogs()[0];
 			currentCatalogContainer.empty().append("Repository " + currentCatalog.uri);
-			
+
 			var listContainer = container.find(".repositories-container").first();
 			listContainer.empty();
 
@@ -32,7 +32,9 @@ var RepositoryConfigurator = {
 					// Changing the catalog requires us to drop all other selections so far
 					delete q.q;
 
-					queryExecutor.navigate("?" + Util.queryObjectToString(q));
+					queryExecutor.navigate("?" + Util.queryObjectToString(q), function(result) {
+						RepositoryConfigurator.render(args);
+					});
 				});
 				div.append(a);
 
@@ -55,7 +57,7 @@ var RepositoryConfigurator = {
 			var li = $(document.createElement("li"));
 			li.append("Link repository ");
 			li.css("cursor", "default");
-			
+
 			// Dropbox
 			var a = $(document.createElement("a"));
 			a.append("Dropbox");
@@ -68,7 +70,7 @@ var RepositoryConfigurator = {
 				})
 			});
 			li.append(a);
-			
+
 			// GitHub
 			a = $(document.createElement("a"));
 			a.append("GitHub");
@@ -76,7 +78,7 @@ var RepositoryConfigurator = {
 			li.append(a);
 
 			listContainer.append(li);
-			
+
 			container.fadeIn();
 		}
 };
