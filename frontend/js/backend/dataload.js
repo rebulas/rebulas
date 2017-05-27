@@ -42,7 +42,7 @@
       this.dbx = new Dropbox({ accessToken: catalog.token });
 
       var path = catalog.path ? catalog.path : "";
-      if (path[0] != "/") {
+      if (path && path[0] != "/") {
         path = "/" + path;
       }
       this.path = path;
@@ -56,7 +56,7 @@
     async listAllFiles() {
       let allFiles = [];
 
-      let folders = [this.path ? this.path : ""];
+      let folders = [this.path];
       while(folders.length !== 0) {
         let folder = folders[0];
         folders.splice(0, 1);
