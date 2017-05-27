@@ -14,8 +14,7 @@ var RepositoryManager = {
   },
 
   "addCatalog" : function(id, type, token, path) {
-    // var p = path ? "rebulas/" + path : "rebulas";
-    var p = "rebulas";
+    var p = path ? "rebulas/" + path : "rebulas";
     var uri = type == "dropbox" ? "dropbox.com/" + p : "localhost";
 
     var c = localStorage.getItem("catalogs");
@@ -27,7 +26,7 @@ var RepositoryManager = {
       "id" : id,
       "uri" : uri,
       "token" : token,
-      "path" : path
+      "path" : path ? path : "default"
     });
 
     localStorage.setItem("catalogs", JSON.stringify(storedCatalogs));

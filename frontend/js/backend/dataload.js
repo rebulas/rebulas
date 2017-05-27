@@ -1,6 +1,4 @@
 (function(window) {
-  var INDEX_FILE_NAME = '.rebulas_index',
-      DBX_INDEX_FILE_PATH = '/' + INDEX_FILE_NAME;
 
   class AuthRequests {
     constructor(user, pass) {
@@ -68,17 +66,30 @@
   }
 
   class DropboxOperations {
-    constructor(token) {
-      this.dbx = new Dropbox({ accessToken: token });
+
+    constructor(catalog) {
+      this.dbx = new Dropbox({ accessToken: catalog.token });
+
+      var path = catalog.path ? catalog.path : "";
+      if (path[0] != "/") {
+        path = "/" + path;
+      }
+      this.path = path;
+      this.indexFile = path + '/.rebulas_index';
+    }
+
+    getIndexFilePath() {
+      return this.indexFile;
     }
 
     async listAllFiles() {
       let allFiles = [];
 
-      let folders = [''];
+      let folders = [this.path ? this.path : ""];
       while(folders.length !== 0) {
         let folder = folders[0];
         folders.splice(0, 1);
+
         let files = await this.dbx.filesListFolder({ path: folder });
 
         files.entries.forEach((entry) => {
@@ -130,10 +141,10 @@
     }
 
     saveIndex(index) {
-      Util.log('Saving index');
+      Util.log('Saving index %s', this.indexFile);
       let blob = new Blob([JSON.stringify(index.toJSON())], { type: 'application/json' });
       return this.dbx.filesUpload({
-        path: DBX_INDEX_FILE_PATH,
+        path: this.indexFile,
         contents: blob,
         mute: true,
         mode: {
@@ -247,7 +258,7 @@
 
   async function getIndexWithOps(indexOps, catalog) {
     let allFiles = await indexOps.listAllFiles();
-    let fileIndex = allFiles.findIndex((entry) => entry.path === DBX_INDEX_FILE_PATH);
+    let fileIndex = allFiles.findIndex((entry) => entry.path === indexOps.getIndexFilePath());
     let existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
     let lunrIndex;
 
@@ -308,7 +319,7 @@
       }
 
       if(catalog.uri.startsWith('dropbox.com')) {
-        let indexOps = new DropboxOperations(catalog.token);
+        let indexOps = new DropboxOperations(catalog);
         Util.log('Loading Dropbox index');
         return getIndexWithOps(indexOps, catalog).then((index) => {
           catalog.searchIndex = index;
