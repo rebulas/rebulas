@@ -83,6 +83,7 @@ var QueryExecutor = {
 					}
 
 					result.count = result.items.length;
+          result.catalog.id = catalog.id;
 					result.catalog.name = catalog.uri;
 					result.catalog.searchIndex = catalog.searchIndex;
 

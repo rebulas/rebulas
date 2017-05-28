@@ -214,7 +214,7 @@ var FacetRenderer = {
 
         var link = $(document.createElement("a"));
         link.css("cursor", "pointer");
-        link.mouseup({"link" : self.createLink(value.link, catalog)}, function(ev) {
+        link.click({"link" : self.createLink(value.link, catalog)}, function(ev) {
 
             // Sorting a result list does not refresh the facet panel but it modifies the URL
             // To keep the facet link in sync we'll grab just the sort portion of the URL

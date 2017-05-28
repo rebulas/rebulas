@@ -1,23 +1,5 @@
 (function(window) {
 
-  class AuthRequests {
-    constructor(user, pass) {
-      this.user = user;
-      this.pass = pass;
-    }
-    get(url) {
-      let method = 'GET', self = this;
-      return new Promise(function (resolve, reject) {
-          var xhr = new XMLHttpRequest();
-          xhr.open(method, url);
-          xhr.setRequestHeader("Authorization", "Basic " + btoa(self.user + ":" + self.pass));
-          xhr.onload = resolve;
-          xhr.onerror = reject;
-          xhr.send();
-      });
-    }
-  }
-
   function addDocToIndex(doc, content, index, features) {
     Util.log('Indexing', doc.id);
     let analyzed = features.analyzeDocument(content);
@@ -34,95 +16,6 @@
     });
 
     index.addDoc(analyzed);
-  }
-
-  class DropboxOperations {
-
-    constructor(catalog) {
-      this.dbx = new Dropbox({ accessToken: catalog.token });
-
-      var path = catalog.path ? catalog.path : "";
-      if (path && path[0] != "/") {
-        path = "/" + path;
-      }
-      this.path = path;
-      this.indexFile = path + '/.rebulas_index';
-    }
-
-    getIndexFilePath() {
-      return this.indexFile;
-    }
-
-    async listAllFiles() {
-      let allFiles = [];
-
-      let folders = [this.path];
-      while(folders.length !== 0) {
-        let folder = folders[0];
-        folders.splice(0, 1);
-
-        let files = await this.dbx.filesListFolder({ path: folder });
-
-        files.entries.forEach((entry) => {
-          if (entry['.tag'] == 'folder') {
-            folders.push(entry.path_lower);
-          } else {
-            allFiles.push({
-              path: entry.path_lower,
-              name: entry.path_display,
-              rev: entry.rev
-            });
-          }
-        });
-      }
-
-      return allFiles;
-    }
-
-    saveDocument(path, content) {
-      let blob = new Blob([content], { type: 'application/json' });
-      return this.dbx.filesUpload({
-        path: path,
-        contents: blob,
-        mute: true,
-        mode: {
-          '.tag': 'overwrite'
-        }
-      }).then((entry) => {
-        let saved = {
-          id: entry.path,
-          name: entry.name,
-          rev: entry.rev,
-          content: content
-        };
-        return saved;
-      });
-    }
-
-    getEntryContent(entry) {
-      let self = this;
-      return new Promise((resolve, reject) =>
-        self.dbx.filesDownload({ path: entry.path }).then((response) => {
-          let blob = response.fileBlob;
-          let reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsText(blob);
-        }, reject));
-    }
-
-    saveIndexContent(index) {
-      Util.log('Saving index', this.indexFile);
-      let blob = new Blob([JSON.stringify(index)], { type: 'application/json' });
-      return this.dbx.filesUpload({
-        path: this.indexFile,
-        contents: blob,
-        mute: true,
-        mode: {
-          '.tag': 'overwrite'
-        }
-      });
-    }
   }
 
   class IndexWrapper {
@@ -228,13 +121,18 @@
         let searchResults = [];
         query.getSelections().forEach((selection) => {
           let selectionResults,
-              searchQuery = {};
+              searchQuery = {},
+              searchConfig = {};
           if(selection.field == '$s') {
             searchQuery['any'] = selection.value;
           } else {
             searchQuery[selection.field] = selection.value;
+            searchConfig.fields = {};
+            searchConfig.fields[selection.field] = {
+              bool: 'AND'
+            };
           }
-          selectionResults = index.search(searchQuery, {});
+          selectionResults = index.search(searchQuery, searchConfig);
           Util.log(JSON.stringify(searchQuery), '->', selectionResults.length);
           searchResults.push(selectionResults);
         });
@@ -271,7 +169,12 @@
 
   function emptyIndex() {
     let index = new IndexWrapper();
-    index.search = () => [];
+    index.search = () => {
+      return {
+        results: [],
+        facets: []
+      };
+    };
     return index;
   }
 
@@ -327,7 +230,7 @@
   let loadedIndices = {};
   window.RebulasBackend = {
     getCatalogIndex: async function(catalog) {
-      elasticlunr.tokenizer.seperator = /([\s\-,]|\. )+/;
+      elasticlunr.tokenizer.seperator = /([\s\-,]|(\. ))+/;
       if(loadedIndices[catalog.id]) {
         catalog.searchIndex = loadedIndices[catalog.id];
         Util.log('Found existing search index for catalog ', catalog.id);

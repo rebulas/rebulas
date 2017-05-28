@@ -1,5 +1,23 @@
 var Util = {
 
+  AuthRequests: class AuthRequests {
+    constructor(user, pass) {
+      this.user = user;
+      this.pass = pass;
+    }
+    get(url) {
+      let method = 'GET', self = this;
+      return new Promise(function (resolve, reject) {
+          var xhr = new XMLHttpRequest();
+          xhr.open(method, url);
+          xhr.setRequestHeader("Authorization", "Basic " + btoa(self.user + ":" + self.pass));
+          xhr.onload = resolve;
+          xhr.onerror = reject;
+          xhr.send();
+      });
+    }
+  },
+
 	parseQueryString : function(q) {
 		var string = q || window.location.search.substring(1);
 
