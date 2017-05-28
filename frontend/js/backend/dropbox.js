@@ -43,21 +43,22 @@
 
     saveDocument(path, content) {
       let blob = new Blob([content], { type: 'application/json' });
-      return this.dbx.filesUpload({
-        path: path,
-        contents: blob,
-        mute: true,
-        mode: {
-          '.tag': 'overwrite'
-        }
-      }).then((entry) => {
-        let saved = {
-          id: entry.path,
-          name: entry.name,
-          rev: entry.rev,
-          content: content
-        };
-        return saved;
+      return new Promise((resolve, reject) => {
+        this.dbx.filesUpload({
+          path: path,
+          contents: blob,
+          mute: true,
+          mode: {
+            '.tag': 'overwrite'
+          }
+        }).then((entry) => {
+          resolve({
+            id: entry.path,
+            name: entry.name,
+            rev: entry.rev,
+            content: content
+          });
+        });
       });
     }
 

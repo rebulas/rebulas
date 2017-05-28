@@ -2,7 +2,7 @@
 
   function addDocToIndex(doc, content, index, features) {
     Util.log('Indexing', doc.id);
-    let analyzed = features.analyzeDocument(content);
+    let analyzed = features.addDocContent(content);
 
     analyzed.id = doc.id;
     analyzed.rev = doc.rev;
@@ -26,6 +26,7 @@
     }
 
     async saveIndex() {
+      Util.log('Saving index');
       let ops = this.indexOperations;
       await ops.saveIndexContent({
         index: this.index.toJSON(),
@@ -78,12 +79,16 @@
           indexOps = this.indexOperations,
           features = this.features,
           index = this.index;
+
       this.indexOperations.saveDocument(id, content).then((savedItem) => {
-        index.removeDoc(id);
         addDocToIndex(savedItem, content, index, features);
+        features.calculateFieldFeatures();
         // TODO: Recalculate field statistics
         self.saveIndex();
       });
+
+      features.removeDocContent(index.documentStore.getDoc(id)._content);
+      index.removeDoc(id);
     }
 
     processSelectionResults(selectionResults) {

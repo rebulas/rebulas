@@ -15,7 +15,7 @@
     }
 
     static tokenizeFacetValue(text) {
-      return text.split(/ /).map((s) => s.trim()).filter((t) => t);      
+      return text.split(/ /).map((s) => s.trim()).filter((t) => t);
     }
 
     static sentenceSplit(text) {
@@ -58,20 +58,11 @@
       return result;
     }
 
-    constructor() {
-      this.fieldFeatures = {};
-    }
-
-    toJSON() {
-      return this.fieldFeatures;
-    }
-
-    analyzeDocument(content) {
-      let self = this,
-          lexer = new marked.Lexer(),
+    static analyzeDocument(content) {
+      let lexer = new marked.Lexer(),
           lexemes = lexer.lex(content),
           topHeadings = [],
-          analyzedDoc = {};
+          topHeadingsValues = [];
 
       // Gather top-level headings
       lexemes.forEach((lexeme, index) => {
@@ -86,50 +77,111 @@
           });
         }
       });
-
       // Gather text values for each top-level heading
       topHeadings.forEach((heading, index) => {
         let nextHeading = topHeadings[index + 1];
         let valueLexemes = lexemes.slice(heading.index + 1,
                                          (nextHeading && nextHeading.index) || lexemes.length);
-        self.appendFieldStats(heading.text, valueLexemes);
-
-        let fieldKey = heading.text.toLowerCase();
-        let fieldValue = valueLexemes.map((l) => l.text ? l.text : '').join(' ');
-        analyzedDoc[fieldKey] = fieldValue;
+        topHeadingsValues.push(valueLexemes);
       });
-      return analyzedDoc;
+
+      return {
+        topHeadings: topHeadings,
+        topHeadingsValues: topHeadingsValues,
+        lexemes: lexemes
+      };
     }
 
-    appendFieldStats(heading, valueLexemes) {
-      heading = heading.toLowerCase();
-      let fieldFeatures = this.fieldFeatures;
-      let isListOnly = FeatureCollector.isList(valueLexemes);
-      fieldFeatures[heading] = fieldFeatures[heading] || {
-        values: {},
-        sentenceCount: 0,
-        isFacet: isListOnly
-      };
+    constructor() {
+      this.fieldFeatures = {};
+    }
 
-      let stats = fieldFeatures[heading];
-      if(isListOnly) return;
+    toJSON() {
+      return this.fieldFeatures;
+    }
 
-      valueLexemes.forEach((lex) => {
-        if(!lex.text) return;
-        let sentCount = FeatureCollector.sentenceSplit(lex.text).length;
-        // single-sentence values don't count
-        stats.sentenceCount += sentCount <= 1 ? 0 : sentCount;
+    addDocContent(content) {
+      let self = this,
+          fieldFeatures = this.fieldFeatures,
+          addedDoc = {},
+          analyzedDoc = FeatureCollector.analyzeDocument(content);
 
-        FeatureCollector.tokenizeFacetField(lex.text).forEach((token) => {
-          let id = token.toLowerCase();
-          stats.values[id] = stats.values[id] || {
-            id: id,
-            value: token,
-            count: 0
-          };
-          stats.values[id].count++;
-        });
+      // Gather text values for each top-level heading
+      analyzedDoc.topHeadings.forEach((heading, index) => {
+        let valueLexemes = analyzedDoc.topHeadingsValues[index],
+            fieldKey = heading.text.toLowerCase();
+
+        appendFieldStats(fieldKey, valueLexemes);
+
+        let fieldValue = valueLexemes.map((l) => l.text ? l.text : '').join(' ');
+        addedDoc[fieldKey] = fieldValue;
       });
+      return addedDoc;
+
+      function appendFieldStats(fieldKey, valueLexemes) {
+        fieldFeatures[fieldKey] = fieldFeatures[fieldKey] || {
+          values: {},
+          sentenceCount: 0,
+          docCount: 0,
+          plainListDocs: 0
+        };
+
+        let stats = fieldFeatures[fieldKey];
+        stats.docCount++;
+        if(FeatureCollector.isList(valueLexemes))
+          stats.plainListDocs++;
+
+        valueLexemes.forEach((lex) => {
+          if(!lex.text) return;
+          let sentCount = FeatureCollector.sentenceSplit(lex.text).length;
+          // single-sentence values don't count
+          stats.sentenceCount += sentCount <= 1 ? 0 : sentCount;
+
+          FeatureCollector.tokenizeFacetField(lex.text).forEach((token) => {
+            let id = token.toLowerCase();
+            stats.values[id] = stats.values[id] || {
+              id: id,
+              value: token,
+              count: 0
+            };
+            stats.values[id].count++;
+          });
+        });
+      }
+    }
+
+    removeDocContent(content) {
+      let fieldFeatures = this.fieldFeatures,
+          analyzedDoc = FeatureCollector.analyzeDocument(content);
+
+      analyzedDoc.topHeadings.forEach((heading, index) => {
+        let fieldKey = heading.text.toLowerCase();
+        let valueLexemes = analyzedDoc.topHeadingsValues[index];
+
+        removeFieldStats(fieldKey, valueLexemes);
+      });
+
+      function removeFieldStats(fieldKey, valueLexemes) {
+        let stats = fieldFeatures[fieldKey];
+        stats.docCount--;
+        if(FeatureCollector.isList(valueLexemes))
+          stats.plainListDocs--;
+
+        valueLexemes.forEach((lex) => {
+          if(!lex.text) return;
+          let sentCount = FeatureCollector.sentenceSplit(lex.text).length;
+          stats.sentenceCount -= sentCount <= 1 ? 0 : sentCount;
+
+          FeatureCollector.tokenizeFacetField(lex.text).forEach((token) => {
+            let id = token.toLowerCase();
+            if(stats.values[id]) {
+              stats.values[id].count--;
+              if(stats.values[id].count === 0)
+                delete stats.values[id];
+            }
+          });
+        });
+      }
     }
 
     calculateFieldFeatures() {
@@ -146,7 +198,9 @@
                  'Avg:', avg,
                  'Var:', variance,
                  'Sentences:', stats.sentenceCount);
-        stats.isFacet = stats.isFacet || variance < 1;
+
+        // Pretty much the only feature...
+        stats.isFacet = stats.docCount === stats.plainListDocs || variance < 1;
       });
       return fieldFeatures;
     }
