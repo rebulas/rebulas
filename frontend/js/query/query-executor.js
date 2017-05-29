@@ -7,11 +7,7 @@ var QueryExecutor = {
 				"count" : 2,
 				"catalog" : {
 					"id" : 0,
-					"name" : "",
-					"displayFields" : [
-						{"field" : "name", "type" : "text"},
-						{"field" : "description", "type" : "text"}
-					]
+					"name" : ""
 				},
 				"breadcrumbs" : [
 					{"field" : "tag", "valueLocalized" : "Important", "query" : "tag=important"}

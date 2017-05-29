@@ -1,15 +1,9 @@
 var ItemRenderer = {
 
-	"Months" : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-
 	renderList : function(args) {
-		args.catalog.displayFields.sort(function(a, b) {
-			return a.position - b.position;
-		});
 
 		var container = args.container;
 		var clickListener = args.clickListener;
-		var fields = args.fields;
 		var catalog = args.catalog;
 
 		var ul = $(document.createElement("ul"));
@@ -27,16 +21,8 @@ var ItemRenderer = {
 			li.css("cursor", "pointer");
 			ul.append(li);
 
-			var counter = 0;
-			for (var a in catalog.displayFields) {
-				if (counter++ >= 1) {
-					break;
-				}
-
-				var displayField = catalog.displayFields[a];
-				var renderedField = this.renderField(item, displayField);
-				li.append(renderedField);
-			}
+			var renderedField = this.renderFirstField(item);
+			li.append(renderedField);
 		});
 
 		container.append(ul);
@@ -111,43 +97,18 @@ var ItemRenderer = {
 		});
 	},
 
-	getFieldValue : function(item, field) {
-		for (a in item) {
-			if (field == a) {
-				return item[a];
-			}
-		}
-
-		return undefined;
-	},
-
-	renderField : function(item, displayField) {
-		var value = this.getFieldValue(item, displayField.field);
-
-		if (!value) {
-			return false;
-		}
-
+	renderFirstField : function(item) {
 		var renderedField = $(document.createElement("div"));
 
-		if ("text" == displayField.type) {
-			renderedField.append(value);
-		} else if ("date" == displayField.type) {
-			var date = new Date(Number(value));
-			var day = date.getDate();
-			var month = this.Months[date.getMonth()];
-			var year = date.getFullYear();
-
-			renderedField.append(day + " " + month + " " + year);
-		} else if ("set" == displayField.type) {
-			var str = "";
-			for (v in value) {
-				str += value[v] + ", ";
-			}
-
-			renderedField.append(str);
+		// TODO the order of the fields in item is not guaranteed
+		// This needs fixing with either user input i.e. specifying which field to expose
+		// or some clever heiristics determining which is the most important field. This might be
+		// a challenge given that we do not impose any restriction on the consistency of the documents
+		for (var key in item) {
+				if (key != "id" && key != "_md") {
+						renderedField.append(item[key]);
+						return renderedField;
+				}
 		}
-
-		return renderedField;
 	}
 }

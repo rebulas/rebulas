@@ -41,7 +41,6 @@ var ResultRenderer = {
 				ItemRenderer.renderList({
 					"container" : container,
 					"items" : result.items,
-					"fields" : result.fields,
 					"catalog" : catalog,
 					"clickListener" : this.details
 				});
