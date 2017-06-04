@@ -20,6 +20,7 @@
 <script type="text/javascript" src="js/ui/facet-renderer.js"></script>
 <script type="text/javascript" src="js/ui/item-renderer.js"></script>
 <script type="text/javascript" src="js/ui/result-renderer.js"></script>
+<script type="text/javascript" src="js/ui/elements.js"></script>
 <script type="text/javascript" src="js/query/query.js"></script>
 <script type="text/javascript" src="js/query/query-executor.js"></script>
 <script type="text/javascript" src="js/terminal/terminal.js"></script>
@@ -94,7 +95,8 @@ $(document).ready(function() {
 	});
 
 	RepositoryConfigurator.render({
-		"container" : $("#repository-button"),
+		"repositoryContainer" : $("#repository-button"),
+		"catalogContainer" : $("#catalog-button"),
 		"queryExecutor" : queryExecutor
 	});
 
@@ -125,10 +127,15 @@ $(document).ready(function() {
 		</div>
 		<div class="col-lg-10" id="right-container">
 			<div class="row">
-				<div class="col-lg-10">
+				<div class="col-lg-8">
 					<div id="terminal" class="terminal-container"></div>
 				</div>
-				<div class="col-lg-2">
+				<div class="col-lg-4">
+					<div class="btn-group pull-right" id="catalog-button">
+						<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						<span class="current-catalog">Catalog default</span> <span class="caret"></span></button>
+						<ul class="dropdown-menu catalog-container"></ul>
+					</div>
 					<div class="btn-group pull-right" style="display:none" id="repository-button">
 						<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 						<span class="current-repository"></span> <span class="caret"></span></button>

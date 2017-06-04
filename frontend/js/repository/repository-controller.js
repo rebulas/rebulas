@@ -12,13 +12,13 @@ window.OAuthCallback = function(args) {
 }
 
 var RepositoryController = {
-	
+
 	"initDropboxOAuth" : function(successCallback) {
 		// Both URLs must be registered with the Dropbox app referenced by the rebulasDropboxClientID
-		var redirectUri = window.location.hostname == "localhost" 
-							? "http://localhost:8080/oauth/dropbox.html" 
+		var redirectUri = window.location.hostname == "localhost"
+							? "http://localhost:8080/oauth/dropbox.html"
 							: "https://rebulas.com/app/oauth/dropbox.html";
-							
+
 
 		var oauthUrl = "https://www.dropbox.com/1/oauth2/authorize?client_id=" + rebulasDropboxClientID;
 		var oauthHash = Util.hash(oauthUrl);
@@ -27,12 +27,11 @@ var RepositoryController = {
 		oauthUrl += "&response_type=token&redirect_uri=" + redirectUri + "&state=" + csrf;
 
 		window.OAuthSessions[csrf] = function(oauthArgs) {
-			// Compose the id to allow linking multiple dropbox account 
-			var catalogId = Util.hash(oauthHash + oauthArgs.uid);
-			
-			RepositoryManager.addCatalog(catalogId, oauthArgs.origin, oauthArgs.token);
-		
-			successCallback(catalogId);
+			// Compose the id to allow linking multiple dropbox account
+			var repositoryId = Util.hash(oauthHash + oauthArgs.uid);
+
+			var repository = Repositories.add(repositoryId, oauthArgs.origin, oauthArgs.token);
+			successCallback(repository);
 		};
 
 		window.open(oauthUrl, "OAuth");

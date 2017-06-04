@@ -2,32 +2,44 @@
 var RepositoryConfigurator = {
 
 		"render" : function(args) {
-			var container = args.container;
+			var repositoryContainer = args.repositoryContainer;
+			var catalogContainer = args.catalogContainer;
 			var queryExecutor = args.queryExecutor;
-			var catalogs = RepositoryManager.getCatalogs();
 
-			var currentCatalogContainer = container.find(".current-repository").first();
+			var currentCatalogContainer = repositoryContainer.find(".current-repository").first();
 			var q = Util.parseQueryString();
 
-			// TODO alter once we start remembering the last used repository
-			var currentCatalog = q.catalog ? RepositoryManager.getCatalog(q.catalog) : RepositoryManager.getCatalogs()[0];
-			currentCatalogContainer.empty().append("Repository " + currentCatalog.uri);
+			var catalogs = Catalogs.getAll();
 
-			var listContainer = container.find(".repositories-container").first();
+			// TODO alter once we start remembering the last used repository
+			var currentCatalog = catalogs[0];
+			if (q.catalog) {
+				let c = Catalogs.get(q.catalog);
+				if (c) {
+					currentCatalog = c;
+				}
+			}
+
+			currentCatalogContainer.empty().append("Repository " + currentCatalog.repository.uri);
+
+			var listContainer = repositoryContainer.find(".repositories-container").first();
 			listContainer.empty();
 
 			// Line for each repository/catalog, click changes the current catalog
-			catalogs.forEach(function(c) {
-				var li = $(document.createElement("li"));
-				li.css("cursor", "default");
-				var div = $(document.createElement("div"));
+			Repositories.getAll().forEach(r => {
+				var li = Elements.li().css("cursor", "default");
 
-				var a = $(document.createElement("a"));
-				a.append(c.uri);
-				a.css("cursor", "pointer");
-				a.click({"catalogId" : c.id}, function(event) {
+				var a =  Elements.a().append(r.uri).css("cursor", "pointer");
+				a.click({"repository" : r}, function(event) {
 					var q = Util.parseQueryString();
-					q.catalog = event.data.catalogId;
+
+					var repository = event.data.repository;
+					if (repository.catalogs) {
+						// When switching the repository select the first catalog from that repository
+						q.catalog = repository.catalogs[0].id;
+					} else {
+						Util.log("Repository without catalogs, please add a catalog");
+					}
 
 					// Changing the catalog requires us to drop all other selections so far
 					delete q.q;
@@ -36,34 +48,31 @@ var RepositoryConfigurator = {
 						RepositoryConfigurator.render(args);
 					});
 				});
+				var div = Elements.div();
 				div.append(a);
 
-				var remove = $(document.createElement("span"));
-				remove.addClass("glyphicon glyphicon-remove pull-right");
-				remove.click({"catalogId" : c.id}, function(event) {
-					RepositoryManager.removeCatalog(event.data.catalogId);
+				var remove = Elements.span("glyphicon glyphicon-remove pull-right").css("cursor", "pointer");
+				remove.click({"id" : r.id}, function(event) {
+					Repositories.remove(event.data.id);
 
 					queryExecutor.navigate("?", function(result) {
 						RepositoryConfigurator.render(args);
 					});
 				});
-				remove.css("cursor", "pointer");
+
 				div.append(remove);
 				li.append(div);
 				listContainer.append(li);
 			});
-			listContainer.append($(document.createElement("li")).attr("role", "separator").addClass("divider"));
+			listContainer.append(Elements.li("divider").attr("role", "separator"));
 
-			var li = $(document.createElement("li"));
-			li.append("Link repository ");
-			li.css("cursor", "default");
+			var li = Elements.li().append("Link repository ").css("cursor", "default");
 
 			// Dropbox
-			var a = $(document.createElement("a"));
-			a.append("Dropbox");
-			a.addClass("add-repository-link");
+			var a = Elements.a("add-repository-link").append("Dropbox");
 			a.click(function() {
-				RepositoryController.initDropboxOAuth(function(catalogId) {
+				RepositoryController.initDropboxOAuth(function(repository) {
+					var catalogId = repository.catalogs[0].id;
 					queryExecutor.navigate("?catalog=" + catalogId, function(result) {
 						RepositoryConfigurator.render(args);
 					});
@@ -72,13 +81,17 @@ var RepositoryConfigurator = {
 			li.append(a);
 
 			// GitHub
-			a = $(document.createElement("a"));
-			a.append("GitHub");
-			a.addClass("add-repository-link");
+			a = Elements.a("add-repository-link").append("GitHub");
 			li.append(a);
-
 			listContainer.append(li);
 
-			container.fadeIn();
+			repositoryContainer.fadeIn();
+
+			var repository = Repositories.get(currentCatalog.repository.id);
+			if (Repositories.supportsPaths(repository)) {
+				catalogContainer.fadeIn();
+			} else {
+				catalogContainer.hide();
+			}
 		}
 };

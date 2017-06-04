@@ -52,6 +52,7 @@ var QueryExecutor = {
 				"execute" : async function(queryObject, callback) {
 
 					waitStatePlaceholder.empty().append("Loading data, please wait...").show();
+					$(document.body).css("cursor", "wait");
 
 					// Ahem...clone
 					var result = JSON.parse(JSON.stringify(staticResult));
@@ -67,8 +68,14 @@ var QueryExecutor = {
 					// TODO handle initial state i.e. no catalogs
 					// TODO handle non existing catalogs with a warning instead of silent fallback to default
 					// TODO alter once we start remembering the last used repository
-					var defaultCatalog = RepositoryManager.getCatalogs()[0];
-					var catalog = queryObject.catalog ? RepositoryManager.getCatalog(queryObject.catalog) : defaultCatalog;
+					var defaultCatalog = Catalogs.getAll()[0];
+					var catalog = defaultCatalog;
+					if (queryObject.catalog) {
+						var c = Catalogs.get(queryObject.catalog);
+						if (c) {
+							catalog = c;
+						}
+					}
 
 					// TODO are we going to index items added to a local/static catalog
 					if (catalog.id != defaultCatalog.id) {
@@ -84,6 +91,7 @@ var QueryExecutor = {
 					result.catalog.searchIndex = catalog.searchIndex;
 
 					waitStatePlaceholder.empty().hide();
+					$(document.body).css("cursor", "default");
 
 					this.listeners.forEach(function(listener) {
 						if (listener.onResultChange) {
