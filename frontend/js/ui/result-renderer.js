@@ -28,14 +28,8 @@ var ResultRenderer = {
 					"queryExecutor" : queryExecutor
 				});
 
-				// Render the items
-				countContainer.empty();
-				var listerSize = result.catalog.listerSize || 40;
-				if (result.count > listerSize) {
-					countContainer.append("Showing " + listerSize + " out of " + result.count + " results");
-				} else {
-					countContainer.append("Showing " + result.count + " results");
-				}
+				countContainer.empty().append(result.count + " results");
+				result.count > 0 ? countContainer.show() : countContainer.hide();
 
 				var container = $(document.createElement("div"));
 				ItemRenderer.renderList({
@@ -49,7 +43,7 @@ var ResultRenderer = {
 				itemsContainer.append(container);
 
 				detailsContainer.hide();
-				hintPlaceholder.empty().append("Select element to show details").show();
+				hintPlaceholder.empty().append(result.count > 0 ? "Select element to show details" : "No elements to show").show();
 			},
 
 			"details" : function(existingItem, catalog) {

@@ -105,10 +105,6 @@ ul.item-list > li {
     margin: 10px 10px 0 0;
 }
 
-#catalog-button {
-    margin: 10px 10px 0 0;
-}
-
 #repository-button > button {
   background-color: #5cb85c;
   border-color: #DDD;
@@ -133,6 +129,59 @@ ul.item-list > li {
   padding: 0px;
 }
 
+.add-repository-link {
+	display : inline !important;
+	cursor: pointer;
+	text-decoration: underline;
+	padding: 0 5px 0 5px !important;
+}
+
+
+
+
+
+#catalog-button {
+    margin: 10px 10px 0 0;
+}
+
+#catalog-button > ul {
+  width: 300px;
+}
+
+#catalog-button > ul > li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+#catalog-button > ul > li > a:hover {
+  background-color: white;
+}
+
+#catalog-button > ul > .divider {
+  padding: 0px;
+}
+
+.add-catalog-link {
+	display : inline !important;
+	cursor: pointer;
+	text-decoration: underline;
+	padding: 0 5px 0 0px !important;
+}
+
+.add-catalog-input {
+	margin-right: 10px;
+	height: 35px;
+}
+
+
+
+
+
+
+
+
+
+
 #help {
 	width: 500px;
 	font-family: monospace;
@@ -150,13 +199,6 @@ ul.item-list > li {
 
 #helpButton {
 	margin-right: 20px;
-}
-
-.add-repository-link {
-	display : inline !important;
-	cursor: pointer;
-	text-decoration: underline;
-	padding: 0 5px 0 5px !important;
 }
 
 .facet {

@@ -71,12 +71,19 @@ var Repositories = {
 var Catalogs = {
 
     add : function(repositoryId, path) {
-      var r = Repositories.get(repositoryId);
+      var stored = localStorage.getItem("repositories");
+
+      var repositories = [];
+      repositories = stored ? repositories.concat(JSON.parse(stored)) : repositories;
+
+      var r = repositories.find(repo => repo.id == repositoryId);
       if (r) {
         r.catalogs.push({
-          "id" : Util.hash(uri),
+          "id" : Util.hash(r.uri + "/" + path),
           "path" : path
         });
+
+        localStorage.setItem("repositories", JSON.stringify(repositories));
       }
     },
 
@@ -108,7 +115,17 @@ var Catalogs = {
     },
 
     remove : function(id) {
+      var stored = localStorage.getItem("repositories");
 
+      var repositories = [];
+      repositories = stored ? repositories.concat(JSON.parse(stored)) : repositories;
+
+      repositories.forEach(r => {
+        var catalogs = r.catalogs.filter(c => c.id != id);
+        r.catalogs = catalogs;
+      });
+
+      localStorage.setItem("repositories", JSON.stringify(repositories));
     },
 
     denormalize : function(repository, catalog) {

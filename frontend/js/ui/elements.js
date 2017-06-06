@@ -23,5 +23,19 @@ var Elements = {
 
   span : function(classes) {
     return this.element("span", classes);
+  },
+
+  textInput : function(classes) {
+    var el = this.element("input", classes);
+    el.attr("type", "text");
+
+    return el;
+  },
+
+  button : function(classes) {
+    var el = this.element("button", classes);
+    el.attr("type", "button");
+
+    return el;
   }
 }

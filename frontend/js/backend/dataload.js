@@ -19,10 +19,11 @@
   }
 
   class IndexWrapper {
-    constructor(indexOperations) {
+    constructor(indexOperations, catalog) {
       this.indexOperations = indexOperations;
       this.index = new elasticlunr.Index();
       this.features = new FeatureCollector();
+      this.path = catalog.path;
     }
 
     async saveIndex() {
@@ -75,10 +76,13 @@
       // Reverse of adaptSearchResult
       let self = this,
           content = item._md,
-          id = '/' + item.id,
           indexOps = this.indexOperations,
           features = this.features,
           index = this.index;
+
+      // The item that has been read from the proper path has an id that contains the path
+      // Note the leading slash is not part of the item.id
+      let id = item.id.indexOf(this.path) == -1 ? '/' + this.path + "/" + item.id : "/" +  item.id;
 
       this.indexOperations.saveDocument(id, content).then((savedItem) => {
         addDocToIndex(savedItem, content, index, features);
@@ -188,7 +192,7 @@
     let fileIndex = allFiles.findIndex((entry) => entry.path === indexOps.getIndexFilePath());
     let existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
 
-    let indexWrapper = new IndexWrapper(indexOps);
+    let indexWrapper = new IndexWrapper(indexOps, catalog);
     if(existingIndexEntry) {
       Util.log('Found existing index');
       let existingIndexContent = await indexOps.getEntryContent(existingIndexEntry);
@@ -198,7 +202,7 @@
 
     if(!verifyUpToDate(indexWrapper.index, allFiles)) {
       Util.log('Existing index outdated');
-      indexWrapper = new IndexWrapper(indexOps);
+      indexWrapper = new IndexWrapper(indexOps, catalog);
       let newIndex = await rebuildIndex(indexOps, allFiles, indexWrapper.features);
       indexWrapper.index = newIndex;
       await indexWrapper.saveIndex();
