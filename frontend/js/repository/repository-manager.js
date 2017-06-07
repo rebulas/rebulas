@@ -1,7 +1,7 @@
 var Repositories = {
 
     "defaultRepository" : {"id" : 0, "uri" : "localhost", "catalogs" : [
-      {"id" : 0, "path" : ""}
+      {"id" : 0, "path" : "default"}
     ]},
 
     add : function(id, type, token) {

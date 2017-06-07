@@ -83,7 +83,7 @@
       // Note the leading slash is not part of the item.id
       let id = item.id ? "/" +  item.id : '/' + this.path + "/" + Util.uniqueId();
 
-      Util.log('Saving', item.id);
+      Util.log('Saving', id);
       this.indexOperations.saveDocument(id, content).then((savedItem) => {
         addDocToIndex(savedItem, content, index, features);
         features.calculateFieldFeatures();
@@ -91,8 +91,11 @@
         self.saveIndex();
       });
 
-      features.removeDocContent(index.documentStore.getDoc(id)._content);
-      index.removeDoc(id);
+	  let doc = index.documentStore.getDoc(id);
+      if (doc) {
+		features.removeDocContent(doc._content);
+		index.removeDoc(id);
+	  }
     }
 
     processSelectionResults(selectionResults) {
@@ -245,17 +248,25 @@
         Util.log('Found existing search index for catalog ', catalog.id);
         return catalog.searchIndex;
       }
-
-      if(catalog.uri.startsWith('dropbox.com')) {
-        let indexOps = new DropboxOperations(catalog);
-        Util.log('Loading Dropbox index');
-        return getIndexWithOps(indexOps, catalog).then((index) => {
-          catalog.searchIndex = index;
-          loadedIndices[catalog.id] = index;
-          return index;
-        });
-      }
-      return emptyIndex();
+		
+		let indexOps = undefined;
+		if (catalog.uri.startsWith('dropbox.com')) {
+			indexOps = new DropboxOperations(catalog);
+			Util.log('Loading Dropbox index');
+		} else if (catalog.uri.startsWith("localhost")) {
+			indexOps = new LocalhostOperations(catalog);
+			Util.log('Loading Localhost index');
+		}
+		
+		if (indexOps) {
+			return getIndexWithOps(indexOps, catalog).then((index) => {
+			  catalog.searchIndex = index;
+			  loadedIndices[catalog.id] = index;
+			  return index;
+			});
+		}
+		
+		return emptyIndex();
     }
   };
 }(window));
