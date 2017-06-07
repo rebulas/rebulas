@@ -72,7 +72,6 @@
     }
 
     saveItem(item) {
-      Util.log('Saving', item.id);
       // Reverse of adaptSearchResult
       let self = this,
           content = item._md,
@@ -84,6 +83,7 @@
       // Note the leading slash is not part of the item.id
       let id = item.id ? "/" +  item.id : '/' + this.path + "/" + Util.uniqueId();
 
+      Util.log('Saving', item.id);
       this.indexOperations.saveDocument(id, content).then((savedItem) => {
         addDocToIndex(savedItem, content, index, features);
         features.calculateFieldFeatures();
