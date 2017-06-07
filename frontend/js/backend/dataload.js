@@ -82,7 +82,7 @@
 
       // The item that has been read from the proper path has an id that contains the path
       // Note the leading slash is not part of the item.id
-      let id = item.id.indexOf(this.path) == -1 ? '/' + this.path + "/" + item.id : "/" +  item.id;
+      let id = item.id ? "/" +  item.id : '/' + this.path + "/" + Util.uniqueId();
 
       this.indexOperations.saveDocument(id, content).then((savedItem) => {
         addDocToIndex(savedItem, content, index, features);

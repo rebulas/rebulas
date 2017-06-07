@@ -47,7 +47,7 @@ var ResultRenderer = {
 			},
 
 			"details" : function(existingItem, catalog) {
-				var item = existingItem ? existingItem : {"id" : Util.uniqueId()};
+				var item = existingItem ? existingItem : {};
 
 				var saveCallback = function(item, newContent) {
 					detailsContainer.empty().hide();
