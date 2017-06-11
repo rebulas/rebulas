@@ -85,11 +85,20 @@
         topHeadingsValues.push(valueLexemes);
       });
 
-      return {
+      let result = {
         topHeadings: topHeadings,
         topHeadingsValues: topHeadingsValues,
         lexemes: lexemes
       };
+
+      if (topHeadings.length > 0 && topHeadingsValues.length > 0) {
+        result.heading = {
+          name : topHeadings[0].text,
+          value : topHeadingsValues[0][0].text
+        }
+      }
+
+      return result;
     }
 
     constructor() {

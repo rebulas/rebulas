@@ -79,9 +79,26 @@
           features = this.features,
           index = this.index;
 
+      let nameBasedId = undefined;
+      let analyzed = FeatureCollector.analyzeDocument(content);
+      if (analyzed.heading) {
+        nameBasedId = analyzed.heading.value
+                            .toLowerCase()
+                            .replace("'", "")
+                            .replace(/[^a-zA-Z0-9]/g, '-');
+      }
+
       // The item that has been read from the proper path has an id that contains the path
       // Note the leading slash is not part of the item.id
-      let id = item.id ? "/" +  item.id : '/' + this.path + "/" + Util.uniqueId();
+      // Try do devise a file name that hints of the content
+      let id = undefined;
+      if (item.id) {
+        id = "/" +  item.id;
+      } else {
+        let uniq = Util.uniqueId();
+        id = '/' + this.path + "/";
+        id += nameBasedId ? nameBasedId + "-" + uniq.substring(uniq.length - 2) : uniq;
+      }
 
       Util.log('Saving', id);
       this.indexOperations.saveDocument(id, content).then((savedItem) => {
