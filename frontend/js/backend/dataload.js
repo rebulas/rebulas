@@ -91,11 +91,11 @@
         self.saveIndex();
       });
 
-	  let doc = index.documentStore.getDoc(id);
+      let doc = index.documentStore.getDoc(id);
       if (doc) {
-		features.removeDocContent(doc._content);
-		index.removeDoc(id);
-	  }
+        features.removeDocContent(doc._content);
+        index.removeDoc(id);
+      }
     }
 
     processSelectionResults(selectionResults) {
@@ -248,7 +248,7 @@
         Util.log('Found existing search index for catalog ', catalog.id);
         return catalog.searchIndex;
       }
-		
+
 		let indexOps = undefined;
 		if (catalog.uri.startsWith('dropbox.com')) {
 			indexOps = new DropboxOperations(catalog);
@@ -257,7 +257,7 @@
 			indexOps = new LocalhostOperations(catalog);
 			Util.log('Loading Localhost index');
 		}
-		
+
 		if (indexOps) {
 			return getIndexWithOps(indexOps, catalog).then((index) => {
 			  catalog.searchIndex = index;
@@ -265,7 +265,7 @@
 			  return index;
 			});
 		}
-		
+
 		return emptyIndex();
     }
   };

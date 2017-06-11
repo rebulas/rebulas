@@ -183,7 +183,7 @@ ul.item-list > li {
 
 
 #help {
-	width: 500px;
+	width: 550px;
 	font-family: monospace;
 	color:#5cb85c;
 	display: none;
@@ -191,8 +191,8 @@ ul.item-list > li {
 	top:0;
 	right: 0;
 	background-color: white;
-	padding: 10px;
-	border-radius: 8px;
+	padding: 10px 20px 10px 10px;
+	border-radius: 1px;
 	border-left: 1px solid #DDD;
 	border-bottom: 1px solid #DDD;
 }

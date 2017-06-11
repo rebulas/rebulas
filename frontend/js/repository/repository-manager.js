@@ -114,6 +114,36 @@ var Catalogs = {
       return results;
     },
 
+    getByURI : function(uri) {
+
+      if (!uri) {
+        return undefined;
+      }
+
+      var catalog;
+      var repository;
+
+      if (uri[uri.length - 1] == "/") {
+        uri = uri.slice(0, -1);
+      }
+
+      Repositories.getAll().forEach(r => {
+        r.catalogs.forEach(c => {
+          var u = r.uri + "/" + c.path;
+          if (u[u.length - 1] == "/") {
+            u = u.slice(0, -1);
+          }
+
+          if (u == uri) {
+            catalog = c;
+            repository = r;
+          }
+        });
+      });
+
+      return repository && catalog ? this.denormalize(repository, catalog) : undefined;
+    },
+
     remove : function(id) {
       var stored = localStorage.getItem("repositories");
 

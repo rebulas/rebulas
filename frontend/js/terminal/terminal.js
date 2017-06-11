@@ -3,16 +3,17 @@ var Terminal = {
 
   "create" : function(args) {
     var queryExecutor = args.queryExecutor;
-    var initialResult = args.initialResult;
+
+		this.currentResult = args.initialResult;
 		this.container = args.container;
 		this.helpContainer = args.helpContainer;
 		this.newItemListener = args.newItemListener;
-		this.catalog = initialResult.catalog;
+		this.catalog = args.initialResult.catalog;
 
 		var settings = {
 			"greetings" : 'Welcome to Rebulas. Enter help or h for a list of commands.',
 			"name" : 'rebulas',
-			"prompt": this.calculatePrompt(initialResult)
+			"prompt": this.calculatePrompt(this.currentResult)
 		};
 
 		var height = this.getHeight();
@@ -30,7 +31,8 @@ var Terminal = {
 
     return {
       "onResultChange" : function(result) {
-					this.catalog = result.catalog;
+					self.currentResult = result;
+					self.catalog = result.catalog;
           terminal.set_prompt(self.calculatePrompt(result));
       },
 
@@ -75,7 +77,7 @@ var Terminal = {
 		return buffer;
 	},
 
-  "processCommand" : function(command, terminal, queryExecutor) {
+  "processCommand" : async function(command, terminal, queryExecutor) {
       var queryObject = Util.parseQueryString();
   		var q = new Query(queryObject.q);
 
@@ -114,6 +116,31 @@ var Terminal = {
 				// Give away the focus, the opening of the add/edit screen will capture it
 				terminal.focus(false);
 				this.newItemListener(this.catalog);
+			} else if (c.command == "cp") {
+				if (c.args[0] != "*") {
+					terminal.echo("Only bulk operations via the * are supported");
+				} else {
+					var result = this.currentResult;
+
+					let uri = c.args[1];
+					let catalog = Catalogs.getByURI(uri);
+
+					if (!catalog) {
+						terminal.echo("No catalog " + uri + " found");
+					} else {
+						let index = await RebulasBackend.getCatalogIndex(catalog);
+						result.items.forEach(item => {
+
+							// At present the item.id contains path information
+							// FIXME this should not be the case
+							let clone = JSON.parse(JSON.stringify(item));
+							delete clone.id;
+
+							index.saveItem(clone);
+						});
+						terminal.echo(result.count + " items copied");
+					}
+				}
       } else if (c.command == "height") {
 				var height = parseInt(c.args[0]);
 				if (!isNaN(height)) {
