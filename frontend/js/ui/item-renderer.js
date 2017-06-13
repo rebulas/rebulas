@@ -38,49 +38,59 @@ var ItemRenderer = {
 		container.empty();
 
 		var detailContainer = $(document.createElement("div"));
-		detailContainer.css("display", "inline-block");
-		detailContainer.css("width", "100%");
-		detailContainer.css("height", "95%");
+		detailContainer.addClass("details-container-inner")
 
 		var textarea = $(document.createElement("textarea"));
 		textarea.addClass("item-details-textarea");
 		textarea.append(item._md);
-		detailContainer.append(textarea);
+
+		// Remember the default state and initilize the screen with it
+		var defaultState = localStorage.getItem("default-details-state");
+		if (defaultState == "html") {
+			var md = window.markdownit();
+			detailContainer.html(md.render(item._md));
+		} else {
+			detailContainer.append(textarea);
+		}
 
 		container.append(detailContainer);
 
-		var mdToggle = $(document.createElement("span"));
-		mdToggle.addClass("glyphicon glyphicon-play-circle pull-left");
-		mdToggle.css("font-size", "1.5em");
-		mdToggle.css("cursor", "pointer");
-		mdToggle.click(function() {
-			if (mdToggle.hasClass("glyphicon-play-circle")) {
-				var md = window.markdownit();
-				detailContainer.html(md.render(item._md));
-				mdToggle.removeClass("glyphicon-play-circle").addClass("glyphicon-edit");
-			} else {
-				detailContainer.empty();
-				detailContainer.append(textarea);
-				mdToggle.removeClass("glyphicon-edit").addClass("glyphicon-play-circle");
-
-				setTimeout(function() {
-						textarea.focus();
-				},0);
-			}
-		});
-		container.append(mdToggle);
-
 		var saveButton = $(document.createElement("button"));
-		saveButton.addClass("btn btn-success pull-right");
+		saveButton.addClass("btn btn-success save-button");
 		saveButton.append("  Save  ");
 		saveButton.click(() => saveCallback(textarea.val()));
 		container.append(saveButton);
 
 		var cancelButton = $(document.createElement("button"));
-		cancelButton.addClass("btn btn-default pull-right");
+		cancelButton.addClass("btn btn-default cancel-button");
 		cancelButton.append("Cancel");
 		cancelButton.click(cancelCallback);
 		container.append(cancelButton);
+
+		var previewButton = $(document.createElement("button"));
+		previewButton.addClass("btn btn-default");
+		previewButton.addClass(defaultState == "html" ? "html" : "md");
+		previewButton.append(defaultState == "html" ? "Markdown" : "Preview");
+		previewButton.click(function() {
+			if (previewButton.hasClass("md")) {
+				var md = window.markdownit();
+				detailContainer.empty().html(md.render(item._md));
+				previewButton.removeClass("md").addClass("html");
+				previewButton.empty().append("Markdown");
+
+				localStorage.setItem("default-details-state", "html");
+			} else {
+				detailContainer.empty().append(textarea);
+				previewButton.removeClass("html").addClass("md");
+				previewButton.empty().append("Preview");
+
+				localStorage.setItem("default-details-state", "md");
+				setTimeout(function() {
+						textarea.focus();
+				},0);
+			}
+		});
+		container.append(previewButton);
 
 		// Since renderDetails is called within the event chain of the click that triggered it
 		// the focus here is overtaken by the focus of the element the event was attached to.
