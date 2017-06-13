@@ -72,7 +72,26 @@ var ResultRenderer = {
 			},
 
 			"newItem" : function(catalog) {
-				this.details(null, catalog);
+
+				// Pre-load the item with the most probably heading sections based on
+				// the existing documents in the index
+				var fields = [];
+				if (catalog.searchIndex) {
+					Object.keys(catalog.searchIndex.features.fieldFeatures).forEach((key) => {
+						let title = key.charAt(0).toUpperCase() + key.slice(1);
+						fields.push(title);
+					});
+				}
+
+				var item = {
+					"_md" : ""
+				};
+
+				fields.forEach(field => {
+						item._md += "# " + field + String.fromCharCode(13).repeat(3);
+				});
+
+				this.details(item, catalog);
 			}
 		}
 	}
