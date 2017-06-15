@@ -49,13 +49,22 @@ var ResultRenderer = {
 			"details" : function(existingItem, catalog) {
 				var item = existingItem ? existingItem : {};
 
-				var saveCallback = function(item, newContent) {
-					detailsContainer.empty().hide();
-					itemsContainer.fadeIn();
+				var saveCallback = function(item, newContent, close = true) {
+					if (close) {
+						detailsContainer.empty().hide();
+						itemsContainer.fadeIn();
+					}
 
 					if (newContent) {
 						item._md = newContent;
 						catalog.searchIndex.saveItem(item);
+
+						if (close) {
+							hintPlaceholder.empty().append("Item saved").show();
+							setTimeout(function() {
+								hintPlaceholder.empty().append("Select element to show details");
+							}, 3000);
+						}
 					}
 				};
 

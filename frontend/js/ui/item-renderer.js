@@ -56,10 +56,26 @@ var ItemRenderer = {
 		container.append(detailContainer);
 
 		var saveButton = $(document.createElement("button"));
-		saveButton.addClass("btn btn-success save-button");
-		saveButton.append("  Save  ");
-		saveButton.click(() => saveCallback(textarea.val()));
+		saveButton.addClass("btn btn-success save-button disabled");
+		saveButton.append("  Save & Close ");
 		container.append(saveButton);
+
+
+		// Handle Ctrl + S
+		textarea.on('keydown', function(e){
+			if (e.keyCode == 83 && (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey))      {
+        e.preventDefault();
+				saveCallback(textarea.val(), false);
+				saveButton.addClass("disabled");
+				saveButton.off("click");
+        return false;
+	    }
+		});
+
+		textarea.on("input", function(e) {
+				saveButton.removeClass("disabled");
+				saveButton.click(() => saveCallback(textarea.val()));
+		});
 
 		var cancelButton = $(document.createElement("button"));
 		cancelButton.addClass("btn btn-default cancel-button");

@@ -68,6 +68,7 @@ html, body {
   width : 100%;
 	min-height : 600px;
 	margin-bottom: 30px;
+	outline: none;
 }
 
 .save-button {
