@@ -93,6 +93,28 @@ $(document).ready(function() {
 			setTimeout(terminal.focus, 100);
 			$("#help").fadeOut();
 		});
+
+		var lastCtrlKeyPress = 0;
+		$(document).on("keyup", function(e) {
+			// A really stupid way to detect if the terminal is focused. Could not find any reasonable utility to do this
+			// We need to distinguish between double control key press when the terminal is focused (blurs the terminal) and
+			// the same event when the terminal is not focused (focuses the terminal)
+			//
+			// In this case the JQuery terminal happens to have a text area that has the class "clipboard". During upgrades
+			// of the library this may fail
+			let terminalFocused = document.activeElement.getAttribute("class") == "clipboard";
+
+			if (e.which == 17 && !terminalFocused) {
+				let now = new Date().getTime();
+				if (now - lastCtrlKeyPress > 300) {
+					lastCtrlKeyPress = now;
+				} else {
+					// Double Ctrl key press
+					terminal.focus();
+				}
+			}
+		});
+
 	});
 
 	RepositoryConfigurator.render({
@@ -151,7 +173,6 @@ $(document).ready(function() {
 					<div id="hintPlaceholder"></div>
 				</div>
 			</div>
-
 
 			<div id="help" class="pull-right">
 				<b>Rebulas Terminal Reference</b>

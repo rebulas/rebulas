@@ -10,11 +10,23 @@ var Terminal = {
 		this.newItemListener = args.newItemListener;
 		this.catalog = args.initialResult.catalog;
 
+		var lastCtrlKeyPress = 0;
 		var settings = {
 			"greetings" : 'Welcome to Rebulas. Enter help or h for a list of commands.',
 			"name" : 'rebulas',
-			"prompt": this.calculatePrompt(this.currentResult)
-		};
+			"prompt": this.calculatePrompt(this.currentResult),
+			"keymap" : {
+				"CTRL" : function() {
+					let now = new Date().getTime();
+					if (now - lastCtrlKeyPress > 300) {
+						lastCtrlKeyPress = now;
+					} else {
+						// Double Ctrl key press
+						terminal.focus(false);
+					}
+				}
+			}
+		}
 
 		var height = this.getHeight();
 		if (!isNaN(height)) {
