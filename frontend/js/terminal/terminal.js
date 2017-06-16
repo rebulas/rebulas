@@ -23,8 +23,16 @@ var Terminal = {
 					} else {
 						// Double Ctrl key press
 						terminal.focus(false);
+
+						// Show the keyboard navigation shortcuts when we blur the terminal
+						Keymap.activateShortcuts();
 					}
 				}
+			},
+
+			"onFocus" : function(terminal) {
+				// We don't want shortcuts triggering while typing in the terminal
+				Keymap.deActivateShortcuts();
 			}
 		}
 

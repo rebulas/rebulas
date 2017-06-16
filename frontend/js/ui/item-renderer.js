@@ -12,6 +12,9 @@ var ItemRenderer = {
 		var items = args.items;
 		items.forEach((item) => {
 			var li = $(document.createElement("li"));
+			li.addClass("focusable-link"); // Virtual class used to identify links that can be activated by keyboard shortcust
+			li.attr("id", Util.uniqueId()) // Used to identify and activate the link
+
 			li.click({"item" : item, "catalog" : catalog}, function(event) {
 				clickListener(event.data.item, event.data.catalog);
 

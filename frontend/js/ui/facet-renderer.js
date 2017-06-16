@@ -214,6 +214,8 @@ var FacetRenderer = {
 
         var link = $(document.createElement("a"));
         link.css("cursor", "pointer");
+        link.addClass("focusable-facet"); // Virtual class used to identify links that can be activated by keyboard shortcust
+        link.attr("id", Util.uniqueId()) // Used to identify and activate the link
         link.click({"link" : self.createLink(value.link, catalog)}, function(ev) {
 
             // Sorting a result list does not refresh the facet panel but it modifies the URL

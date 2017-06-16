@@ -49,10 +49,16 @@ var ResultRenderer = {
 			"details" : function(existingItem, catalog) {
 				var item = existingItem ? existingItem : {};
 
+				// We don't want shortcuts triggering while we edit
+				Keymap.deActivateShortcuts();
+
 				var saveCallback = function(item, newContent, close = true) {
 					if (close) {
 						detailsContainer.empty().hide();
 						itemsContainer.fadeIn();
+
+						// We don't want shortcuts triggering while we edit
+						Keymap.activateShortcuts();
 					}
 
 					if (newContent) {

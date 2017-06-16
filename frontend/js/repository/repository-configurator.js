@@ -95,12 +95,27 @@ var RepositoryConfigurator = {
 			} else {
 				catalogContainer.hide();
 			}
+
+
+			// Stop listening to keyboard shortcuts when the menues open
+			catalogContainer.on('show.bs.dropdown', function() {
+				Keymap.deActivateShortcuts();
+			});
+			repositoryContainer.on('show.bs.dropdown', function() {
+				Keymap.deActivateShortcuts();
+			});
+			catalogContainer.on('hide.bs.dropdown', function() {
+				Keymap.activateShortcuts();
+			});
+			repositoryContainer.on('hide.bs.dropdown', function() {
+				Keymap.activateShortcuts();
+			});
 		},
 
 		buildCatalogDropdown : function(args, currentCatalog, repository) {
 				var catalogContainer = args.catalogContainer;
 				var queryExecutor = args.queryExecutor;
-				
+
 				var currentCatalogContainer = catalogContainer.find(".current-catalog").first();
 				currentCatalogContainer.empty().append("Catalog " + currentCatalog.path);
 

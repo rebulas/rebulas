@@ -261,7 +261,7 @@ ul.item-list > li {
 }
 
 .facet-value {
-	margin: 3px 0 0 3px;
+	margin: 3px 0 0 15px;
 }
 
 .facet-value > a {
@@ -294,4 +294,19 @@ ul.item-list > li {
 	color: #FFFAFA !important;
 	text-transform: none !important;
 	margin-right: 5px;
+}
+
+.keyboard-hint {
+	width: 25px;
+	height: 22px;
+	padding: 0 2px 0 2px;
+	text-align: center;
+	position: absolute;
+	top: 0;
+	left: -25px;
+	border: 1px dotted #DDD;
+	background-color: white;
+	color: #6d706f;
+	font-weight: normal !important;
+	font-style: normal !important;
 }

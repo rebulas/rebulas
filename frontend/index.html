@@ -21,6 +21,7 @@
 <script type="text/javascript" src="js/ui/item-renderer.js"></script>
 <script type="text/javascript" src="js/ui/result-renderer.js"></script>
 <script type="text/javascript" src="js/ui/elements.js"></script>
+<script type="text/javascript" src="js/ui/keymap.js"></script>
 <script type="text/javascript" src="js/query/query.js"></script>
 <script type="text/javascript" src="js/query/query-executor.js"></script>
 <script type="text/javascript" src="js/terminal/terminal.js"></script>
@@ -94,26 +95,12 @@ $(document).ready(function() {
 			$("#help").fadeOut();
 		});
 
-		var lastCtrlKeyPress = 0;
-		$(document).on("keyup", function(e) {
-			// A really stupid way to detect if the terminal is focused. Could not find any reasonable utility to do this
-			// We need to distinguish between double control key press when the terminal is focused (blurs the terminal) and
-			// the same event when the terminal is not focused (focuses the terminal)
-			//
-			// In this case the JQuery terminal happens to have a text area that has the class "clipboard". During upgrades
-			// of the library this may fail
-			let terminalFocused = document.activeElement.getAttribute("class") == "clipboard";
-
-			if (e.which == 17 && !terminalFocused) {
-				let now = new Date().getTime();
-				if (now - lastCtrlKeyPress > 300) {
-					lastCtrlKeyPress = now;
-				} else {
-					// Double Ctrl key press
-					terminal.focus();
-				}
-			}
+		var keymap = Keymap.create({
+			"terminal" : terminal
 		});
+
+		// Remap the shortcuts when the result changes
+		queryExecutor.addListener(keymap);
 
 	});
 
