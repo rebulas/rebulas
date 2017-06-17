@@ -1,4 +1,7 @@
 (function(exports) {
+  let Util = exports.Util || require('../util/util').Util,
+      marked = exports.marked || require('../../style/marked.min');
+
   class FeatureCollector {
     static mean(arr) {
       return arr.reduce((t, v) => t + v, 0) / arr.length;

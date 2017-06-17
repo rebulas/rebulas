@@ -1,12 +1,16 @@
 (function(exports) {
   let Util = exports.Util || require('../util/util').Util,
+      performance = exports.performance || {
+        now: () => process.hrtime()[1] / 1000000
+      },
       elasticlunr = exports.elasticlunr || require('./elasticlunr'),
       FeatureCollector = exports.FeatureCollector || require('./faceting').FeatureCollector,
       DropboxOperations = exports.DropboxOperations || require('./dropbox').DropboxOperations,
       localhost = (exports.LocalhostOperations && exports) || require('./localhost'),
       LocalhostOperations = localhost.LocalhostOperations,
       RejectingOperations = localhost.RejectingOperations,
-      LocalWrapperOperations = localhost.LocalWrapperOperations;
+      LocalWrapperOperations = localhost.LocalWrapperOperations,
+      Query = exports.Query || require('../query/query').Query;
 
   function addDocToIndex(doc, content, index, features) {
     Util.log('Indexing', doc.id);
@@ -34,10 +38,10 @@
       this.path = catalog.path;
     }
 
-    async saveIndex() {
+    saveIndex() {
       Util.log('Saving index');
       let ops = this.indexOperations;
-      await ops.saveIndexContent({
+      return ops.saveIndexContent({
         index: this.index.toJSON(),
         features: this.features.toJSON()
       });
@@ -109,11 +113,13 @@
       }
 
       Util.log('Saving', id);
-      this.indexOperations.saveDocument(id, content).then((savedItem) => {
-        addDocToIndex(savedItem, content, index, features);
-        features.calculateFieldFeatures();
-        // TODO: Recalculate field statistics
-        self.saveIndex();
+      let result;
+      result = new Promise((resolve, reject) => {
+        this.indexOperations.saveDocument(id, content).then((savedItem) => {
+          addDocToIndex(savedItem, content, index, features);
+          features.calculateFieldFeatures();
+          self.saveIndex().then(resolve, reject);
+        });
       });
 
       let doc = index.documentStore.getDoc(id);
@@ -121,6 +127,7 @@
         features.removeDocContent(doc._content);
         index.removeDoc(id);
       }
+      return result;
     }
 
     processSelectionResults(selectionResults) {

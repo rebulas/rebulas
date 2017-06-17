@@ -2,6 +2,14 @@
   let Util = exports.Util || require('../util/util').Util,
       Dropbox = exports.Dropbox || require('dropbox');
 
+  function createUploadPayload(content) {
+    if(typeof Blob != 'undefined') {
+      return new Blob([JSON.stringify(content)], { type: 'application/json' });
+    } else {
+      return content;
+    }
+  }
+
   class DropboxOperations {
     constructor(catalog) {
       this.dbx = new Dropbox({ accessToken: catalog.token });
@@ -51,11 +59,10 @@
     }
 
     saveDocument(path, content) {
-      let blob = new Blob([content], { type: 'application/json' });
       return new Promise((resolve, reject) => {
         this.dbx.filesUpload({
           path: path,
-          contents: blob,
+          contents: createUploadPayload(content),
           mute: true,
           mode: {
             '.tag': 'overwrite'
@@ -94,10 +101,9 @@
 
     saveIndexContent(index) {
       Util.log('Saving index', this.indexFile);
-      let blob = new Blob([JSON.stringify(index)], { type: 'application/json' });
       return this.dbx.filesUpload({
         path: this.indexFile,
-        contents: blob,
+        contents: createUploadPayload(JSON.stringify(index)),
         mute: true,
         mode: {
           '.tag': 'overwrite'

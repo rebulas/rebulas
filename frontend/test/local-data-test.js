@@ -2,23 +2,49 @@ let fs = require('fs'),
     dataload = require('../js/backend/dataload.js'),
     testStorage = require('../testlib/localstorage');
 
-let catalog = {
+let dummyItem = {
+  _md: '# Name\nDummy Item'
+};
+
+let dropboxCatalog = {
   id: 1,
   uri: 'dropbox.com',
   path: 'default',
-  token: ''
+  token: 'Kwxy6aJcFqAAAAAAAAABu0820e1KfmpBpZlUehqKn45sf9hVt3uU6Qpl8d-CLuT_'
 };
 
-module.exports.testGetDropboxIndex = async (test) => {
+let localCatalog = {
+  id: 2,
+  uri: 'localhost',
+  path: 'default'
+};
+
+async function verifyCatalog(test, catalog) {
   try {
     let catalogIndex = await dataload.RebulasBackend.getCatalogIndex(catalog);
-    console.log('Built index', catalogIndex);
+    await catalogIndex.saveItem(dummyItem);
+    let result = catalogIndex.search('dummy');
+    test.ok(result.items.length >= 1, 'Has result');
   } catch(e) {
-    test.fail(e);
+    console.error(e);
+    test.ok(false, e);
   }
   test.done();
+}
+
+module.exports.testLocalIndex = async (test) => verifyCatalog(test, localCatalog);
+
+module.exports.testDropboxIndex = async (test) => {
+  if(dropboxCatalog.token)
+    verifyCatalog(test, dropboxCatalog);
+  else
+    test.done();
 };
 
+module.exports.setUp = (cb) => {
+  testStorage.setUp();
+  cb();
+};
 module.exports.tearDown = (cb) => {
   testStorage.LocalStorage.clear();
   testStorage.tearDown();

@@ -92,7 +92,6 @@
 	}
 
 	class LocalhostOperations {
-
 		constructor(catalog) {
 			var path = catalog.path ? catalog.path : "";
 			if (path && path[0] != "/") {

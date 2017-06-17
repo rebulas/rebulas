@@ -1,3 +1,4 @@
+(function(exports) {
 function Query(queryString) {
 	this.criteria = [];
 	var self = this;
@@ -245,3 +246,5 @@ function isQuery(queryString) {
 	var query = new Query(queryString);
 	return queryString.length > 1 && query.getSelections().length > 0;
 }
+exports.Query = Query;
+}((typeof module != 'undefined' && module.exports) || window));
