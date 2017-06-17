@@ -1,4 +1,4 @@
-const rebulasDropboxClientID = "f0l5xgrg354cgs0";
+const rebulasDropboxClientID = "jimrv9o4n8d3yyj";
 
 // Register on-going OAuth sessions for mapping to OAuth callbacks
 window.OAuthSessions = [];

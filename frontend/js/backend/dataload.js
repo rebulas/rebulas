@@ -1,4 +1,12 @@
-(function(window) {
+(function(exports) {
+  let Util = exports.Util || require('../util/util').Util,
+      elasticlunr = exports.elasticlunr || require('./elasticlunr'),
+      FeatureCollector = exports.FeatureCollector || require('./faceting').FeatureCollector,
+      DropboxOperations = exports.DropboxOperations || require('./dropbox').DropboxOperations,
+      localhost = (exports.LocalhostOperations && exports) || require('./localhost'),
+      LocalhostOperations = localhost.LocalhostOperations,
+      RejectingOperations = localhost.RejectingOperations,
+      LocalWrapperOperations = localhost.LocalWrapperOperations;
 
   function addDocToIndex(doc, content, index, features) {
     Util.log('Indexing', doc.id);
@@ -233,16 +241,16 @@
     async function rebuildIndex(indexOps, allFiles, features) {
       Util.log('Rebuilding index');
       let index = new elasticlunr.Index();
-      let promises = [];
-      allFiles.forEach((entry) => {
-        promises.push(indexOps.getEntryContent(entry).then((content) => {
+
+      let promises = allFiles.map((entry) => {
+        return indexOps.getEntryContent(entry).then((content) => {
           let doc = {
             id: entry.path,
             name: entry.name,
             rev: entry.rev
           };
           addDocToIndex(doc, content, index, features);
-        }));
+        });
       });
 
       await Promise.all(promises);
@@ -257,7 +265,7 @@
   }
 
   let loadedIndices = {};
-  window.RebulasBackend = {
+  exports.RebulasBackend = {
     getCatalogIndex: async function(catalog) {
       elasticlunr.tokenizer.seperator = /([\s\-,]|(\. ))+/;
       if(loadedIndices[catalog.id]) {
@@ -269,6 +277,7 @@
 		let indexOps = undefined;
 		if (catalog.uri.startsWith('dropbox.com')) {
 			indexOps = new DropboxOperations(catalog);
+			//indexOps = new LocalWrapperOperations(catalog, indexOps);
 			Util.log('Loading Dropbox index');
 		} else if (catalog.uri.startsWith("localhost")) {
 			indexOps = new LocalhostOperations(catalog);
@@ -276,14 +285,17 @@
 		}
 
 		if (indexOps) {
-			return getIndexWithOps(indexOps, catalog).then((index) => {
-			  catalog.searchIndex = index;
-			  loadedIndices[catalog.id] = index;
-			  return index;
-			});
+			try {
+				let index = await getIndexWithOps(indexOps, catalog);
+				catalog.searchIndex = index;
+				loadedIndices[catalog.id] = index;
+				return index;
+			} catch(e) {
+				Util.error(e);
+			}
 		}
 
 		return emptyIndex();
     }
   };
-}(window));
+}((typeof module != 'undefined' && module.exports) || window));

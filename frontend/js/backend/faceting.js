@@ -1,5 +1,4 @@
 (function(exports) {
-
   class FeatureCollector {
     static mean(arr) {
       return arr.reduce((t, v) => t + v, 0) / arr.length;
@@ -244,4 +243,4 @@
   }
 
   exports.FeatureCollector = FeatureCollector;
-}(window));
+}((typeof module != 'undefined' && module.exports) || window));
