@@ -1,4 +1,4 @@
-var Elements = {
+module.exports = {
 
   element : function(name, classes) {
     var el = $(document.createElement(name));

@@ -1,6 +1,6 @@
-(function(exports) {
-  let Util = exports.Util || require('../util/util').Util,
-      Dropbox = exports.Dropbox || require('dropbox');
+var Util = require("extra/util");
+var Dropbox = require('dropbox');
+
 
   function createUploadPayload(content) {
     if(typeof Blob != 'undefined') {
@@ -111,6 +111,4 @@
       });
     }
   }
-
-  exports.DropboxOperations = DropboxOperations;
-}((typeof module != 'undefined' && module.exports) || window));
+  module.exports.DropboxOperations = DropboxOperations;

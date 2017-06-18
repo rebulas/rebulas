@@ -1,7 +1,14 @@
+var Catalogs = require("repository/repository-manager").Catalogs;
+var Repositories = require("repository/repository-manager").Repositories;
+var Util = require("extra/util");
+var Elements = require("ui/elements");
+var RepositoryController = require("repository/repository-controller");
+var Keymap = require("ui/keymap");
 
-var RepositoryConfigurator = {
+module.exports = {
 
 		"render" : function(args) {
+			var self = this;
 			var repositoryContainer = args.repositoryContainer;
 			var catalogContainer = args.catalogContainer;
 			var queryExecutor = args.queryExecutor;
@@ -45,7 +52,7 @@ var RepositoryConfigurator = {
 					delete q.q;
 
 					queryExecutor.navigate("?" + Util.queryObjectToString(q), function(result) {
-						RepositoryConfigurator.render(args);
+						self.render(args);
 					});
 				});
 				var div = Elements.div();
@@ -56,7 +63,7 @@ var RepositoryConfigurator = {
 					Repositories.remove(event.data.id);
 
 					queryExecutor.navigate("?", function(result) {
-						RepositoryConfigurator.render(args);
+						self.render(args);
 					});
 				});
 
@@ -74,7 +81,7 @@ var RepositoryConfigurator = {
 				RepositoryController.initDropboxOAuth(function(repository) {
 					var catalogId = repository.catalogs[0].id;
 					queryExecutor.navigate("?catalog=" + catalogId, function(result) {
-						RepositoryConfigurator.render(args);
+						self.render(args);
 					});
 				})
 			});
@@ -113,6 +120,7 @@ var RepositoryConfigurator = {
 		},
 
 		buildCatalogDropdown : function(args, currentCatalog, repository) {
+				var self = this;
 				var catalogContainer = args.catalogContainer;
 				var queryExecutor = args.queryExecutor;
 
@@ -137,7 +145,7 @@ var RepositoryConfigurator = {
 						delete q.q;
 
 						queryExecutor.navigate("?" + Util.queryObjectToString(q), function(result) {
-							RepositoryConfigurator.render(args);
+							self.render(args);
 						});
 					});
 					var div = Elements.div();
@@ -151,10 +159,10 @@ var RepositoryConfigurator = {
 							var q = Util.parseQueryString();
 							if (q.catalog == event.data.id) {
 								queryExecutor.navigate("?", function(result) {
-									RepositoryConfigurator.render(args);
+									self.render(args);
 								});
 							} else {
-								RepositoryConfigurator.render(args);
+								self.render(args);
 							}
 						}
 					});
@@ -172,7 +180,7 @@ var RepositoryConfigurator = {
 				button.click(function() {
 					var path = catalogName.val();
 					Catalogs.add(repository.id, path);
-					RepositoryConfigurator.render(args);
+					self.render(args);
 				});
 				var li = Elements.li().append(catalogName).append(button);
 				listContainer.append(li);

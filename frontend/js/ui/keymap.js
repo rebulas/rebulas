@@ -1,4 +1,6 @@
-var Keymap = {
+var Elements = require("ui/elements");
+
+module.exports = {
 
   "lastChar" : undefined,
   "lastCharTimestamp" : 0,

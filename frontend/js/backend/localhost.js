@@ -1,6 +1,6 @@
-(function(exports) {
-	let Util = exports.Util || require('../util/util').Util,
-			localforage = exports.localforage || require('./localforage.min');
+var Util = require("extra/util");
+var localforage = require('localforage');
+
 
 	class RejectingOperations {
 		constructor(catalog) {
@@ -157,8 +157,6 @@
 			return this.saveDocument(this.indexFile, JSON.stringify(index));
 		}
 	}
-
 	exports.RejectingOperations = RejectingOperations;
 	exports.LocalhostOperations = LocalhostOperations;
 	exports.LocalWrapperOperations = LocalWrapperOperations;
-}((typeof module != 'undefined' && module.exports) || window));

@@ -1,4 +1,8 @@
-var ResultRenderer = {
+var ItemRenderer = require("ui/item-renderer");
+var FacetRenderer = require("ui/facet-renderer");
+var Keymap = require("ui/keymap");
+
+module.exports = {
 
 	"create" : function(args) {
 		var queryExecutor = args.queryExecutor;

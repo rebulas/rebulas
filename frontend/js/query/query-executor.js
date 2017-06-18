@@ -1,4 +1,9 @@
-var QueryExecutor = {
+var RebulasBackend = require("backend/dataload").RebulasBackend;
+var Query = require("query/query");
+var Catalogs = require("repository/repository-manager").Catalogs;
+var Util = require("extra/util");
+
+module.exports = {
 
 		create : function(args) {
 			var waitStatePlaceholder = args.waitStatePlaceholder;

@@ -1,4 +1,6 @@
-var ItemRenderer = {
+var Util = require("extra/util");
+
+module.exports = {
 
 	renderList : function(args) {
 

@@ -1,4 +1,6 @@
-var FacetRenderer = {
+var Util = require("extra/util");
+
+module.exports = {
 
     // To be used as a buffer for Ctrl + facets clicks in order to produce an or query
     "orQueue" : [],

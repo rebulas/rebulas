@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "description": "Rebulas - Productivity for the technically minded",
   "scripts": {
-    "start": "node server.js",
+    "start": "export NODE_PATH=./js; beefy main.js 8080",
+    "build": "export NODE_PATH=./js; browserify main.js > dist/main.js",
     "test": "nodeunit"
   },
   "devDependencies": {
@@ -11,5 +12,25 @@
     "filereader": "^0.10.3",
     "node-localstorage": "^1.3.0",
     "nodeunit": "^0.11.1"
+  },
+  "dependencies": {
+    "beefy": "^2.1.1",
+    "bootstrap": "^3.2.0",
+    "browserify": "^5.10.0",
+    "cssify": "^0.6.0",
+    "dropbox": "^2.5.4",
+    "elasticlunr": "^0.9.5",
+    "jquery": "^2.1.1",
+    "jquery-browserify": "^1.8.1",
+    "jquery-mousewheel": "^3.1.13",
+    "jquery.terminal": "^1.4.3",
+    "localforage": "^1.5.0",
+    "markdown-it": "^8.3.1",
+    "marked": "^0.3.6"
+  },
+  "browserify": {
+    "transform": [
+      "cssify"
+    ]
   }
 }

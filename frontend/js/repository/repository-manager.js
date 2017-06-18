@@ -171,3 +171,7 @@ var Catalogs = {
       }
     }
 }
+
+
+module.exports.Catalogs = Catalogs;
+module.exports.Repositories = Repositories;

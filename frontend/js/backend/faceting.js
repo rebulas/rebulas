@@ -1,6 +1,5 @@
-(function(exports) {
-  let Util = exports.Util || require('../util/util').Util,
-      marked = exports.marked || require('../../style/marked.min');
+var Util = require("extra/util");
+var marked = require("marked");
 
   class FeatureCollector {
     static mean(arr) {
@@ -244,6 +243,4 @@
       }
     }
   }
-
-  exports.FeatureCollector = FeatureCollector;
-}((typeof module != 'undefined' && module.exports) || window));
+  module.exports.FeatureCollector = FeatureCollector;

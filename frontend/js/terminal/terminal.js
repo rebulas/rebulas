@@ -1,4 +1,9 @@
-var Terminal = {
+var Keymap = require("ui/keymap");
+var Util = require("extra/util");
+var Query = require("query/query");
+
+module.exports = {
+
 	"container" : undefined,
 
   "create" : function(args) {

@@ -1,16 +1,12 @@
-(function(exports) {
-  let Util = exports.Util || require('../util/util').Util,
-      performance = exports.performance || {
-        now: () => process.hrtime()[1] / 1000000
-      },
-      elasticlunr = exports.elasticlunr || require('./elasticlunr'),
-      FeatureCollector = exports.FeatureCollector || require('./faceting').FeatureCollector,
-      DropboxOperations = exports.DropboxOperations || require('./dropbox').DropboxOperations,
-      localhost = (exports.LocalhostOperations && exports) || require('./localhost'),
-      LocalhostOperations = localhost.LocalhostOperations,
-      RejectingOperations = localhost.RejectingOperations,
-      LocalWrapperOperations = localhost.LocalWrapperOperations,
-      Query = exports.Query || require('../query/query').Query;
+var Util = require("extra/util");
+var elasticlunr = require('elasticlunr');
+var FeatureCollector = require('backend/faceting').FeatureCollector;
+var DropboxOperations = require('backend/dropbox').DropboxOperations;
+var localhost = require('backend/localhost');
+var LocalhostOperations = localhost.LocalhostOperations;
+var RejectingOperations = localhost.RejectingOperations;
+var LocalWrapperOperations = localhost.LocalWrapperOperations;
+var Query = require('query/query');
 
   function addDocToIndex(doc, content, index, features) {
     Util.log('Indexing', doc.id);
@@ -305,4 +301,3 @@
 		return emptyIndex();
     }
   };
-}((typeof module != 'undefined' && module.exports) || window));

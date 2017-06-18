@@ -11,7 +11,10 @@ window.OAuthCallback = function(args) {
 	}
 }
 
-var RepositoryController = {
+var Util = require("extra/util");
+var Repositories = require("repository/repository-manager").Repositories;
+
+module.exports = {
 
 	"initDropboxOAuth" : function(successCallback) {
 		// Both URLs must be registered with the Dropbox app referenced by the rebulasDropboxClientID
