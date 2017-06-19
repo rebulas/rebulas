@@ -1,21 +1,3 @@
-// Register jQuery
-window.jQuery = $ = require('jquery');
-
-// Bootstrap
-require('bootstrap/dist/js/bootstrap');
-require('./node_modules/bootstrap/dist/css/bootstrap.css');
-
-// Terminal
-require("jquery.terminal/js/jquery.terminal.js");
-require('./node_modules/jquery.terminal/css/jquery.terminal.css');
-
-// Markdown
-require("marked");
-require("markdown-it");
-
-// Dropbox
-require("dropbox");
-
 var Util = require("extra/util");
 var QueryExecutor = require("query/query-executor");
 var Terminal = require("terminal/terminal");
