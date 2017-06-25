@@ -8,7 +8,10 @@ image: node:6.9.4
 pipelines:
   default:
     - step:
+        caches:
+          - node      
         script: # Modify the commands below to build your repository.
           - npm install
           - npm run build
           - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"dist-0.0.1.tgz"
+          - curl http://rebulas.com/12adj723s/update.php
