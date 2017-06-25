@@ -10,7 +10,6 @@ let dropboxCatalog = {
   id: 1,
   uri: 'dropbox.com',
   path: 'default',
-  token: 'Kwxy6aJcFqAAAAAAAAABu0820e1KfmpBpZlUehqKn45sf9hVt3uU6Qpl8d-CLuT_'
 };
 
 let localCatalog = {

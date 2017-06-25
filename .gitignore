@@ -1,4 +1,3 @@
+testdata*
+bundle.js
 node_modules
-.project
-.settings
-*~
