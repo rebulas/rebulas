@@ -6,7 +6,9 @@
     "watch": "export NODE_PATH=./js; watchify main.js -o bundle.js -dv",
     "server": "node server.js",
     "start": "npm-run-all -p -r watch server",
-    "build": "export NODE_PATH=./js; browserify -d main.js > bundle.js",
+    "dist" : "mkdir -p dist && cp index.html bundle.js main.css dist/ && cp -r style oauth dist/",
+    "browserify": "export NODE_PATH=./js; browserify -d main.js > bundle.js",
+    "build" : "npm run browserify && npm run dist && tar -czvf dist-$npm_package_version.tgz dist",
     "test": "nodeunit"
   },
   "devDependencies": {
