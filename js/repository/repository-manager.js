@@ -1,3 +1,5 @@
+var Util = require("extra/util");
+
 var Repositories = {
 
     "defaultRepository" : {"id" : 0, "uri" : "localhost", "catalogs" : [
