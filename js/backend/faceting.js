@@ -243,4 +243,5 @@ var marked = require("marked");
       }
     }
   }
+
   module.exports.FeatureCollector = FeatureCollector;
