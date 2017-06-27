@@ -3,13 +3,13 @@
   "version": "0.0.1",
   "description": "Rebulas - Productivity for the technically minded",
   "scripts": {
-    "watch": "cross-env NODE_PATH=./js; watchify main.js -o bundle.js -dv",
+    "watch": "cross-env NODE_PATH=./js watchify main.js -o bundle.js -dv",
     "server": "node server.js",
     "start": "npm-run-all -p -r watch server",
     "dist": "mkdir -p dist && cp index.html bundle.js main.css dist/ && cp -r style oauth dist/",
-    "browserify": "cross-env NODE_PATH=./js; browserify -d main.js > bundle.js",
+    "browserify": "cross-env NODE_PATH=./js browserify -d main.js > bundle.js",
     "build": "npm run browserify && npm run dist && tar -czvf dist-$npm_package_version.tgz dist",
-    "test": "cross-env NODE_PATH=./js; nodeunit"
+    "test": "cross-env NODE_PATH=./js nodeunit"
   },
   "devDependencies": {
     "cross-env": "^5.0.1",
