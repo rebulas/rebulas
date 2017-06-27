@@ -1,4 +1,5 @@
 var Util = require("extra/util");
+var marked = require("marked");
 
 module.exports = {
 
@@ -52,8 +53,7 @@ module.exports = {
 		// Remember the default state and initilize the screen with it
 		var defaultState = localStorage.getItem("default-details-state");
 		if (defaultState == "html") {
-			var md = window.markdownit();
-			detailContainer.html(md.render(item._md));
+			detailContainer.html(marked(item._md));
 		} else {
 			detailContainer.append(textarea);
 		}
@@ -94,8 +94,7 @@ module.exports = {
 		previewButton.append(defaultState == "html" ? "Markdown" : "Preview");
 		previewButton.click(function() {
 			if (previewButton.hasClass("md")) {
-				var md = window.markdownit();
-				detailContainer.empty().html(md.render(item._md));
+				detailContainer.empty().html(marked(item._md));
 				previewButton.removeClass("md").addClass("html");
 				previewButton.empty().append("Markdown");
 
