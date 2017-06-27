@@ -116,7 +116,7 @@ let dummyItem = {
 let dropboxCatalog = {
   id: 1,
   uri: 'dropbox.com',
-  path: 'unittest',
+  path: 'unittest'
 }, localCatalog = {
   id: 2,
   uri: 'localhost',
