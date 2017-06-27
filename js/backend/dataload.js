@@ -10,7 +10,7 @@ var Query = require('query/query');
 
 var performance = {
   now : () => new Date().getTime()
-}
+};
 
 function addDocToIndex(doc, content, index, features) {
   Util.log('Indexing', doc.id);
@@ -96,9 +96,9 @@ class IndexWrapper {
     let analyzed = FeatureCollector.analyzeDocument(content);
     if (analyzed.heading) {
       nameBasedId = analyzed.heading.value
-                          .toLowerCase()
-                          .replace("'", "")
-                          .replace(/[^a-zA-Z0-9]/g, '-');
+        .toLowerCase()
+        .replace("'", "")
+        .replace(/[^a-zA-Z0-9]/g, '-');
     }
 
     // The item that has been read from the proper path has an id that contains the path
@@ -129,8 +129,8 @@ class IndexWrapper {
 
   processSelectionResults(selectionResults) {
     let minimalSelection = selectionResults.reduce(
-                            (acc, val) => acc.length < val.length ? acc : val,
-                            selectionResults[0]);
+      (acc, val) => acc.length < val.length ? acc : val,
+      selectionResults[0]);
     let selectionMaps = [];
     selectionResults.forEach((result) => {
       let map = {};
@@ -144,7 +144,7 @@ class IndexWrapper {
   search(queryObject) {
     let startMark = performance.now();
     let self = this,
-        query = new Query(queryObject.q),
+    query = new Query(queryObject.q),
         index = this.index,
         features = this.features,
         searchQuery = {};
@@ -273,19 +273,31 @@ async function getIndexWithOps(indexOps, catalog) {
   }
 }
 
+let syncTimeout;
+function startIndexSync(indexOps) {
+  if(syncTimeout) {
+    clearTimeout(syncTimeout);
+  }
+
+  syncTimeout = setTimeout(() => indexOps.sync(), 15000);
+}
+
+
 let loadedIndices = {};
 elasticlunr.tokenizer.seperator = /([\s\-,]|(\. ))+/;
 
 exports.RebulasBackend = {
   getIndexBackend: function(catalog) {
-	  let indexOps = undefined;
-	  if (catalog.uri.startsWith('dropbox.com')) {
-		  indexOps = new DropboxOperations(catalog);
-		  Util.log('Loading Dropbox index');
-	  } else if (catalog.uri.startsWith('localhost')) {
-		  indexOps = new LocalhostOperations(catalog);
-		  Util.log('Loading Localhost index');
-	  }
+    let indexOps = undefined;
+    if (catalog.uri.startsWith('dropbox.com')) {
+      indexOps = new DropboxOperations(catalog);
+      indexOps = new LocalWrapperOperations(catalog, indexOps);
+      Util.log('Loading Dropbox index');
+      startIndexSync(indexOps);
+    } else if (catalog.uri.startsWith('localhost')) {
+      indexOps = new LocalhostOperations(catalog);
+      Util.log('Loading Localhost index');
+    }
     return indexOps;
   },
   loadIndex: async function(indexOps, catalog) {
@@ -300,13 +312,13 @@ exports.RebulasBackend = {
       return catalog.searchIndex;
     }
     let indexOps = exports.RebulasBackend.getIndexBackend(catalog);
-	  if (indexOps) {
-			let index = await exports.RebulasBackend.loadIndex(indexOps, catalog);
-			loadedIndices[catalog.id] = index;
-			return index;
-	  }
+    if (indexOps) {
+      let index = await exports.RebulasBackend.loadIndex(indexOps, catalog);
+      loadedIndices[catalog.id] = index;
+      return index;
+    }
 
-	  return emptyIndex();
+    return emptyIndex();
   },
   clearIndexCache: function () {
     loadedIndices = {};

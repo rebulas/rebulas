@@ -1,15 +1,26 @@
 let fs = require('fs'),
     os = require('os'),
     path = require('path'),
-    mock = require("mock-require"),
+    mock = require('mock-require'),
     Util = require('extra/util'),
     LocalStorage = require('node-localstorage').LocalStorage;
 
+var localforageMock = require('./localforage-mock');
 
 var localMock;
 var localhost;
 var dataload;
 var RebulasBackend;
+
+let dropboxCatalog = {
+  id: 1,
+  uri: 'dropbox.com',
+  path: 'unittest'
+}, localCatalog = {
+  id: 2,
+  uri: 'localhost',
+  path: 'default'
+};
 
 module.exports = {
 
@@ -17,6 +28,7 @@ module.exports = {
     let tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'testdata-'));
     localMock = new LocalStorage(tempDir);
   	mock('backend/local-storage', localMock);
+    mock('localforage', localforageMock);
 
     dataload = require('backend/dataload.js');
     RebulasBackend = dataload.RebulasBackend;
@@ -26,6 +38,7 @@ module.exports = {
   },
 
   tearDown : function(cb) {
+    localMock.clear();
     localCatalog.searchIndex = null;
     dropboxCatalog.searchIndex = null;
 
@@ -44,11 +57,6 @@ module.exports = {
     test.done();
   },
 
-  testLocalIndex : async function(test) {
-    await verifyCatalog(test, localCatalog);
-    test.done();
-  },
-
   testDropboxIndex : async function(test) {
     try {
       if(dropboxCatalog.token) {
@@ -60,8 +68,11 @@ module.exports = {
 
   testLocalWrapper : async function(test) {
     try {
-        await verifyLocalWrapper(test, localCatalog);
-    } catch(e) { console.error(e); }
+      await verifyLocalWrapper(test, localCatalog);
+    } catch(e) {
+      console.error(e);
+      test.fail(e);
+    }
 
     test.done();
   },
@@ -71,7 +82,11 @@ module.exports = {
       if(dropboxCatalog.token) {
         await verifyLocalWrapper(test, dropboxCatalog);
       }
-    } catch(e) { console.error(e); }
+    } catch(e) {
+      console.error(e);
+      test.fail(e);
+    }
+
     test.done();
   },
 
@@ -111,16 +126,6 @@ let dummyItem = {
   _md: '# Name\nDummy Item'
 }, dummyItem2 = {
   _md: '# Name\nDummy Item 2'
-};
-
-let dropboxCatalog = {
-  id: 1,
-  uri: 'dropbox.com',
-  path: 'unittest'
-}, localCatalog = {
-  id: 2,
-  uri: 'localhost',
-  path: 'default'
 };
 
 async function verifyCatalog(test, catalog) {
@@ -177,6 +182,7 @@ async function verifyLocalWrapper(test, catalog) {
 
   dirtyItems = await indexOps.dirtyItems();
   test.ok(dirtyItems.length > 0, 'Not dirty after failing save');
+  //test.ok(await indexOps.isDirtyItem(secondSavedItem), 'Item is reported dirty');
 
   console.log('Syncing');
   await indexOps.sync();
@@ -186,7 +192,7 @@ async function verifyLocalWrapper(test, catalog) {
 
   // Verify it's synced now, loop to account for not immediate consistency
   let found = false;
-  for(let i = 0; i < 5 && !found; i++) {
+  for (let i = 0; i < 5 && !found; i++) {
     allFiles = await originalOps.listAllFiles();
     found = allFiles.find((e) => e.name === secondSavedItem.name);
   }
