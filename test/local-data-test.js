@@ -159,7 +159,7 @@ async function verifyLocalWrapper(test, catalog) {
     (e) => e._md === dummyItem2._md, 'No dummy item 2 in result'));
 
   // Check that indeed we don't have the saved item in the original backend
-  allFiles = await originalOps.listAllFiles();
+  allFiles = await originalOps.listItems();
   test.ok(!allFiles.find((e) => e.name === secondSavedItem.name), 'Item 2 found in original');
   // Restore backend and sync
   indexOps.delegate = originalOps;
@@ -178,7 +178,7 @@ async function verifyLocalWrapper(test, catalog) {
   // Verify it's synced now, loop to account for not immediate consistency
   let found = false;
   for (let i = 0; i < 5 && !found; i++) {
-    allFiles = await originalOps.listAllFiles();
+    allFiles = await originalOps.listItems();
     found = allFiles.find((e) => e.name === secondSavedItem.name);
   }
   test.ok(found, 'Item 2 not found in original after sync');

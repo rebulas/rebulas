@@ -202,11 +202,11 @@ function verifyUpToDate(lunrIndex, files) {
     return false;
   }
   let upToDate = files.every((entry) => {
-    let doc = lunrIndex.documentStore.getDoc(entry.path);
+    let doc = lunrIndex.documentStore.getDoc(entry.id);
     if(!doc) {
-      Util.log('New document', entry.path);
+      Util.log('New document', entry.id);
     } else if(doc.rev !== entry.rev) {
-      Util.log('Updated document', entry.path);
+      Util.log('Updated document', entry.id);
     }
     return doc && doc.rev === entry.rev;
   });
@@ -225,8 +225,8 @@ function emptyIndex() {
 }
 
 async function getIndexWithOps(indexOps, catalog) {
-  let allFiles = await indexOps.listAllFiles();
-  let fileIndex = allFiles.findIndex((entry) => entry.path === indexOps.getIndexFilePath());
+  let allFiles = await indexOps.listItems();
+  let fileIndex = allFiles.findIndex((entry) => entry.id === indexOps.indexId);
   let existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
 
   let indexWrapper = new IndexWrapper(indexOps, catalog);
@@ -258,7 +258,7 @@ async function getIndexWithOps(indexOps, catalog) {
     let promises = allFiles.map((entry) => {
       return indexOps.getEntryContent(entry).then((content) => {
         let doc = {
-          id: entry.path,
+          id: entry.id,
           name: entry.name,
           rev: entry.rev
         };

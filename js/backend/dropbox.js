@@ -16,7 +16,7 @@ class DropboxOperations extends model.BaseCatalogOperations {
     this.dbx = new Dropbox({ accessToken: catalog.token });
   }
 
-  async listAllFiles() {
+  async listItems() {
     let allFiles = [];
 
     let folders = [this.path];
@@ -37,11 +37,7 @@ class DropboxOperations extends model.BaseCatalogOperations {
         if (entry['.tag'] == 'folder') {
           folders.push(entry.path_lower);
         } else {
-          allFiles.push({
-            path: entry.path_lower,
-            name: entry.name,
-            rev: entry.rev
-          });
+          allFiles.push(new model.CatalogItemEntry(entry.path_lower, entry.rev));
         }
       });
     }
@@ -61,23 +57,23 @@ class DropboxOperations extends model.BaseCatalogOperations {
   }
 
   async getEntryContent(entry) {
-    let self = this;
-    return new Promise((resolve, reject) => {
-      self.dbx.filesDownload({ path: entry.path }).then((response) => {
-        // Seems to behave differently in node and browser
-        if(response.fileBinary !== undefined) {
-          // node - directly the string in fileBinary
-          resolve(response.fileBinary);
-          return;
-        }
+    return this.dbx.filesDownload({ path: entry.id }).then((response) => {
+      // Seems to behave differently in node and browser
+      if(response.fileBinary !== undefined) {
+        // node - directly the string in fileBinary
+        return response.fileBinary;
+      }
 
+      return new Promise((resolve, reject) => {
         // browser - Blob
         let blob = response.fileBlob;
         let reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
+        reader.onloadend = () => {
+          resolve(reader.result);
+        };
         reader.onerror = reject;
         reader.readAsText(blob);
-      }, reject);
+      });
     });
   }
 

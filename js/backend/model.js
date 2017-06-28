@@ -1,8 +1,28 @@
-class CatalogItem {
-  constructor(id, content, rev) {
+function toEntryName(id) {
+  let split = id.split('/');
+  return split[split.length - 1];
+}
+
+class CatalogItemEntry {
+  constructor(id, rev) {
     this.id = id;
-    this.rev = content;
-    this.content = rev;
+    this.rev = rev || '1';
+    this._name = '';
+  }
+
+  get name() {
+    return this._name || toEntryName(this.id);
+  }
+
+  set name(name) {
+    this._name = name;
+  }
+}
+
+class CatalogItem extends CatalogItemEntry {
+  constructor(id, content, rev) {
+    super(id, content);
+    this.content = content;
   }
 }
 
@@ -17,11 +37,12 @@ class BaseCatalogOperations {
     this.indexFile = path + '/.rebulas_index';
   }
 
-  getIndexFilePath() {
+  get indexId() {
     return this.indexFile;
   }
 
-  listAllFiles() {
+  // Return an array of CatalogItemEntry
+  listItems() {
     return Promise.reject(new Error());
   }
 
@@ -32,9 +53,15 @@ class BaseCatalogOperations {
   getEntryContent(catalogItem) {
     return Promise.reject(new Error());
   }
+
+  saveIndexContent(index) {
+    return Promise.reject(new Error());
+  }
 }
 
 module.exports = {
+  CatalogItemEntry: CatalogItemEntry,
   CatalogItem: CatalogItem,
-  BaseCatalogOperations: BaseCatalogOperations
+  BaseCatalogOperations: BaseCatalogOperations,
+  toEntryName: toEntryName
 };

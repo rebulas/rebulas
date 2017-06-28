@@ -3,11 +3,6 @@ var localforage = require('localforage');
 var lc = require("backend/local-storage"),
     model = require('./model');
 
-function toEntryName(path) {
-  let split = path.split('/');
-  return split[split.length - 1];
-}
-
 class LocalWrapperOperations extends model.BaseCatalogOperations {
   constructor(catalog, delegate) {
     super(catalog);
@@ -27,26 +22,20 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     return this.storageId + '/' + path;
   }
 
-  async listAllFiles() {
+  async listItems() {
     try {
-      return await this.delegate.listAllFiles();
+      return await this.delegate.listItems();
     } catch(e) {
       Util.error(e);
     }
 
     let self = this,
-    storagePrefix = this.storageId,
-    allKeys = await localforage.keys();
+        allKeys = await localforage.keys();
 
-    let localEntries = allKeys.filter((key) => self.isLocalPath(key)).
+    return allKeys.
+      filter((key) => self.isLocalPath(key)).
       map((key) => self.toDelegatePath(key)).
-      map((key) => {
-        return {
-          path: key,
-          name: toEntryName(key)
-        };
-      });
-    return localEntries;
+      map((key) => new model.CatalogItemEntry(key, '0'));
   }
 
   saveDocument(path, content) {
@@ -66,7 +55,7 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
         Util.log('Failed to save', path, ':', err);
         let localItem = {
           id: path,
-          name: toEntryName(path),
+          name: model.toEntryName(path),
           rev: '',
           content: content
         };
@@ -162,19 +151,9 @@ class LocalhostOperations extends model.BaseCatalogOperations {
     }
   }
 
-  async listAllFiles() {
+  async listItems() {
     var list = JSON.parse(lc.getItem(this.storageId));
-    let allFiles = [];
-
-    for (var path in list) {
-      allFiles.push({
-        "path" : path,
-        "name" : toEntryName(path),
-        "rev": "1"
-      });
-    }
-
-    return allFiles;
+    return Object.keys(list).map((path) => new model.CatalogItemEntry(path));
   }
 
   saveDocument(path, content) {
@@ -184,7 +163,7 @@ class LocalhostOperations extends model.BaseCatalogOperations {
 
     return Promise.resolve({
       "id": path,
-      "name": toEntryName(path),
+      "name": model.toEntryName(path),
       "content": content,
       "rev": "1"
     });
@@ -192,8 +171,7 @@ class LocalhostOperations extends model.BaseCatalogOperations {
 
   getEntryContent(entry) {
     var list = JSON.parse(lc.getItem(this.storageId));
-    let self = this;
-    return Promise.resolve(list[entry.path]);
+    return Promise.resolve(list[entry.id]);
   }
 
   saveIndexContent(index) {
