@@ -236,10 +236,9 @@ async function getIndexWithOps(indexOps, catalog) {
   let indexWrapper = new IndexWrapper(indexOps, catalog);
   if(existingIndexEntry) {
     Util.log('Found existing index');
-    let existingIndexContent = await indexOps.getEntryContent(existingIndexEntry);
+    existingIndexEntry = await indexOps.getItem(existingIndexEntry);
     try {
-      existingIndexContent = JSON.parse(existingIndexContent);
-      indexWrapper.loadIndex(existingIndexContent);
+      indexWrapper.loadIndex(JSON.parse(existingIndexEntry.content));
     } catch(e) { Util.error(e); }
   }
 
@@ -260,13 +259,13 @@ async function getIndexWithOps(indexOps, catalog) {
     let index = new elasticlunr.Index();
 
     let promises = allFiles.map((entry) => {
-      return indexOps.getEntryContent(entry).then((content) => {
+      return indexOps.getItem(entry).then((item) => {
         let doc = {
           id: entry.id,
-          name: entry.name,
+          name: model.toEntryName(item.id),
           rev: entry.rev
         };
-        addDocToIndex(doc, content, index, features);
+        addDocToIndex(doc, item.content, index, features);
       });
     });
 

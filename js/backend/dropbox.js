@@ -10,11 +10,11 @@ function createUploadPayload(content) {
   }
 }
 
-function createDownloadResult(response) {
+function createDownloadResult(catalogItem, response) {
   // Seems to behave differently in node and browser
   if(response.fileBinary !== undefined) {
     // node - directly the string in fileBinary
-    return response.fileBinary;
+    return new model.CatalogItem(catalogItem.id, catalogItem.rev, response.fileBinary);
   }
 
   return new Promise((resolve, reject) => {
@@ -22,7 +22,7 @@ function createDownloadResult(response) {
     let blob = response.fileBlob;
     let reader = new FileReader();
     reader.onloadend = () => {
-      resolve(reader.result);
+      resolve(new model.CatalogItem(catalogItem.id, catalogItem.rev, reader.result));
     };
     reader.onerror = reject;
     reader.readAsText(blob);
@@ -75,9 +75,9 @@ class DropboxOperations extends model.BaseCatalogOperations {
     }).then((entry) => new model.CatalogItem(catalogItem.id, entry.rev, catalogItem.content));
   }
 
-  async getEntryContent(entry) {
-    return this.dbx.filesDownload({ path: entry.id })
-      .then(createDownloadResult);
+  async getItem(catalogItem) {
+    return this.dbx.filesDownload({ path: catalogItem.id })
+      .then(createDownloadResult.bind(null, catalogItem));
   }
 }
 

@@ -64,15 +64,17 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
       .then(saveRemote, onLocalSaveReject);
   }
 
-  getEntryContent(entry) {
+  getItem(catalogItem) {
     let self = this,
-        localPath = self.toLocalPath(entry.path);
+        localPath = self.toLocalPath(catalogItem.id);
 
-    return self.delegate.getEntryContent(entry).then(
+    return self.delegate.getItem(catalogItem).then(
       (content) => localforage.setItem(localPath, content)
     ).catch((err) => {
       Util.error(err);
-      return localforage.getItem(localPath);
+      return localforage.getItem(localPath).then((localContent) =>
+        new model.CatalogItem(catalogItem.id, catalogItem.rev, localContent)
+      );
     });
   }
 
@@ -155,9 +157,9 @@ class LocalhostOperations extends model.BaseCatalogOperations {
     return Promise.resolve(catalogItem);
   }
 
-  getEntryContent(entry) {
+  getItem(entry) {
     var list = JSON.parse(lc.getItem(this.storageId));
-    return Promise.resolve(list[entry.id]);
+    return Promise.resolve(new model.CatalogItem(entry.id, null, list[entry.id]));
   }
 }
 

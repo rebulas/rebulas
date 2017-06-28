@@ -50,7 +50,7 @@ class BaseCatalogOperations {
     return Promise.reject(new Error());
   }
 
-  getEntryContent(catalogItem) {
+  getItem(catalogItem) {
     return Promise.reject(new Error());
   }
 }
