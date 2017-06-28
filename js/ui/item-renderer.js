@@ -94,7 +94,7 @@ module.exports = {
 		previewButton.append(defaultState == "html" ? "Markdown" : "Preview");
 		previewButton.click(function() {
 			if (previewButton.hasClass("md")) {
-				detailContainer.empty().html(marked(item._md));
+				detailContainer.empty().html(marked(textarea.val()));
 				previewButton.removeClass("md").addClass("html");
 				previewButton.empty().append("Markdown");
 
