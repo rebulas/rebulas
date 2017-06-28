@@ -1,14 +1,16 @@
 var Util = require("extra/util");
 var localforage = require('localforage');
-var lc = require("backend/local-storage");
+var lc = require("backend/local-storage"),
+    model = require('./model');
 
 function toEntryName(path) {
   let split = path.split('/');
   return split[split.length - 1];
 }
 
-class LocalWrapperOperations {
+class LocalWrapperOperations extends model.BaseCatalogOperations {
   constructor(catalog, delegate) {
+    super(catalog);
     this.delegate = delegate;
     this.storageId = "rebulas_local_storage_" + catalog.id;
   }
@@ -23,10 +25,6 @@ class LocalWrapperOperations {
 
   toLocalPath(path) {
     return this.storageId + '/' + path;
-  }
-
-  getIndexFilePath() {
-    return this.delegate.indexFile;
   }
 
   async listAllFiles() {
@@ -108,7 +106,7 @@ class LocalWrapperOperations {
         localforage.getItem(entryPath)
         .then((entryContent) => {
           Util.log('Saving remote', entryPath);
-          return self.delegate.saveDocument(entryPath, entryContent);
+          return self.delegate.saveDocument(self.toDelegatePath(entryPath), entryContent);
         })
         .then((savedItem) => {
           let index = dirty.indexOf(entryPath);
@@ -142,21 +140,15 @@ class LocalWrapperOperations {
     return this.dirtyItems();
   }
 
-  async isDirtyItem(item) {
-    debugger;
-    return (await this.dirtyItems()).indexOf(this.toLocalPath(item.path)) > 0;
+  isDirtyItem(item) {
+    return this.dirtyItems()
+      .then((items) => items.indexOf(this.toLocalPath(item.path)) > 0);
   }
 }
 
-class LocalhostOperations {
-
+class LocalhostOperations extends model.BaseCatalogOperations {
   constructor(catalog) {
-    var path = catalog.path ? catalog.path : "";
-    if (path && path[0] != "/") {
-      path = "/" + path;
-    }
-    this.path = path;
-    this.indexFile = path + '/.rebulas_index';
+    super(catalog);
     this.storageId = "rebulas_localhost_storage_" + catalog.id;
 
     var list = lc.getItem(this.storageId);
@@ -168,10 +160,6 @@ class LocalhostOperations {
       };
       lc.setItem(this.storageId, JSON.stringify(list));
     }
-  }
-
-  getIndexFilePath() {
-    return this.indexFile;
   }
 
   async listAllFiles() {

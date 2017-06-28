@@ -1,5 +1,6 @@
 var Util = require("extra/util");
-var Dropbox = require('dropbox');
+var Dropbox = require('dropbox'),
+    model = require('./model');
 
 function createUploadPayload(content) {
   if(typeof Blob !== 'undefined') {
@@ -9,20 +10,10 @@ function createUploadPayload(content) {
   }
 }
 
-class DropboxOperations {
+class DropboxOperations extends model.BaseCatalogOperations {
   constructor(catalog) {
+    super(catalog);
     this.dbx = new Dropbox({ accessToken: catalog.token });
-
-    var path = catalog.path ? catalog.path : "";
-    if (path && path[0] != "/") {
-      path = "/" + path;
-    }
-    this.path = path;
-    this.indexFile = path + '/.rebulas_index';
-  }
-
-  getIndexFilePath() {
-    return this.indexFile;
   }
 
   async listAllFiles() {
@@ -66,12 +57,7 @@ class DropboxOperations {
       mode: {
         '.tag': 'overwrite'
       }
-    }).then((entry) => ({
-      id: entry.path,
-      name: entry.name,
-      rev: entry.rev,
-      content: content
-    }));
+    }).then((entry) => new model.CatalogItem(entry.path, content, entry.rev));
   }
 
   async getEntryContent(entry) {
