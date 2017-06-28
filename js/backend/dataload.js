@@ -7,6 +7,7 @@ var LocalhostOperations = localhost.LocalhostOperations;
 var RejectingOperations = localhost.RejectingOperations;
 var LocalWrapperOperations = localhost.LocalWrapperOperations;
 var Query = require('query/query');
+var model = require('backend/model');
 
 var performance = {
   now : () => new Date().getTime()
@@ -41,11 +42,12 @@ class IndexWrapper {
   saveIndex() {
     Util.log('Saving index');
     let ops = this.indexOperations;
-    return ops.saveIndexContent({
+    let indexItem = new model.CatalogItem(ops.indexId, null, JSON.stringify({
       index: this.index.toJSON(),
       features: this.features.toJSON(),
       date: new Date().toUTCString()
-    });
+    }));
+    return ops.saveItem(indexItem);
   }
 
   loadIndex(indexContent) {
@@ -119,12 +121,14 @@ class IndexWrapper {
       features.removeDocContent(doc._content);
       index.removeDoc(id);
     }
-    return this.indexOperations.saveDocument(id, content).then((savedItem) => {
-      savedItem.id = id;
-      addDocToIndex(savedItem, content, index, features);
-      features.calculateFieldFeatures();
-      return self.saveIndex().then(() => savedItem);
-    });
+
+    return this.indexOperations.saveItem(new model.CatalogItem(id, null, content))
+      .then((savedItem) => {
+        savedItem.id = id;
+        addDocToIndex(savedItem, content, index, features);
+        features.calculateFieldFeatures();
+        return self.saveIndex().then(() => savedItem);
+      });
   }
 
   processSelectionResults(selectionResults) {

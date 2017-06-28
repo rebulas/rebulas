@@ -20,8 +20,8 @@ class CatalogItemEntry {
 }
 
 class CatalogItem extends CatalogItemEntry {
-  constructor(id, content, rev) {
-    super(id, content);
+  constructor(id, rev, content) {
+    super(id, rev);
     this.content = content;
   }
 }
@@ -46,15 +46,11 @@ class BaseCatalogOperations {
     return Promise.reject(new Error());
   }
 
-  saveDocument(catalogItem) {
+  saveItem(catalogItem) {
     return Promise.reject(new Error());
   }
 
   getEntryContent(catalogItem) {
-    return Promise.reject(new Error());
-  }
-
-  saveIndexContent(index) {
     return Promise.reject(new Error());
   }
 }

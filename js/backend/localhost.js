@@ -38,7 +38,7 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
       map((key) => new model.CatalogItemEntry(key, '0'));
   }
 
-  saveDocument(path, content) {
+  saveItem(catalogItem) {
     let self = this;
 
     function onLocalSaveReject(errLocal) {
@@ -50,23 +50,17 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     }
 
     function saveRemote() {
-      Util.log('Saving', path);
-      return self.delegate.saveDocument(path, content).catch((err) => {
-        Util.log('Failed to save', path, ':', err);
-        let localItem = {
-          id: path,
-          name: model.toEntryName(path),
-          rev: '',
-          content: content
-        };
-        return self.addDirty(self.toLocalPath(path)).then(() => localItem, (err) => {
+      Util.log('Saving', catalogItem.id);
+      return self.delegate.saveItem(catalogItem).catch((err) => {
+        Util.log('Failed to save', catalogItem.id, ':', err);
+        return self.addDirty(catalogItem).then(() => catalogItem, (err) => {
           Util.error(err);
           return err;
         });
       });
     }
 
-    return localforage.setItem(self.toLocalPath(path), content)
+    return localforage.setItem(self.toLocalPath(catalogItem.id), catalogItem.content)
       .then(saveRemote, onLocalSaveReject);
   }
 
@@ -82,11 +76,6 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     });
   }
 
-  saveIndexContent(index) {
-    Util.log('Saving index', this.delegate.indexFile);
-    return this.saveDocument(this.delegate.indexFile, JSON.stringify(index));
-  }
-
   async sync() {
     let self = this,
         dirty = await this.dirtyItems();
@@ -95,7 +84,8 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
         localforage.getItem(entryPath)
         .then((entryContent) => {
           Util.log('Saving remote', entryPath);
-          return self.delegate.saveDocument(self.toDelegatePath(entryPath), entryContent);
+          let item = new model.CatalogItem(self.toDelegatePath(entryPath), null, entryContent);
+          return self.delegate.saveItem(item);
         })
         .then((savedItem) => {
           let index = dirty.indexOf(entryPath);
@@ -107,10 +97,11 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   }
 
   async addDirty(item) {
+    let localId = this.toLocalPath(item.id);
     let dirty = await this.dirtyItems(),
-    index = dirty.indexOf(item);
+    index = dirty.indexOf(localId);
     if(index < 0) {
-      dirty.push(item);
+      dirty.push(localId);
     }
     return this.saveDirtyItems(dirty);
   }
@@ -156,27 +147,17 @@ class LocalhostOperations extends model.BaseCatalogOperations {
     return Object.keys(list).map((path) => new model.CatalogItemEntry(path));
   }
 
-  saveDocument(path, content) {
+  saveItem(catalogItem) {
     var list = JSON.parse(lc.getItem(this.storageId));
-    list[path] = content;
+    list[catalogItem.id] = catalogItem.content;
     lc.setItem(this.storageId, JSON.stringify(list));
 
-    return Promise.resolve({
-      "id": path,
-      "name": model.toEntryName(path),
-      "content": content,
-      "rev": "1"
-    });
+    return Promise.resolve(catalogItem);
   }
 
   getEntryContent(entry) {
     var list = JSON.parse(lc.getItem(this.storageId));
     return Promise.resolve(list[entry.id]);
-  }
-
-  saveIndexContent(index) {
-    Util.log('Saving index', this.indexFile);
-    return this.saveDocument(this.indexFile, JSON.stringify(index));
   }
 }
 

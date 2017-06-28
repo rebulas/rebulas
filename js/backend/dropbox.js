@@ -10,6 +10,25 @@ function createUploadPayload(content) {
   }
 }
 
+function createDownloadResult(response) {
+  // Seems to behave differently in node and browser
+  if(response.fileBinary !== undefined) {
+    // node - directly the string in fileBinary
+    return response.fileBinary;
+  }
+
+  return new Promise((resolve, reject) => {
+    // browser - Blob
+    let blob = response.fileBlob;
+    let reader = new FileReader();
+    reader.onloadend = () => {
+      resolve(reader.result);
+    };
+    reader.onerror = reject;
+    reader.readAsText(blob);
+  });
+}
+
 class DropboxOperations extends model.BaseCatalogOperations {
   constructor(catalog) {
     super(catalog);
@@ -45,41 +64,20 @@ class DropboxOperations extends model.BaseCatalogOperations {
     return allFiles;
   }
 
-  saveDocument(path, content) {
+  saveItem(catalogItem) {
     return this.dbx.filesUpload({
-      path: path,
-      contents: createUploadPayload(content),
+      path: catalogItem.id,
+      contents: createUploadPayload(catalogItem.content),
       mute: true,
       mode: {
         '.tag': 'overwrite'
       }
-    }).then((entry) => new model.CatalogItem(entry.path, content, entry.rev));
+    }).then((entry) => new model.CatalogItem(catalogItem.id, entry.rev, catalogItem.content));
   }
 
   async getEntryContent(entry) {
-    return this.dbx.filesDownload({ path: entry.id }).then((response) => {
-      // Seems to behave differently in node and browser
-      if(response.fileBinary !== undefined) {
-        // node - directly the string in fileBinary
-        return response.fileBinary;
-      }
-
-      return new Promise((resolve, reject) => {
-        // browser - Blob
-        let blob = response.fileBlob;
-        let reader = new FileReader();
-        reader.onloadend = () => {
-          resolve(reader.result);
-        };
-        reader.onerror = reject;
-        reader.readAsText(blob);
-      });
-    });
-  }
-
-  saveIndexContent(index) {
-    return this.saveDocument(this.indexFile, JSON.stringify(index))
-      .then(() => index);
+    return this.dbx.filesDownload({ path: entry.id })
+      .then(createDownloadResult);
   }
 }
 
