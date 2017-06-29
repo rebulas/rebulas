@@ -52,7 +52,7 @@ module.exports = {
 
 		// Remember the default state and initilize the screen with it
 		var defaultState = localStorage.getItem("default-details-state");
-		
+
 		// Allow default to html only if the item exists, new items enter text mode
 		if (defaultState == "html" && item.id) {
 			detailContainer.html(marked(item._md));
