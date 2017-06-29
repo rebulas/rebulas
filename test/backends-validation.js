@@ -13,13 +13,13 @@ let dropboxCatalog = {
 
 module.exports = {
   setUp : function(cb) {
-    commonTests.setUp(cb);
+    commonTests.setUp();
+    cb();
   },
 
   tearDown : function(cb) {
-    commonTests.tearDown(cb);
-    localCatalog.searchIndex = null;
-    dropboxCatalog.searchIndex = null;
+    commonTests.tearDown();
+    cb();
   },
 
   testLocalIndex : async function(test) {
@@ -33,6 +33,7 @@ module.exports = {
         await commonTests.verifyCatalog(test, dropboxCatalog);
       }
     } catch(e) {
+      console.log(e);
       test.fail(e);
     }
     test.done();
@@ -42,6 +43,7 @@ module.exports = {
     try {
       await commonTests.verifyLocalWrapper(test, localCatalog);
     } catch(e) {
+      console.log(e);
       test.fail(e);
     }
 
@@ -54,6 +56,7 @@ module.exports = {
         await commonTests.verifyLocalWrapper(test, dropboxCatalog);
       }
     } catch(e) {
+      console.log(e);
       test.fail(e);
     }
 
@@ -71,6 +74,7 @@ module.exports = {
         await commonTests.verifyIndexReload(test, dropboxCatalog);
       }
     } catch(e) {
+      console.log(e);
       test.fail(e);
     }
     test.done();

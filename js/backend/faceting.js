@@ -24,6 +24,9 @@ var marked = require("marked");
     }
 
     static isPlainList(lexemes) {
+      if(!lexemes.length) {
+        return false;
+      }
       // If the content is just a list - definitely facet-able
       // Is just a list if starts with list_start, ends with list_end
       // and no lexemes are outside a (list_item_begin, list_item_end)
@@ -65,7 +68,8 @@ var marked = require("marked");
           topHeadings = [],
           topHeadingsValues = [];
 
-      // Gather top-level headings
+      // Gather top-level headings, these will be considered
+      // for field names, i.e. facet names
       lexemes.forEach((lexeme, index) => {
         let isTopLevelHeading = lexeme.type === 'heading' &&
             topHeadings.indexOf(lexeme.text) &&
@@ -78,7 +82,8 @@ var marked = require("marked");
           });
         }
       });
-      // Gather text values for each top-level heading
+      // Gather text values for each top-level heading,
+      // these will be consiedered for field values, i.e. facet values
       topHeadings.forEach((heading, index) => {
         let nextHeading = topHeadings[index + 1];
         let valueLexemes = lexemes.slice(heading.index + 1,
@@ -92,11 +97,16 @@ var marked = require("marked");
         lexemes: lexemes
       };
 
-      if (topHeadings.length > 0 && topHeadingsValues.length > 0) {
+      // Use first top-level heading as the "name"
+      if (topHeadings && topHeadingsValues) {
+        let nameIndex = topHeadingsValues.findIndex((vals) => vals),
+            nameField = topHeadings[nameIndex].text,
+            nameValue = topHeadingsValues[nameIndex][0];
+
         result.heading = {
-          name : topHeadings[0].text,
-          value : topHeadingsValues[0][0].text
-        }
+          name : nameField,
+          value : nameValue ? nameValue.text : ''
+        };
       }
 
       return result;

@@ -3,7 +3,7 @@ let fs = require('fs'),
     path = require('path'),
     mock = require('mock-require'),
     LocalStorage = require('node-localstorage').LocalStorage,
-    model = require('backend/model');;
+    model = require('backend/model');
 
 var localforageMock = require('./localforage-mock');
 
@@ -18,7 +18,15 @@ let dummyItem = {
   _md: '# Name\nDummy Item 2'
 };
 
-module.exports.setUp = (cb) => {
+module.exports.someIndex = async () =>
+  await RebulasBackend.getCatalogIndex({
+    id: 3,
+    uri: 'localhost',
+    path: 'default'
+  });
+;
+
+module.exports.setUp = () => {
   let tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'testdata-'));
   localMock = new LocalStorage(tempDir);
   mock('backend/local-storage', localMock);
@@ -27,17 +35,13 @@ module.exports.setUp = (cb) => {
   dataload = require('backend/dataload.js');
   RebulasBackend = dataload.RebulasBackend;
   localhost = require('backend/localhost');
-
-  cb();
 };
 
-module.exports.tearDown = (cb) => {
+module.exports.tearDown = () => {
   console.log('Clear localStorage');
   localMock.clear();
 
   RebulasBackend.clearIndexCache();
-
-  cb();
 };
 
 module.exports.verifyIndexReload = async (test, catalog) => {
