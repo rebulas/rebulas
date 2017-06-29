@@ -57,7 +57,7 @@ class DropboxOperations extends model.BaseCatalogOperations {
       try {
         files = await this.dbx.filesListFolder({ path: folder });
       } catch(e) {
-        if(e.error.error_summary.indexOf('path/not_found/') < 0) {
+        if (e.error && e.error.error_summary && e.error.error_summary.indexOf('path/not_found/') < 0) {
           Util.log(e);
         }
       }
