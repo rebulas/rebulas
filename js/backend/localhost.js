@@ -81,21 +81,23 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   async sync() {
     let self = this,
         dirty = await this.dirtyItems();
-    let promises = dirty.map(
-      (entryPath) =>
-        localforage.getItem(entryPath)
-        .then((entryContent) => {
-          Util.log('Saving remote', entryPath);
-          let item = new model.CatalogItem(self.toDelegatePath(entryPath), null, entryContent);
-          return self.delegate.saveItem(item);
-        })
-        .then((savedItem) => {
-          let index = dirty.indexOf(entryPath);
-          dirty.splice(index, 1);
-        }).catch((err) => Util.log(err))
-    );
-    return Promise.all(promises)
-        .then(() => self.saveDirtyItems(dirty));
+
+    while(dirty.length) {
+      let entryPath = dirty[0];
+      Util.log('Saving remote', entryPath);
+
+      let entryContent = await localforage.getItem(entryPath);
+      let item = new model.CatalogItem(self.toDelegatePath(entryPath), null, entryContent);
+      try {
+        await this.delegate.saveItem(item);
+        dirty.splice(0, 1);
+      } catch(e) {
+        Util.error(e);
+        break;
+      }
+    }
+
+    return self.saveDirtyItems(dirty);
   }
 
   async addDirty(item) {

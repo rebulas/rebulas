@@ -38,6 +38,16 @@ class DropboxOperations extends model.BaseCatalogOperations {
   async listItems() {
     let allFiles = [];
 
+    try {
+      await this.dbx.filesCreateFolder({ path: this.path });
+    } catch(e) {
+      if(e.status !== 409) {
+        Util.error(e);
+      } else {
+        Util.log('Exists', this.path);
+      }
+    }
+
     let folders = [this.path];
     while(folders.length !== 0) {
       let folder = folders[0];
