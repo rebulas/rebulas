@@ -57,9 +57,13 @@ class DropboxOperations extends model.BaseCatalogOperations {
       try {
         files = await this.dbx.filesListFolder({ path: folder });
       } catch(e) {
+		// Part of the regular execution flow, if the folder has been deleted we don't want to return cached content
         if (e.error && e.error.error_summary && e.error.error_summary.indexOf('path/not_found/') < 0) {
           Util.log(e);
-        }
+        } else {
+			// Re-throw, we don't have access or there's an error we can't continue with
+			throw e;
+		}
       }
 
       files.entries.forEach((entry) => {
