@@ -46,7 +46,15 @@ $(document).ready(function() {
   				"initialResult" : result,
   				"container" : $("#terminal"),
   				"helpContainer" : $("#help"),
-  				"newItemListener" : newItemListener
+  				"newItemListener" : newItemListener,
+          "introListener" : function() {
+            let intro = introJs();
+
+            // Skip over hidden elements 
+            intro.onbeforechange(el => {if (!el) intro.nextStep()});
+            intro.setOption("showStepNumbers", false);
+            intro.start();
+          }
   		});
 
   		// Render the initial result

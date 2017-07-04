@@ -13,11 +13,12 @@ module.exports = {
 		this.container = args.container;
 		this.helpContainer = args.helpContainer;
 		this.newItemListener = args.newItemListener;
+		this.introListener = args.introListener;
 		this.catalog = args.initialResult.catalog;
 
 		var lastCtrlKeyPress = 0;
 		var settings = {
-			"greetings" : 'Welcome to Rebulas. Enter help or h for a list of commands.',
+			"greetings" : 'Welcome to Rebulas. Enter [[i;;]help] or [[i;;]h] for list of commands, [[i;;]intro] for a guide',
 			"name" : 'rebulas',
 			"prompt": this.calculatePrompt(this.currentResult),
 			"keymap" : {
@@ -109,6 +110,8 @@ module.exports = {
       var c = this.parseCommand(command);
       if (c.command == "h" || c.command == "help") {
 				this.helpContainer.fadeIn();
+			} else if (c.command == "intro") {
+				this.introListener();
       } else if (c.command == "s") {
           var term = c.args.join(" ");
 

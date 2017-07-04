@@ -19,6 +19,10 @@
 <script src="style/terminal/jquery.mousewheel.min.js"></script>
 <link href="style/terminal/jquery.terminal-1.2.0.min.css" rel="stylesheet"/>
 
+<!-- Intro.js -->
+<link type="text/css" rel="stylesheet" href="style/introjs/introjs.min.css" />
+<script type="text/javascript" src="style/introjs/intro.min.js"></script>
+
 <!-- Main code bundle -->
 <script type="text/javascript" src="bundle.js"></script>
 
@@ -27,34 +31,61 @@
 	<div class="row" style="height:100%">
 		<div class="col-lg-2" id="head-container">
 			<div id="left-container">
-				<ul id="facets-container" class="nav nav-list"></ul>
+				<ul id="facets-container" class="nav nav-list"
+					data-step="6"
+					data-position="right"
+					data-intro="A breakdown of the result based on the meta information a.k.a. facets. The facets are based on the first level headings of the documents you've stored. <br><br>Click on any value to filter the result leaving only the items that contain it."
+				></ul>
 			</div>
 		</div>
 		<div class="col-lg-10" id="right-container">
 			<div class="row">
 				<div class="col-lg-8">
-					<div id="terminal" class="terminal-container"></div>
+					<div id="terminal" class="terminal-container"
+						data-step="1"
+						data-intro="Use the terminal to search, filter or perform bulk operations. The terminal support common bash shortcuts, double press Ctrl to focus/blur.<br><br><i>Use the arrows to navigate this introduction</i>"></div>
 				</div>
 				<div class="col-lg-4">
-					<div class="btn-group pull-right" id="catalog-button">
+
+					<!-- Catalogs button -->
+					<div class="btn-group pull-right" id="catalog-button"
+						data-step="3"
+						data-position="bottom-right-aligned"
+						data-intro="You may create multiple catalogs under one repository. Use this button to switch between them and to create new ones.">
+
 						<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 						<span class="current-catalog">Catalog default</span> <span class="caret"></span></button>
 						<ul class="dropdown-menu catalog-container"></ul>
 					</div>
-					<div class="btn-group pull-right" style="display:none" id="repository-button">
+
+					<!-- Repository button -->
+					<div class="btn-group pull-right" style="display:none" id="repository-button"
+						data-step="2"
+						data-position="bottom-right-aligned"
+						data-intro="By default your data will be stored in the local browser storage. Use this button to link to an external repository and to switch between repositories. <br><br>Note that Rebulas wokrs entirely on the client side, your data never touches our servers and you remain completely in control.">
+
 						<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 						<span class="current-repository"></span> <span class="caret"></span></button>
 						<ul class="dropdown-menu repositories-container"></ul>
 					</div>
+
 				</div>
 			</div>
 			<div class="row">
 				<div class="col-lg-3">
 					<h4 id="countContainer"></h4>
-					<div id="itemsContainer" class="pull-left"></div>
+					<div id="itemsContainer" class="pull-left"
+						data-step="4"
+						data-position="right"
+						data-intro="The list of items that match your selection. Click to see details and edit. <br><br> Every item is a Markdown document where first level headings are used as meta information for the structure of the document.">
+					</div>
 				</div>
 				<div class="col-lg-9">
-					<div id="itemDetails" class="pull-left" style="display:none"></div>
+					<div id="itemDetails" class="pull-left" style="display:none"
+						data-step="5"
+						data-position="left"
+						data-intro="Edit, preview and save. Valid markdown accepted, first level headings will be used for meta information">
+					</div>
 					<div id="hintPlaceholder"></div>
 				</div>
 			</div>
