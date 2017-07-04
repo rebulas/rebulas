@@ -193,7 +193,13 @@ class IndexWrapper {
     this.features.calculateFieldFeatures();
   }
 
-  sync() {
+  async sync() {
+    if((await this.indexOperations.dirtyItems()).length === 0) {
+      Util.log('Synchronized');
+      return Promise.resolve();
+    }
+
+    Util.log('Synchronizing...');
     let self = this;
     function onItemSynced(err, catalogItem) {
       if(catalogItem.id === self.indexOperations.indexFile) {
@@ -293,7 +299,13 @@ function startIndexSync(catalog) {
     clearTimeout(syncTimeout);
   }
 
-  syncTimeout = setTimeout(async () => await catalog.searchIndex.sync(), 15000);
+  syncTimeout = setTimeout(async () => {
+    syncTimeout = null;
+    try {
+      await catalog.searchIndex.sync();
+    } catch(e) {}
+    startIndexSync(catalog);
+  }, 15000);
 }
 
 let loadedIndices = {};

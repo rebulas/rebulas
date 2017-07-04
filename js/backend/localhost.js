@@ -120,15 +120,6 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     return localforage.getItem('dirty_items_' + this.storageId)
       .then((items) => items || [], (err) => { Util.log(err); return []; });
   }
-
-  isDirty() {
-    return this.dirtyItems();
-  }
-
-  isDirtyItem(item) {
-    return this.dirtyItems()
-      .then((items) => items.indexOf(this.toLocalPath(item.id)) > 0);
-  }
 }
 
 class LocalhostOperations extends model.BaseCatalogOperations {
