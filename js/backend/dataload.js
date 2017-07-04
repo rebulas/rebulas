@@ -154,9 +154,9 @@ class IndexWrapper {
         index = this.index;
 
     let nameBasedId = undefined;
-    let analyzed = FeatureCollector.analyzeDocument(content);
-    if (analyzed.heading) {
-      nameBasedId = analyzed.heading.value
+    let analyzed = new model.AnalyzedItem(null, content);
+    if (analyzed.fields.length > 0) {
+      nameBasedId = analyzed.fields[0].textValue
         .toLowerCase()
         .replace("'", "")
         .replace(/[^a-zA-Z0-9]/g, '-');

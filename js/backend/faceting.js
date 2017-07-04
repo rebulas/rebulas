@@ -63,56 +63,6 @@ class FeatureCollector {
     return result;
   }
 
-  static analyzeDocument(content) {
-    let lexer = new marked.Lexer(),
-        lexemes = lexer.lex(content),
-    topHeadings = [],
-    topHeadingsValues = [];
-
-    // Gather top-level headings, these will be considered
-    // for field names, i.e. facet names
-    lexemes.forEach((lexeme, index) => {
-      let isTopLevelHeading = lexeme.type === 'heading' &&
-          lexeme.depth === 1 &&
-          topHeadings.indexOf(lexeme.text) < 0;
-
-      if(isTopLevelHeading) {
-        topHeadings.push({
-          text: lexeme.text,
-          index: index
-        });
-      }
-    });
-    // Gather text values for each top-level heading,
-    // these will be consiedered for field values, i.e. facet values
-    topHeadings.forEach((heading, index) => {
-      let nextHeading = topHeadings[index + 1];
-      let valueLexemes = lexemes.slice(heading.index + 1,
-                                       (nextHeading && nextHeading.index) || lexemes.length);
-      topHeadingsValues.push(valueLexemes);
-    });
-
-    let result = {
-      topHeadings: topHeadings,
-      topHeadingsValues: topHeadingsValues,
-      lexemes: lexemes
-    };
-
-    // Use first top-level heading as the "name"
-    if (topHeadings && topHeadingsValues) {
-      let nameIndex = topHeadingsValues.findIndex((vals) => vals),
-          nameField = topHeadings[nameIndex].text,
-          nameValue = topHeadingsValues[nameIndex][0];
-
-      result.heading = {
-        name : nameField,
-        value : nameValue ? nameValue.text : ''
-      };
-    }
-
-    return result;
-  }
-
   constructor() {
     this.fieldFeatures = {};
   }
