@@ -112,8 +112,8 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   test.ok(searchResult.items.find(
     (e) => e._md === dummyItem2._md, 'No dummy item 2 in result'));
 
-  test.deepEqual(secondSavedItem, (await indexOps.getItem(secondSavedItem)),
-                'Not equal saved item in local store');
+  let localSecondItem = await indexOps.getItem(secondSavedItem);
+  test.deepEqual(secondSavedItem, localSecondItem, 'Not equal saved item in local store');
 
   // Check that indeed we don't have the saved item in the original backend
   allFiles = await originalOps.listItems();
@@ -159,7 +159,7 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
 
   test.deepEqual(newIndex.date, oldIndex.date, 'Unequal dates');
   test.deepEqual(newJson.fields, oldJson.fields, 'Unequal fields');
-  //test.deepEqual(newJson.documentStore.docs, oldJson.documentStore.docs, 'Unequal docs');
+  test.deepEqual(newJson.documentStore.docs, oldJson.documentStore.docs, 'Unequal docs');
   test.deepEqual(newJson.documentStore.docInfo, oldJson.documentStore.docInfo, 'Unequal docInfo');
 
   test.deepEqual(newIndex.features, oldIndex.features, 'Unequal features');

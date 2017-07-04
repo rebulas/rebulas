@@ -75,25 +75,30 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     });
   }
 
-  async sync() {
+  async sync(listener) {
     let dirty = await this.dirtyItems();
 
     while(dirty.length) {
       let entryPath = dirty[0];
       Util.log('Saving remote', entryPath);
 
-      let catalogItem = await localforage.getItem(entryPath);
-      let item = new model.CatalogItem().fromJSON(catalogItem);
+      let localCopy = await localforage.getItem(entryPath),
+          catalogItem = new model.CatalogItem().fromJSON(localCopy);
+
       try {
-        await this.saveItem(item);
+        let savedItem = await this.saveItem(catalogItem);
         dirty.splice(0, 1);
+        await this.saveDirtyItems(dirty);
+
+        if(listener) {
+          listener(null, savedItem, catalogItem);
+        }
       } catch(e) {
         Util.error(e);
+        listener(e, catalogItem);
         break;
       }
     }
-
-    return this.saveDirtyItems(dirty);
   }
 
   async addDirty(item) {

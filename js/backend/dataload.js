@@ -105,7 +105,7 @@ class IndexWrapper {
     this.path = catalog.path;
   }
 
-  saveIndex() {
+  saveIndex(localOnly) {
     Util.log('Saving index');
     let ops = this.indexOperations;
     let indexItem = new model.CatalogItem(ops.indexId, null, JSON.stringify({
@@ -113,7 +113,7 @@ class IndexWrapper {
       features: this.features.toJSON(),
       date: new Date().toUTCString()
     }));
-    return ops.saveItem(indexItem);
+    return localOnly ? ops.saveLocal(indexItem) : ops.saveItem(indexItem);
   }
 
   async loadIndex() {
@@ -128,7 +128,7 @@ class IndexWrapper {
       try {
         let indexContent = JSON.parse(existingIndexEntry.content);
         this.index = indexContent.index && elasticlunr.Index.load(indexContent.index);
-        this.features = indexContent.features && FeatureCollector.load(indexContent.features);  
+        this.features = indexContent.features && FeatureCollector.load(indexContent.features);
       } catch(e) { Util.error(e); }
     }
 
@@ -175,23 +175,36 @@ class IndexWrapper {
     }
 
     Util.log('Saving item', id);
-    let doc = index.documentStore.getDoc(id);
-    if (doc) {
-      features.removeDocContent(doc._content);
-      index.removeDoc(id);
-    }
 
     return this.indexOperations.saveItem(new model.CatalogItem(id, null, content))
       .then((savedItem) => {
-        savedItem.id = id;
-        addDocToIndex(savedItem, content, index, features);
-        features.calculateFieldFeatures();
+        self.reindexItem(savedItem);
         return self.saveIndex().then(() => savedItem);
       });
   }
 
+  reindexItem(catalogItem) {
+    let doc = this.index.documentStore.getDoc(catalogItem.id);
+    if (doc) {
+      this.features.removeDocContent(doc._content);
+      this.index.removeDoc(catalogItem);
+    }
+    addDocToIndex(catalogItem, catalogItem.content, this.index, this.features);
+    this.features.calculateFieldFeatures();
+  }
+
   sync() {
-    return this.indexOperations.sync();
+    let self = this;
+    function onItemSynced(err, catalogItem) {
+      if(catalogItem.id === self.indexOperations.indexFile) {
+        return;
+      }
+
+      self.reindexItem(catalogItem);
+      self.saveIndex(true);
+    }
+
+    return this.indexOperations.sync(onItemSynced).then(() => self.saveIndex());
   }
 
   search(queryObject) {

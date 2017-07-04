@@ -170,13 +170,10 @@ class FeatureCollector {
 
   removeDocContent(content) {
     let fieldFeatures = this.fieldFeatures,
-    analyzedDoc = FeatureCollector.analyzeDocument(content);
+        analyzedDoc = new model.AnalyzedItem(null, content);
 
-    analyzedDoc.topHeadings.forEach((heading, index) => {
-      let fieldKey = heading.text.toLowerCase();
-      let valueLexemes = analyzedDoc.topHeadingsValues[index];
-
-      removeFieldStats(fieldKey, valueLexemes);
+    analyzedDoc.fields.forEach((field) => {
+      removeFieldStats(field.name, field.lexemes);
     });
 
     function removeFieldStats(fieldKey, valueLexemes) {
