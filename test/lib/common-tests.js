@@ -112,6 +112,9 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   test.ok(searchResult.items.find(
     (e) => e._md === dummyItem2._md, 'No dummy item 2 in result'));
 
+  test.deepEqual(secondSavedItem, (await indexOps.getItem(secondSavedItem)),
+                'Not equal saved item in local store');
+
   // Check that indeed we don't have the saved item in the original backend
   allFiles = await originalOps.listItems();
   test.ok(!allFiles.find((e) => e.name === secondSavedItem.name), 'Item 2 found in original');
@@ -124,7 +127,13 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   //test.ok(await indexOps.isDirtyItem(secondSavedItem), 'Item not reported dirty');
 
   console.log('Syncing');
-  await indexOps.sync();
+  await index.sync();
+
+  let remoteSecondSavedItem = await indexOps.getItem(secondSavedItem);
+  test.ok(secondSavedItem.rev !== remoteSecondSavedItem.rev);
+
+  secondSavedItem.rev = remoteSecondSavedItem.rev;
+  test.deepEqual(secondSavedItem, remoteSecondSavedItem, 'Not equal saved item in remote store');
 
   dirtyItems = await indexOps.dirtyItems();
   test.ok(dirtyItems.length === 0, 'Has dirty items after sync');
@@ -136,4 +145,24 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
     found = allFiles.find((e) => e.name === secondSavedItem.name);
   }
   test.ok(found, 'Item 2 not found in original after sync');
+
+  let oldIndex = catalog.searchIndex;
+  RebulasBackend.clearIndexCache();
+  catalog.searchIndex = null;
+
+  await RebulasBackend.getCatalogIndex(catalog);
+
+  let newIndex = catalog.searchIndex;
+
+  let newJson = newIndex.index.toJSON(),
+      oldJson = oldIndex.index.toJSON();
+
+  test.deepEqual(newIndex.date, oldIndex.date, 'Unequal dates');
+  test.deepEqual(newJson.fields, oldJson.fields, 'Unequal fields');
+  //test.deepEqual(newJson.documentStore.docs, oldJson.documentStore.docs, 'Unequal docs');
+  test.deepEqual(newJson.documentStore.docInfo, oldJson.documentStore.docInfo, 'Unequal docInfo');
+
+  test.deepEqual(newIndex.features, oldIndex.features, 'Unequal features');
 };
+
+module.exports.RebulasBackend = () => RebulasBackend;

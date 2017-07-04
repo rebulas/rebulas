@@ -8,7 +8,7 @@ function toEntryName(id) {
 class CatalogItemEntry {
   constructor(id, rev) {
     this.id = id;
-    this.rev = rev || '1';
+    this.rev = rev || 'local';
     this._name = '';
   }
 
@@ -25,6 +25,15 @@ class CatalogItem extends CatalogItemEntry {
   constructor(id, rev, content) {
     super(id, rev);
     this.content = content;
+  }
+
+  toJSON() {
+    return Object.assign({}, this);
+  }
+
+  fromJSON(json) {
+    Object.assign(this, json);
+    return this;
   }
 }
 

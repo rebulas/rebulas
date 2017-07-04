@@ -14,7 +14,7 @@ var performance = {
 };
 
 function addDocToIndex(doc, content, index, features) {
-  Util.log('Indexing', doc.id);
+  Util.log('Indexing', doc.id, 'rev', doc.rev);
   let analyzed = features.addDocContent(content);
 
   analyzed.id = doc.id;
@@ -29,6 +29,72 @@ function addDocToIndex(doc, content, index, features) {
   });
 
   index.addDoc(analyzed);
+}
+
+async function rebuildIndex(indexOps, allFiles, features) {
+  Util.log('Rebuilding index');
+  let index = new elasticlunr.Index();
+
+  let promises = allFiles.map((entry) => {
+    return indexOps.getItem(entry).then((item) => {
+      let doc = {
+        id: entry.id,
+        name: model.toEntryName(item.id),
+        rev: entry.rev
+      };
+      addDocToIndex(doc, item.content, index, features);
+    });
+  });
+
+  await Promise.all(promises);
+  features.calculateFieldFeatures();
+  Util.log('Entries in index:', index.documentStore.length);
+  return index;
+}
+
+function adaptSearchResult(item) {
+  let doc = item.doc,
+      adapted = Object.assign({}, doc);
+  adapted.id = item.ref.substring(1);
+  adapted._md = doc._content;
+
+  return adapted;
+}
+
+function adaptFacets(facets) {
+  let result = [];
+  Object.keys(facets).forEach((key) => {
+    let facet = {
+      field: key,
+      title: key,
+      values: Object.keys(facets[key]).map((k) => adaptFacetValue(facets[key][k], key))
+    };
+    result.push(facet);
+  });
+  return result;
+
+  function adaptFacetValue(facetValue, field) {
+    return {
+      count: facetValue.count,
+      id: facetValue.id,
+      title: facetValue.value,
+      link: field + '=' + facetValue.value
+    };
+  }
+}
+
+function processSelectionResults(selectionResults) {
+  let minimalSelection = selectionResults.reduce(
+    (acc, val) => acc.length < val.length ? acc : val,
+    selectionResults[0]);
+  let selectionMaps = [];
+  selectionResults.forEach((result) => {
+    let map = {};
+    result.forEach((doc) => map[doc.ref] = true);
+    selectionMaps.push(map);
+  });
+
+  return minimalSelection.filter((doc) => selectionMaps.every((map) => map[doc.ref]));
 }
 
 class IndexWrapper {
@@ -50,39 +116,32 @@ class IndexWrapper {
     return ops.saveItem(indexItem);
   }
 
-  loadIndex(indexContent) {
-    this.index = indexContent.index && elasticlunr.Index.load(indexContent.index);
-    this.features = indexContent.features && FeatureCollector.load(indexContent.features);
-  }
+  async loadIndex() {
+    let indexOps = this.indexOperations,
+        allFiles = await indexOps.listItems(),
+        fileIndex = allFiles.findIndex((entry) => entry.id === indexOps.indexId),
+        existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
 
-  adaptSearchResult(item) {
-    let doc = item.doc,
-        adapted = Object.assign({}, doc);
-    adapted.id = item.ref.substring(1);
-    adapted._md = doc._content;
+    if(existingIndexEntry) {
+      Util.log('Found existing index');
+      existingIndexEntry = await indexOps.getItem(existingIndexEntry);
+      try {
+        let indexContent = JSON.parse(existingIndexEntry.content);
+        this.index = indexContent.index && elasticlunr.Index.load(indexContent.index);
+        this.features = indexContent.features && FeatureCollector.load(indexContent.features);  
+      } catch(e) { Util.error(e); }
+    }
 
-    return adapted;
-  }
+    if(verifyUpToDate(this.index, allFiles)) {
+      Util.log('Index up to date');
+    } else {
+      Util.log('Index outdated');
 
-  adaptFacets(facets) {
-    let result = [];
-    Object.keys(facets).forEach((key) => {
-      let facet = {
-        field: key,
-        title: key,
-        values: Object.keys(facets[key]).map((k) => adaptFacetValue(facets[key][k], key))
-      };
-      result.push(facet);
-    });
-    return result;
-
-    function adaptFacetValue(facetValue, field) {
-      return {
-        count: facetValue.count,
-        id: facetValue.id,
-        title: facetValue.value,
-        link: field + '=' + facetValue.value
-      };
+      let features = new FeatureCollector();
+      let newIndex = await rebuildIndex(indexOps, allFiles, features);
+      this.index = newIndex;
+      this.features = features;
+      await this.saveIndex();
     }
   }
 
@@ -131,40 +190,27 @@ class IndexWrapper {
       });
   }
 
-  processSelectionResults(selectionResults) {
-    let minimalSelection = selectionResults.reduce(
-      (acc, val) => acc.length < val.length ? acc : val,
-      selectionResults[0]);
-    let selectionMaps = [];
-    selectionResults.forEach((result) => {
-      let map = {};
-      result.forEach((doc) => map[doc.ref] = true);
-      selectionMaps.push(map);
-    });
-
-    return minimalSelection.filter((doc) => selectionMaps.every((map) => map[doc.ref]));
+  sync() {
+    return this.indexOperations.sync();
   }
 
   search(queryObject) {
-    let startMark = performance.now();
-    let self = this,
-    query = new Query(queryObject.q),
+    let startMark = performance.now(),
+        querySelections = new Query(queryObject.q).getSelections(),
+        self = this,
         index = this.index,
         features = this.features,
-        searchQuery = {};
+        result = [];
 
-    let result = [];
-    if (query.getSelections().length < 1) {
-      result = [];
-      let keys = Object.keys(index.documentStore.docs).sort();
-      keys.forEach((key) => result.push({
+    if (querySelections.length === 0) {
+      // Plain search on keyword(s)
+      Object.keys(index.documentStore.docs).sort().forEach((key) => result.push({
         ref: key,
         doc: index.documentStore.docs[key]
       }));
     } else {
       // Perform a search for every selection
-      let searchResults = [];
-      query.getSelections().forEach((selection) => {
+      let searchResults = querySelections.map((selection) => {
         let selectionResults,
             searchQuery = {},
             searchConfig = {};
@@ -179,20 +225,20 @@ class IndexWrapper {
         }
         selectionResults = index.search(searchQuery, searchConfig);
         Util.log(JSON.stringify(searchQuery), '->', selectionResults.length);
-        searchResults.push(selectionResults);
+        return selectionResults;
       });
 
       // Leave only docs that matched ALL the selections
       result = this.processSelectionResults(searchResults);
     }
 
-    let facetingResult = features.calculateResultFacets(result.map((d) => d.doc));
-    let facets = self.adaptFacets(facetingResult);
-    result = result.map((item) => self.adaptSearchResult(item));
+    let facetingResult = features.calculateResultFacets(result.map((d) => d.doc)),
+        facets = adaptFacets(facetingResult);
+    result = result.map((item) => adaptSearchResult(item));
 
-    Util.log(JSON.stringify(query.getSelections()), ' -> ', result.length, '/',
-             this.index.documentStore.length, 'items,',
-             'took', performance.now() - startMark, 'ms');
+    Util.log(JSON.stringify(querySelections), ' -> ', result.length, '/',
+             index.documentStore.length, 'items, took',
+             performance.now() - startMark, 'ms');
 
     return {
       items: result,
@@ -228,83 +274,33 @@ function emptyIndex() {
   return index;
 }
 
-async function getIndexWithOps(indexOps, catalog) {
-  let allFiles = await indexOps.listItems();
-  let fileIndex = allFiles.findIndex((entry) => entry.id === indexOps.indexId);
-  let existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
-
-  let indexWrapper = new IndexWrapper(indexOps, catalog);
-  if(existingIndexEntry) {
-    Util.log('Found existing index');
-    existingIndexEntry = await indexOps.getItem(existingIndexEntry);
-    try {
-      indexWrapper.loadIndex(JSON.parse(existingIndexEntry.content));
-    } catch(e) { Util.error(e); }
-  }
-
-  if(!verifyUpToDate(indexWrapper.index, allFiles)) {
-    Util.log('Existing index outdated');
-    indexWrapper = new IndexWrapper(indexOps, catalog);
-    let newIndex = await rebuildIndex(indexOps, allFiles, indexWrapper.features);
-    indexWrapper.index = newIndex;
-    await indexWrapper.saveIndex();
-  } else {
-    Util.log('Existing index up to date');
-  }
-
-  return indexWrapper;
-
-  async function rebuildIndex(indexOps, allFiles, features) {
-    Util.log('Rebuilding index');
-    let index = new elasticlunr.Index();
-
-    let promises = allFiles.map((entry) => {
-      return indexOps.getItem(entry).then((item) => {
-        let doc = {
-          id: entry.id,
-          name: model.toEntryName(item.id),
-          rev: entry.rev
-        };
-        addDocToIndex(doc, item.content, index, features);
-      });
-    });
-
-    await Promise.all(promises);
-    features.calculateFieldFeatures();
-    Util.log('Entries in index:', index.documentStore.length);
-    return index;
-  }
-}
-
 let syncTimeout;
-function startIndexSync(indexOps) {
+function startIndexSync(catalog) {
   if(syncTimeout) {
     clearTimeout(syncTimeout);
   }
 
-  syncTimeout = setTimeout(() => indexOps.sync(), 15000);
+  syncTimeout = setTimeout(async () => await catalog.searchIndex.sync(), 15000);
 }
-
 
 let loadedIndices = {};
 elasticlunr.tokenizer.seperator = /([\s\-,]|(\. ))+/;
 
 exports.RebulasBackend = {
   getIndexBackend: function(catalog) {
-    let indexOps = undefined;
+    let indexOps;
     if (catalog.uri.startsWith('dropbox.com')) {
       indexOps = new DropboxOperations(catalog);
-      indexOps = new LocalWrapperOperations(catalog, indexOps);
       Util.log('Loading Dropbox index');
-      startIndexSync(indexOps);
     } else if (catalog.uri.startsWith('localhost')) {
       indexOps = new LocalhostOperations(catalog);
       Util.log('Loading Localhost index');
     }
-    return indexOps;
+    return new LocalWrapperOperations(catalog, indexOps);
   },
   loadIndex: async function(indexOps, catalog) {
-    let index = await getIndexWithOps(indexOps, catalog);
+    let index = new IndexWrapper(indexOps, catalog);
+    await index.loadIndex();
     catalog.searchIndex = index;
     return index;
   },
@@ -312,12 +308,15 @@ exports.RebulasBackend = {
     if(loadedIndices[catalog.id]) {
       catalog.searchIndex = loadedIndices[catalog.id];
       Util.log('Found existing search index for catalog ', catalog.id);
+      startIndexSync(catalog);
       return catalog.searchIndex;
     }
+
     let indexOps = exports.RebulasBackend.getIndexBackend(catalog);
     if (indexOps) {
       let index = await exports.RebulasBackend.loadIndex(indexOps, catalog);
       loadedIndices[catalog.id] = index;
+      startIndexSync(catalog);
       return index;
     }
 
