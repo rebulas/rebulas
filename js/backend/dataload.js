@@ -97,52 +97,74 @@ function processSelectionResults(selectionResults) {
   return minimalSelection.filter((doc) => selectionMaps.every((map) => map[doc.ref]));
 }
 
-class IndexWrapper {
+class BaseSearchIndex {
+  constructor() {}
+
+  loadIndex() {}
+  
+  saveIndex() {}
+
+  search() {}
+
+  saveItem() {}
+
+  sync() {}
+}
+
+class IndexWrapper extends BaseSearchIndex {
   constructor(indexOperations, catalog) {
+    super();
     this.indexOperations = indexOperations;
     this.index = new elasticlunr.Index();
     this.features = new FeatureCollector();
     this.path = catalog.path;
+    this.opsQueue = new Util.PromiseQueue();
   }
 
   saveIndex(localOnly) {
-    Util.log('Saving index');
-    let ops = this.indexOperations;
-    let indexItem = new model.CatalogItem(ops.indexId, null, JSON.stringify({
-      index: this.index.toJSON(),
-      features: this.features.toJSON(),
-      date: new Date().toUTCString()
-    }));
-    return localOnly ? ops.saveLocal(indexItem) : ops.saveItem(indexItem);
+    return this.opsQueue.exec(() => {
+      Util.log('Saving index');
+      let ops = this.indexOperations;
+      let indexItem = new model.CatalogItem(ops.indexId, null, JSON.stringify({
+        index: this.index.toJSON(),
+        features: this.features.toJSON(),
+        date: new Date().toUTCString()
+      }));
+      return localOnly ? ops.saveLocal(indexItem) : ops.saveItem(indexItem);
+    });
   }
 
   async loadIndex() {
-    let indexOps = this.indexOperations,
-        allFiles = await indexOps.listItems(),
-        fileIndex = allFiles.findIndex((entry) => entry.id === indexOps.indexId),
-        existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
+    let self = this;
+    return this.opsQueue.exec(async () => {
+      let indexOps = self.indexOperations,
+      allFiles = await indexOps.listItems(),
+      fileIndex = allFiles.findIndex((entry) => entry.id === indexOps.indexId),
+      existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
 
-    if(existingIndexEntry) {
-      Util.log('Found existing index');
-      existingIndexEntry = await indexOps.getItem(existingIndexEntry);
-      try {
-        let indexContent = JSON.parse(existingIndexEntry.content);
-        this.index = indexContent.index && elasticlunr.Index.load(indexContent.index);
-        this.features = indexContent.features && FeatureCollector.load(indexContent.features);
-      } catch(e) { Util.error(e); }
-    }
+      if(existingIndexEntry) {
+        Util.log('Found existing index');
+        existingIndexEntry = await indexOps.getItem(existingIndexEntry);
+        try {
+          let indexContent = JSON.parse(existingIndexEntry.content);
+          self.index = indexContent.index && elasticlunr.Index.load(indexContent.index);
+          self.features = indexContent.features && FeatureCollector.load(indexContent.features);
+        } catch(e) { Util.error(e); }
+      }
 
-    if(verifyUpToDate(this.index, allFiles)) {
-      Util.log('Index up to date');
-    } else {
-      Util.log('Index outdated');
+      if(verifyUpToDate(self.index, allFiles)) {
+        Util.log('Index up to date');
+        return Promise.resolve();
+      } else {
+        Util.log('Index outdated');
 
-      let features = new FeatureCollector();
-      let newIndex = await rebuildIndex(indexOps, allFiles, features);
-      this.index = newIndex;
-      this.features = features;
-      await this.saveIndex();
-    }
+        let features = new FeatureCollector();
+        let newIndex = await rebuildIndex(indexOps, allFiles, features);
+        self.index = newIndex;
+        self.features = features;
+        return self.saveIndex();
+      }
+    });
   }
 
   saveItem(item) {
@@ -194,23 +216,26 @@ class IndexWrapper {
   }
 
   async sync() {
-    if((await this.indexOperations.dirtyItems()).length === 0) {
-      Util.log('Synchronized');
-      return Promise.resolve();
-    }
-
-    Util.log('Synchronizing...');
     let self = this;
-    function onItemSynced(err, catalogItem) {
-      if(catalogItem.id === self.indexOperations.indexFile) {
-        return;
+    return this.opsQueue.exec(async () => {
+      if((await self.indexOperations.dirtyItems()).length === 0) {
+        Util.log('Synchronized');
+        return Promise.resolve();
       }
 
-      self.reindexItem(catalogItem);
-      self.saveIndex(true);
-    }
+      Util.log('Synchronizing...');
+      function onItemSynced(err, catalogItem) {
+        if(catalogItem.id === self.indexOperations.indexFile) {
+          return;
+        }
 
-    return this.indexOperations.sync(onItemSynced).then(() => self.saveIndex());
+        self.reindexItem(catalogItem);
+        self.saveIndex(true);
+      }
+
+      return self.indexOperations.sync(onItemSynced)
+        .then(() => self.saveIndex());
+    });
   }
 
   search(queryObject) {

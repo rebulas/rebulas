@@ -1,4 +1,25 @@
 module.exports = {
+  PromiseQueue: class PromiseQueue {
+    constructor() {
+      this.last = null;
+    }
+
+    async exec(fun) {
+      let self,
+          last = this.last;
+      if(last) {
+        this.last = last.then(() => fun())
+          .then(() => {
+            if(last === self.last) {
+              self.last = null;
+            }
+          });
+        return this.last;
+      } else {
+        return fun();
+      }
+    }
+  },
 
   AuthRequests: class AuthRequests {
     constructor(user, pass) {

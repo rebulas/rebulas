@@ -16,6 +16,8 @@ let dummyItem = {
   _md: '# Name\nDummy Item'
 }, dummyItem2 = {
   _md: '# Name\nDummy Item 2'
+}, dummyItem3 = {
+  _md: '# Name\nDummy Item 3'
 };
 
 module.exports.someIndex = async () =>
@@ -126,14 +128,20 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   console.log(secondSavedItem);
   //test.ok(await indexOps.isDirtyItem(secondSavedItem), 'Item not reported dirty');
 
-  console.log('Syncing');
-  await index.sync();
+  // Syncing would be performed in the background while the user keeps working
+  // so don't 'await' it
+  index.sync();
+
+  let savedItem3 = await index.saveItem(dummyItem3);
 
   let remoteSecondSavedItem = await indexOps.getItem(secondSavedItem);
   test.ok(secondSavedItem.rev !== remoteSecondSavedItem.rev);
 
   secondSavedItem.rev = remoteSecondSavedItem.rev;
-  test.deepEqual(secondSavedItem, remoteSecondSavedItem, 'Not equal saved item in remote store');
+  test.deepEqual(secondSavedItem, remoteSecondSavedItem,
+                 'Not equal saved item in remote store');
+  test.deepEqual(savedItem3, await indexOps.getItem(savedItem3),
+                 'Not equal saved item in remote store');
 
   dirtyItems = await indexOps.dirtyItems();
   test.ok(dirtyItems.length === 0, 'Has dirty items after sync');

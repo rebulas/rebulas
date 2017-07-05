@@ -102,9 +102,9 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   }
 
   async addDirty(item) {
-    let localId = this.toLocalPath(item.id);
-    let dirty = await this.dirtyItems(),
-    index = dirty.indexOf(localId);
+    let localId = this.toLocalPath(item.id),
+        dirty = await this.dirtyItems(),
+        index = dirty.indexOf(localId);
     if(index < 0) {
       dirty.push(localId);
     }
