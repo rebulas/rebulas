@@ -19,7 +19,7 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   }
 
   toLocalPath(path) {
-    return this.storageId + '/' + path;
+    return this.storageId + path;
   }
 
   async listItems() {
@@ -35,22 +35,13 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     return allKeys.
       filter((key) => self.isLocalPath(key)).
       map((key) => self.toDelegatePath(key)).
-      map((key) => new model.CatalogItemEntry(key, '0'));
+      map((key) => new model.CatalogItemEntry(key));
   }
 
   saveItem(catalogItem) {
     let self = this;
 
-    function onLocalSaveReject(errLocal) {
-      Util.error(errLocal);
-      return saveRemote().then(null, (errRemote) => {
-        Util.error(errRemote);
-        return Promise.reject(new Error([errLocal, errRemote]));
-      });
-    }
-
     function saveRemote() {
-      Util.log('Saving', catalogItem.id);
       return self.delegate.saveItem(catalogItem).catch((err) => {
         Util.log('Failed to save', catalogItem.id, ':', err);
         return self.addDirty(catalogItem).then(() => catalogItem, (err) => {
@@ -60,8 +51,15 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
       });
     }
 
-    return localforage.setItem(self.toLocalPath(catalogItem.id), catalogItem.content)
-      .then(saveRemote, onLocalSaveReject);
+    return this.saveLocal(catalogItem).then(saveRemote);
+  }
+
+  saveLocal(catalogItem) {
+    return localforage.setItem(this.toLocalPath(catalogItem.id), catalogItem.toJSON())
+      .catch((err) => {
+        Util.log('Failed to save locally', catalogItem.id, ':', err);
+        return catalogItem;
+      });
   }
 
   getItem(catalogItem) {
@@ -69,41 +67,44 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
         localPath = self.toLocalPath(catalogItem.id);
 
     return self.delegate.getItem(catalogItem).then(
-      (content) => localforage.setItem(localPath, content)
+      (savedItem) => localforage.setItem(localPath, savedItem.toJSON()).then(() => savedItem)
     ).catch((err) => {
       Util.error(err);
-      return localforage.getItem(localPath).then((localContent) =>
-        new model.CatalogItem(catalogItem.id, catalogItem.rev, localContent)
-      );
+      return localforage.getItem(localPath)
+        .then((localItem) => new model.CatalogItem().fromJSON(localItem));
     });
   }
 
-  async sync() {
-    let self = this,
-        dirty = await this.dirtyItems();
+  async sync(listener) {
+    let dirty = await this.dirtyItems();
 
     while(dirty.length) {
       let entryPath = dirty[0];
       Util.log('Saving remote', entryPath);
 
-      let entryContent = await localforage.getItem(entryPath);
-      let item = new model.CatalogItem(self.toDelegatePath(entryPath), null, entryContent);
+      let localCopy = await localforage.getItem(entryPath),
+          catalogItem = new model.CatalogItem().fromJSON(localCopy);
+
       try {
-        await this.delegate.saveItem(item);
+        let savedItem = await this.saveItem(catalogItem);
         dirty.splice(0, 1);
+        await this.saveDirtyItems(dirty);
+
+        if(listener) {
+          listener(null, savedItem, catalogItem);
+        }
       } catch(e) {
         Util.error(e);
+        listener(e, catalogItem);
         break;
       }
     }
-
-    return self.saveDirtyItems(dirty);
   }
 
   async addDirty(item) {
-    let localId = this.toLocalPath(item.id);
-    let dirty = await this.dirtyItems(),
-    index = dirty.indexOf(localId);
+    let localId = this.toLocalPath(item.id),
+        dirty = await this.dirtyItems(),
+        index = dirty.indexOf(localId);
     if(index < 0) {
       dirty.push(localId);
     }
@@ -118,15 +119,6 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   dirtyItems() {
     return localforage.getItem('dirty_items_' + this.storageId)
       .then((items) => items || [], (err) => { Util.log(err); return []; });
-  }
-
-  isDirty() {
-    return this.dirtyItems();
-  }
-
-  isDirtyItem(item) {
-    return this.dirtyItems()
-      .then((items) => items.indexOf(this.toLocalPath(item.path)) > 0);
   }
 }
 
@@ -148,7 +140,7 @@ class LocalhostOperations extends model.BaseCatalogOperations {
 
   async listItems() {
     var list = JSON.parse(lc.getItem(this.storageId));
-    return Object.keys(list).map((path) => new model.CatalogItemEntry(path));
+    return Object.keys(list).map((path) => new model.CatalogItemEntry(path, 'localhost'));
   }
 
   saveItem(catalogItem) {
@@ -156,12 +148,14 @@ class LocalhostOperations extends model.BaseCatalogOperations {
     list[catalogItem.id] = catalogItem.content;
     lc.setItem(this.storageId, JSON.stringify(list));
 
-    return Promise.resolve(catalogItem);
+    return Promise.resolve(new model.CatalogItem(catalogItem.id,
+                                                 'localhost',
+                                                 catalogItem.content));
   }
 
   getItem(entry) {
     var list = JSON.parse(lc.getItem(this.storageId));
-    return Promise.resolve(new model.CatalogItem(entry.id, null, list[entry.id]));
+    return Promise.resolve(new model.CatalogItem(entry.id, 'localhost', list[entry.id]));
   }
 }
 
