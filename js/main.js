@@ -45,16 +45,20 @@ $(document).ready(function() {
   				"queryExecutor" : queryExecutor,
   				"initialResult" : result,
   				"container" : $("#terminal"),
-  				"helpContainer" : $("#help"),
   				"newItemListener" : newItemListener,
-          "introListener" : function() {
+  				"helpListener" : function() {
+            var h = $(".help").clone();
+            $("#hintPlaceholder").empty().append(h);
+            h.show();
+          },
+  				"introListener" : function() {
             let intro = introJs();
-
+              
             // Skip over hidden elements 
             intro.onbeforechange(el => {if (!el) intro.nextStep()});
             intro.setOption("showStepNumbers", false);
             intro.start();
-          }
+  				}
   		});
 
   		// Render the initial result
@@ -64,11 +68,6 @@ $(document).ready(function() {
   		// The listeners define onResultChange method triggered within queryExecutor
   		queryExecutor.addListener(terminal);
   		queryExecutor.addListener(resultRenderer);
-
-  		$("#helpButton").click(function() {
-  			setTimeout(terminal.focus, 100);
-  			$("#help").fadeOut();
-  		});
 
   		var keymap = Keymap.create({
   			"terminal" : terminal

@@ -62,7 +62,7 @@
 					<div class="btn-group pull-right" style="display:none" id="repository-button"
 						data-step="2"
 						data-position="bottom-right-aligned"
-						data-intro="By default your data will be stored in the local browser storage. Use this button to link to an external repository and to switch between repositories. <br><br>Note that Rebulas wokrs entirely on the client side, your data never touches our servers and you remain completely in control.">
+						data-intro="By default your data will be stored in the local browser storage. Use this button to link to an external repository and to switch between repositories. <br><br>Note that Rebulas works entirely on the client side, your data never touches our servers and you remain completely in control.">
 
 						<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 						<span class="current-repository"></span> <span class="caret"></span></button>
@@ -90,59 +90,58 @@
 				</div>
 			</div>
 
-			<div id="help" class="pull-right">
+			<div class="help">
 				<b>Rebulas Terminal Reference</b>
 				<br/><br/>
-				<div>Filtering
-						<table class="help-table">
+				<div class="help-section">Filtering
+						<table class="help-content">
 							<tr>
-									<td width="30%" style="padding-left: 10px"><b>s <i>keyword</i></b></td>
+									<td width="30%" style="padding-left: 10px">s <i>keyword</i></td>
 									<td width="5%"></td>
-									<td wdith="65%">Search within the catalog of documents</td>
+									<td width="65%">Search within the catalog of documents</td>
 							</tr>
 							<tr>
-									<td style="padding-left: 10px;vertical-align: top; padding-top: 10px"><b>cd <i>field value</i></b></td>
+									<td style="padding-left: 10px;vertical-align: top; padding-top: 10px">cd <i>field value</i></td>
 									<td></td>
 									<td style="padding-top: 10px">Filter the result with the specified field/value pair.</td>
 							</tr>
 							<tr>
-									<td style="padding-left: 10px;vertical-align: top; padding-top: 10px"><b>cd <i>../</i></b></td>
+									<td style="padding-left: 10px;vertical-align: top; padding-top: 10px">cd <i>../</i></td>
 									<td></td>
 									<td style="padding-top: 10px">Drop the last filtering step, if no argument is provided drop all filtering steps</td>
 							</tr>
 						</table>
 				</div>
 				<br/><br/>
-				<div>Flow
-						<table width="100%">
+				<div class="help-section">Flow
+						<table class="help-content">
 							<tr>
-									<td width="30%" style="padding-left: 10px"><b>new</b></td>
+									<td width="30%" style="padding-left: 10px">new</td>
 									<td width="5%"></td>
-									<td wdith="65%">Open the new item dialog</td>
+									<td width="65%">Open the new item dialog</td>
 							</tr>
 						</table>
 				</div>
 				<br/><br/>
-				<div>Styling
-						<table>
+				<div class="help-section">Styling
+						<table class="help-content">
 							<tr>
-									<td width="30%" style="padding-left: 10px"><b>height <i>x</i></b></td>
+									<td width="30%" style="padding-left: 10px">height <i>x</i></td>
 									<td width="5%"></td>
-									<td wdith="65%">Set the height of the terminal in pixels</td>
+									<td width="65%">Set the height of the terminal in pixels</td>
 							</tr>
 						</table>
 				</div>
 				<br><br>
-				<div>Operations
-						<table>
+				<div class="help-section">Operations
+						<table class="help-content">
 							<tr>
-									<td width="30%" style="vertical-align: top;padding-left: 10px"><b>cp <i>*</i> <i>catalog/path</i></b></td>
+									<td width="30%" style="vertical-align: top;padding-left: 10px">cp <i>*</i> <i>catalog/path</i></td>
 									<td width="5%"></td>
-									<td wdith="65%">Copy all items from the current selection to the target catalog</td>
+									<td width="65%">Copy all items from the current selection to the target catalog</td>
 							</tr>
 						</table>
 				</div>
-				<button class="btn btn-success pull-right" id="helpButton">Got it</button>
 			</div>
 		</div>
 	</div>

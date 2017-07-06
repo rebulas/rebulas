@@ -204,28 +204,26 @@ ul.item-list > li {
 
 
 
-
-
-
-
-
-#help {
-	width: 550px;
+.help {
+	width: 650px;
 	font-family: monospace;
 	color:#5cb85c;
 	display: none;
-	position: absolute;
-	top:0;
-	right: 0;
 	background-color: white;
 	padding: 10px 20px 10px 10px;
-	border-radius: 1px;
-	border-left: 1px solid #DDD;
-	border-bottom: 1px solid #DDD;
+	margin: -100px;
+	font-size: 14px;
+}
+.help > .help-section {
+    font-weight: bold;
 }
 
-#helpButton {
-	margin-right: 20px;
+.help-section {
+    font-weight: bold;
+}
+.help-content {
+    width: 100%;
+    font-weight: normal;
 }
 
 .facet {

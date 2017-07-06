@@ -11,7 +11,7 @@ module.exports = {
 
 		this.currentResult = args.initialResult;
 		this.container = args.container;
-		this.helpContainer = args.helpContainer;
+		this.helpListener = args.helpListener;
 		this.newItemListener = args.newItemListener;
 		this.introListener = args.introListener;
 		this.catalog = args.initialResult.catalog;
@@ -109,7 +109,7 @@ module.exports = {
 
       var c = this.parseCommand(command);
       if (c.command == "h" || c.command == "help") {
-				this.helpContainer.fadeIn();
+				this.helpListener();
 			} else if (c.command == "intro") {
 				this.introListener();
       } else if (c.command == "s") {
