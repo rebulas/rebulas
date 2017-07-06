@@ -1,15 +1,25 @@
-let commonTests = require('./lib/common-tests'),
+let Dropbox = require('dropbox'),
+    commonTests = require('./lib/common-tests'),
     model = require('backend/model');
 
 let dropboxCatalog = {
   id: 1,
   uri: 'dropbox.com',
-  path: 'unittest',
+  path: 'rebulas-unittest',
 }, localCatalog = {
   id: 2,
   uri: 'localhost',
   path: 'default'
 };
+
+async function clearDropboxFolder() {
+  let path = '/' + dropboxCatalog.path;
+  console.log('Deleting', path);
+  try {
+    await new Dropbox({ accessToken: dropboxCatalog.token })
+      .filesDelete({ path: path });
+  } catch(e) {}
+}
 
 module.exports = {
   setUp : function(cb) {
@@ -30,6 +40,7 @@ module.exports = {
   testDropboxIndex : async function(test) {
     try {
       if(dropboxCatalog.token) {
+        await clearDropboxFolder();
         await commonTests.verifyCatalog(test, dropboxCatalog);
       }
     } catch(e) {
@@ -53,6 +64,7 @@ module.exports = {
   testDropboxLocalWrapper : async function(test) {
     try {
       if(dropboxCatalog.token) {
+        await clearDropboxFolder();
         await commonTests.verifyLocalWrapper(test, dropboxCatalog);
       }
     } catch(e) {
@@ -71,6 +83,7 @@ module.exports = {
   testDropboxIndexReload : async function(test) {
     try {
       if(dropboxCatalog.token) {
+        await clearDropboxFolder();
         await commonTests.verifyIndexReload(test, dropboxCatalog);
       }
     } catch(e) {

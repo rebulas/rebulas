@@ -14,7 +14,7 @@ function createDownloadResult(catalogItem, response) {
   // Seems to behave differently in node and browser
   if(response.fileBinary !== undefined) {
     // node - directly the string in fileBinary
-    return new model.CatalogItem(catalogItem.id, catalogItem.rev, response.fileBinary);
+    return new model.CatalogItem(catalogItem.id, response.rev, response.fileBinary);
   }
 
   return new Promise((resolve, reject) => {
@@ -22,7 +22,7 @@ function createDownloadResult(catalogItem, response) {
     let blob = response.fileBlob;
     let reader = new FileReader();
     reader.onloadend = () => {
-      resolve(new model.CatalogItem(catalogItem.id, catalogItem.rev, reader.result));
+      resolve(new model.CatalogItem(catalogItem.id, response.rev, reader.result));
     };
     reader.onerror = reject;
     reader.readAsText(blob);
