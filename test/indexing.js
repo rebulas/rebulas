@@ -19,10 +19,10 @@ module.exports = {
   emptyHeadings: async function(test) {
     try {
       await index.saveItem({
-        _md: '# Description\n\n\n'
+        rawContent: '# Description\n\n\n'
       });
       await index.saveItem({
-        _md: '# Description'
+        rawContent: '# Description'
       });
     } catch(e) { console.log(e); test.fail(); }
 

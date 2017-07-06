@@ -101,7 +101,7 @@ class BaseSearchIndex {
   constructor() {}
 
   loadIndex() {}
-  
+
   saveIndex() {}
 
   search() {}
@@ -109,6 +109,8 @@ class BaseSearchIndex {
   saveItem() {}
 
   sync() {}
+
+  dirtyItems() {}
 }
 
 class IndexWrapper extends BaseSearchIndex {
@@ -170,7 +172,7 @@ class IndexWrapper extends BaseSearchIndex {
   saveItem(item) {
     // Reverse of adaptSearchResult
     let self = this,
-        content = item._md,
+        content = item.rawContent,
         indexOps = this.indexOperations,
         features = this.features,
         index = this.index;
@@ -209,7 +211,7 @@ class IndexWrapper extends BaseSearchIndex {
     let doc = this.index.documentStore.getDoc(catalogItem.id);
     if (doc) {
       this.features.removeDocContent(doc._content);
-      this.index.removeDoc(catalogItem);
+      this.index.removeDoc(doc);
     }
     addDocToIndex(catalogItem, catalogItem.content, this.index, this.features);
     this.features.calculateFieldFeatures();
@@ -236,6 +238,10 @@ class IndexWrapper extends BaseSearchIndex {
       return self.indexOperations.sync(onItemSynced)
         .then(() => self.saveIndex());
     });
+  }
+
+  dirtyItems() {
+    return this.indexOperations.dirtyItems();
   }
 
   search(queryObject) {
@@ -273,12 +279,13 @@ class IndexWrapper extends BaseSearchIndex {
       });
 
       // Leave only docs that matched ALL the selections
-      result = this.processSelectionResults(searchResults);
+      result = processSelectionResults(searchResults);
     }
 
     let facetingResult = features.calculateResultFacets(result.map((d) => d.doc)),
         facets = adaptFacets(facetingResult);
-    result = result.map((item) => adaptSearchResult(item));
+    result = result.map((item) =>
+                        new model.DisplayItem(item.ref.substring(1), item.doc._content));
 
     Util.log(JSON.stringify(querySelections), ' -> ', result.length, '/',
              index.documentStore.length, 'items, took',

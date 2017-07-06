@@ -13,11 +13,11 @@ var dataload;
 var RebulasBackend;
 
 let dummyItem = {
-  _md: '# Name\nDummy Item'
+  rawContent: '# Name\nDummy Item'
 }, dummyItem2 = {
-  _md: '# Name\nDummy Item 2'
+  rawContent: '# Name\nDummy Item 2'
 }, dummyItem3 = {
-  _md: '# Name\nDummy Item 3'
+  rawContent: '# Name\nDummy Item 3'
 };
 
 module.exports.someIndex = async () =>
@@ -76,7 +76,7 @@ module.exports.verifyCatalog = async (test, catalog) => {
     let result = catalogIndex.search('dummy');
     test.ok(result.items.length >= 1, 'Not found in result');
     test.ok(result.items.find(
-      (e) => e._md === dummyItem._md, 'Dummy not found in result'));
+      (e) => e.rawContent === dummyItem.rawContent, 'Dummy not found in result'));
 
     test.ok(catalogIndex.index.documentStore.getDoc(savedItem.id), 'Has saved item in store');
   } catch(e) {
@@ -101,7 +101,7 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
 
   test.ok(searchResult.items.length >= 1, 'No result');
   test.ok(searchResult.items.find(
-    (e) => e._md === dummyItem._md, 'No dummy item as result'));
+    (e) => e.rawContent === dummyItem.rawContent, 'No dummy item as result'));
 
   // Swap out with a backend that will reject all operations
   indexOps.delegate = failingOps;
@@ -110,9 +110,9 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   searchResult = index.search('dummy');
   test.ok(searchResult.items.length >= 2, 'Empty result');
   test.ok(searchResult.items.find(
-    (e) => e._md === dummyItem._md, 'No dummy item in result'));
+    (e) => e.rawContent === dummyItem.rawContent, 'No dummy item in result'));
   test.ok(searchResult.items.find(
-    (e) => e._md === dummyItem2._md, 'No dummy item 2 in result'));
+    (e) => e.rawContent === dummyItem2.rawContent, 'No dummy item 2 in result'));
 
   let localSecondItem = await indexOps.getItem(secondSavedItem);
   test.deepEqual(secondSavedItem, localSecondItem, 'Not equal saved item in local store');
