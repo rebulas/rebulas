@@ -1,6 +1,7 @@
 var ItemRenderer = require("ui/item-renderer");
 var FacetRenderer = require("ui/facet-renderer");
 var Keymap = require("ui/keymap");
+var model = require("backend/model");
 
 module.exports = {
 
@@ -66,7 +67,7 @@ module.exports = {
 					}
 
 					if (newContent) {
-						item._md = newContent;
+						item.setContent(newContent);
 						catalog.searchIndex.saveItem(item);
 
 						if (close) {
@@ -102,13 +103,11 @@ module.exports = {
 					});
 				}
 
-				var item = {
-					"_md" : ""
-				};
-
+        let initialContent = '';
 				fields.forEach(field => {
-						item._md += "# " + field + String.fromCharCode(13).repeat(3);
+						initialContent += "# " + field + String.fromCharCode(13).repeat(3);
 				});
+        var item = new model.DisplayItem(null, initialContent);
 
 				this.details(item, catalog);
 			}

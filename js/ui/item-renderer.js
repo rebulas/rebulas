@@ -48,14 +48,14 @@ module.exports = {
 
 		var textarea = $(document.createElement("textarea"));
 		textarea.addClass("item-details-textarea");
-		textarea.append(item._md);
+		textarea.append(item.rawContent);
 
 		// Remember the default state and initilize the screen with it
 		var defaultState = localStorage.getItem("default-details-state");
 
 		// Allow default to html only if the item exists, new items enter text mode
 		if (defaultState == "html" && item.id) {
-			detailContainer.html(marked(item._md));
+			detailContainer.html(marked(item.rawContent));
 		} else {
 			detailContainer.append(textarea);
 		}
@@ -132,15 +132,9 @@ module.exports = {
 	renderFirstField : function(item) {
 		var renderedField = $(document.createElement("div"));
 
-		// TODO the order of the fields in item is not guaranteed
-		// This needs fixing with either user input i.e. specifying which field to expose
-		// or some clever heiristics determining which is the most important field. This might be
-		// a challenge given that we do not impose any restriction on the consistency of the documents
-		for (var key in item) {
-				if (key != "id" && key != "_md") {
-						renderedField.append(item[key]);
-						return renderedField;
-				}
-		}
+    let nameField = item.field('name');
+    nameField = nameField || item.fields[0];
+		renderedField.append(nameField.textValue);
+    return renderedField;
 	}
 }

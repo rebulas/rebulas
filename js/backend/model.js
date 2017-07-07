@@ -100,7 +100,7 @@ class AnalyzedItem {
       let nextHeading = topHeadings[index + 1];
       let valueLexemes = lexemes.slice(heading.index + 1,
                                        (nextHeading && nextHeading.index) || lexemes.length);
-      this.fields.push(new DocumentField(heading.text, valueLexemes));
+      this.fields.push(new DocumentField(heading.text.toLowerCase(), valueLexemes));
     });
   }
 
@@ -136,5 +136,6 @@ module.exports = {
   CatalogItem: CatalogItem,
   BaseCatalogOperations: BaseCatalogOperations,
   AnalyzedItem: AnalyzedItem,
+  DisplayItem: DisplayItem,
   toEntryName: toEntryName
 };
