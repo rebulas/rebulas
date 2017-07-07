@@ -1,6 +1,7 @@
 var Keymap = require("ui/keymap");
 var Util = require("extra/util");
 var Query = require("query/query");
+var Backend = require("backend/dataload.js").RebulasBackend;
 
 module.exports = {
 
@@ -40,7 +41,7 @@ module.exports = {
 				// We don't want shortcuts triggering while typing in the terminal
 				Keymap.deActivateShortcuts();
 			}
-		}
+		};
 
 		var height = this.getHeight();
 		if (!isNaN(height)) {
@@ -65,7 +66,7 @@ module.exports = {
 			"focus" : function() {
 					terminal.focus(true);
 			}
-    }
+    };
   },
 
   "calculatePrompt" : function(result) {
@@ -156,7 +157,7 @@ module.exports = {
 					if (!catalog) {
 						terminal.echo("No catalog " + uri + " found");
 					} else {
-						let index = await RebulasBackend.getCatalogIndex(catalog);
+						let index = await Backend.getCatalogIndex(catalog);
 						result.items.forEach(item => {
 
 							// At present the item.id contains path information
@@ -175,7 +176,9 @@ module.exports = {
 					this.container.height(height);
 					this.setHeight(height);
 				}
-			}
+			} else if (c.command == "commit") {
+				await Backend.commitCatalog(this.catalog);
+      }
   },
 
 	"setHeight" : function(height) {

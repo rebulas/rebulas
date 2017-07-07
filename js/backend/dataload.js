@@ -315,25 +315,13 @@ function emptyIndex() {
   return index;
 }
 
-let syncTimeout;
-function startIndexSync(catalog) {
-  if(syncTimeout) {
-    clearTimeout(syncTimeout);
-  }
-
-  syncTimeout = setTimeout(async () => {
-    syncTimeout = null;
-    try {
-      await catalog.searchIndex.sync();
-    } catch(e) {}
-    startIndexSync(catalog);
-  }, 15000);
-}
-
 let loadedIndices = {};
 elasticlunr.tokenizer.seperator = /([\s\-,]|(\. ))+/;
 
 exports.RebulasBackend = {
+  commitCatalog: function(catalog) {
+    return catalog.searchIndex.sync();
+  },
   getIndexBackend: function(catalog) {
     let indexOps;
     if (catalog.uri.startsWith('dropbox.com')) {
@@ -355,7 +343,6 @@ exports.RebulasBackend = {
     if(loadedIndices[catalog.id]) {
       catalog.searchIndex = loadedIndices[catalog.id];
       Util.log('Found existing search index for catalog ', catalog.id);
-      startIndexSync(catalog);
       return catalog.searchIndex;
     }
 
@@ -363,7 +350,6 @@ exports.RebulasBackend = {
     if (indexOps) {
       let index = await exports.RebulasBackend.loadIndex(indexOps, catalog);
       loadedIndices[catalog.id] = index;
-      startIndexSync(catalog);
       return index;
     }
 
