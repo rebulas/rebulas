@@ -52,15 +52,6 @@ async function rebuildIndex(indexOps, allFiles, features) {
   return index;
 }
 
-function adaptSearchResult(item) {
-  let doc = item.doc,
-      adapted = Object.assign({}, doc);
-  adapted.id = item.ref.substring(1);
-  adapted._md = doc._content;
-
-  return adapted;
-}
-
 function adaptFacets(facets) {
   let result = [];
   Object.keys(facets).forEach((key) => {
@@ -170,7 +161,6 @@ class IndexWrapper extends BaseSearchIndex {
   }
 
   saveItem(item) {
-    // Reverse of adaptSearchResult
     let self = this,
         content = item.rawContent,
         indexOps = this.indexOperations,

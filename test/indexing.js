@@ -1,5 +1,6 @@
 let commonTests = require('./lib/common-tests'),
-    model = require('backend/model');
+    model = require('backend/model'),
+    Util = require('extra/util');
 
 let index;
 module.exports = {
@@ -26,6 +27,67 @@ module.exports = {
       });
     } catch(e) { console.log(e); test.fail(); }
 
+    test.done();
+  },
+  facetedSearch: async function(test) {
+    await Promise.all([
+      index.saveItem({
+        rawContent: `# Name
+item1
+# Facet2
+facetval22
+# Facet1
+facetval11`
+      }),
+      index.saveItem({
+        rawContent: `# Name
+item2
+# Facet2
+facetval22
+# Facet1
+facetval12`
+      }),
+      index.saveItem({
+        rawContent: `# Name
+item3
+# Facet2
+facetval21
+# Facet1
+facetval12`
+      }),
+      index.saveItem({
+        rawContent: `# Name
+item4
+# Facet2
+facetval21
+# Facet1
+facetval12`
+      }),
+    ]);
+
+    let results = index.search({ q: 'facet2=facetval22' });
+    test.equal(2, results.items.length);
+    console.log(results.facets);
+
+    let facet1Values = {
+      field: 'facet1',
+      title: 'facet1',
+      values: [
+        {
+          count: 1,
+          id: 'facetval11',
+          title: 'facetval11',
+          link: 'facet1=facetval11'
+        }, {
+          count: 1,
+          id: 'facetval12',
+          title: 'facetval12',
+          link: 'facet1=facetval12'
+        }
+      ]
+    };
+    test.deepEqual(results.facets.find((f) => f.field === 'facet1'),
+                   facet1Values);
     test.done();
   },
   itemAnalysis: function(test) {
