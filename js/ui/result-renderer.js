@@ -77,6 +77,8 @@ module.exports = {
 								hintPlaceholder.empty().append("Select element to show details");
 							}, 3000);
 						}
+					} else if (close) {
+						hintPlaceholder.empty().append("Select element to show details").show();
 					}
 				};
 

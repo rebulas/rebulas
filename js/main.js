@@ -48,13 +48,14 @@ $(document).ready(function() {
   				"newItemListener" : newItemListener,
   				"helpListener" : function() {
             var h = $(".help").clone();
-            $("#hintPlaceholder").empty().append(h);
+            $("#itemDetails").hide();
+            $("#hintPlaceholder").empty().append(h).show();
             h.show();
           },
   				"introListener" : function() {
             let intro = introJs();
-              
-            // Skip over hidden elements 
+
+            // Skip over hidden elements
             intro.onbeforechange(el => {if (!el) intro.nextStep()});
             intro.setOption("showStepNumbers", false);
             intro.start();
