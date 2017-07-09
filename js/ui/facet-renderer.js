@@ -1,4 +1,5 @@
 var Util = require("extra/util");
+var Elements = require("ui/elements");
 
 module.exports = {
 
@@ -13,7 +14,7 @@ module.exports = {
 
         var self = this;
 
-        var container = $(document.createElement("div"));
+        var container = Elements.div();
 
         // Render the facets, each facet entry links to a smaller result set
         for (var f in facets) {
@@ -23,23 +24,16 @@ module.exports = {
                 continue;
             }
 
-            var title = $(document.createElement("li"));
-            title.addClass("facet-title");
-            title.addClass("facet-title-" + facet.field);
+            var title = Elements.li("facet-title facet-title-" + facet.field);
             title.append(facet["title"]);
             container.append(title);
 
             if (facet.values.length > 10) {
 
-                var searchIcon = $(document.createElement("span"));
-                searchIcon.addClass("glyphicon glyphicon-search facet-title-search-icon");
-                searchIcon.addClass("search-icon-" + facet.id);
+                var searchIcon = Elements.span("glyphicon glyphicon-search facet-title-search-icon search-icon-" + facet.id);
                 title.append(searchIcon);
 
-                var searchInput = $(document.createElement("input"));
-                searchInput.attr("type", "search");
-                searchInput.addClass("search-input-" + facet.id);
-                searchInput.addClass("search-field form-control facet-title-search-input");
+                var searchInput = Elements.searchInput("search-field form-control facet-title-search-input search-input-" + facet.id);
                 searchInput.hide();
                 title.append(searchInput);
 
@@ -104,8 +98,7 @@ module.exports = {
                 });
             }
 
-            var div = $(document.createElement("div"));
-            div.addClass("facet-values-full-" + facet.id);
+            var div = Elements.div("facet-values-full-" + facet.id);
 
             var total = facet.values.length;
             facet.values.forEach(function(value) {
@@ -115,8 +108,7 @@ module.exports = {
 
             // Attach Ctrl+F listener on top of the facet panel to allow easy triggering of the
             // search box
-            var divShortened = $(document.createElement("div"));
-            divShortened.addClass("facet-values-short-" + facet.id);
+            var divShortened = Elements.div("facet-values-short-" + facet.id);
             divShortened.mouseenter({"facetId" : facet.id}, function(ev) {
                 $(document).keydown({"facetId" : ev.data.facetId}, function (e) {
                     if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
@@ -151,10 +143,8 @@ module.exports = {
             container.append(div);
             container.append(divShortened);
 
-            var moreLink = $(document.createElement("div"));
-            moreLink.addClass("pull-right");
+            var moreLink = Elements.div("pull-right more-link-" + facet.id);
             moreLink.css("cursor", "pointer");
-            moreLink.addClass("more-link-" + facet.id);
             moreLink.click({"id" : facet.id, "total" : total}, function(ev) {
                 var divShort = container.find(".facet-values-short-" + ev.data.id).first();
                 var divFull = container.find(".facet-values-full-" + ev.data.id).first();
@@ -174,11 +164,11 @@ module.exports = {
             container.append(moreLink);
 
             if (total > 10) {
-                container.append(document.createElement("br"));
+                container.append(Elements.br());
                 moreLink.append((total - 10 ) + " more");
             }
 
-            container.append(document.createElement("br"));
+            container.append(Elements.br());
         }
 
         container.mouseenter(function(ev) {
@@ -208,15 +198,14 @@ module.exports = {
     "renderFacetValue" : function (catalog, facet, value, prefix, queryExecutor) {
         var self = this;
 
-        var innerLi = $(document.createElement("li"));
+        var innerLi = Elements.li();
         var valueId = String(value.id);
 
         innerLi.addClass(prefix + facet.field + "-value-" + valueId.toLowerCase());
         innerLi.addClass("facet-value");
 
-        var link = $(document.createElement("a"));
+        var link = Elements.a("focusable-facet"); // Virtual class used to identify links that can be activated by keyboard shortcust
         link.css("cursor", "pointer");
-        link.addClass("focusable-facet"); // Virtual class used to identify links that can be activated by keyboard shortcust
         link.attr("id", Util.uniqueId()) // Used to identify and activate the link
         link.click({"link" : self.createLink(value.link, catalog)}, function(ev) {
 
@@ -247,8 +236,7 @@ module.exports = {
         link.append(value.title);
         innerLi.append(link);
 
-        var em = $(document.createElement("em"));
-        em.addClass("muted");
+        var em = Elements.em("muted");
         em.append(" (" + value.count + ")");
         innerLi.append(em);
 

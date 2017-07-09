@@ -1,6 +1,7 @@
 var ItemRenderer = require("ui/item-renderer");
 var FacetRenderer = require("ui/facet-renderer");
 var Keymap = require("ui/keymap");
+var Elements = require("ui/elements");
 var model = require("backend/model");
 
 module.exports = {
@@ -36,7 +37,7 @@ module.exports = {
 				countContainer.empty().append(result.count + " results");
 				result.count > 0 ? countContainer.show() : countContainer.hide();
 
-				var container = $(document.createElement("div"));
+				var container = Elements.div();
 				ItemRenderer.renderList({
 					"container" : container,
 					"items" : result.items,

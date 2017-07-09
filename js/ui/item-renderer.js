@@ -1,4 +1,5 @@
 var Util = require("extra/util");
+var Elements = require("ui/elements");
 var marked = require("marked");
 
 module.exports = {
@@ -9,13 +10,11 @@ module.exports = {
 		var clickListener = args.clickListener;
 		var catalog = args.catalog;
 
-		var ul = $(document.createElement("ul"));
-		ul.addClass("item-list");
+		var ul = Elements.ul("item-list");
 
 		var items = args.items;
 		items.forEach((item) => {
-			var li = $(document.createElement("li"));
-			li.addClass("focusable-link"); // Virtual class used to identify links that can be activated by keyboard shortcust
+			var li = Elements.li("focusable-link"); // Virtual class used to identify links that can be activated by keyboard shortcust
 			li.attr("id", Util.uniqueId()) // Used to identify and activate the link
 
 			li.click({"item" : item, "catalog" : catalog}, function(event) {
@@ -43,11 +42,9 @@ module.exports = {
 
 		container.empty();
 
-		var detailContainer = $(document.createElement("div"));
-		detailContainer.addClass("details-container-inner")
+		var detailContainer = Elements.div("details-container-inner");
 
-		var textarea = $(document.createElement("textarea"));
-		textarea.addClass("item-details-textarea");
+		var textarea = Elements.textArea("item-details-textarea");
 		textarea.append(item.rawContent);
 
 		// Remember the default state and initilize the screen with it
@@ -62,8 +59,7 @@ module.exports = {
 
 		container.append(detailContainer);
 
-		var saveButton = $(document.createElement("button"));
-		saveButton.addClass("btn btn-success save-button disabled");
+		var saveButton = Elements.button("btn btn-success save-button disabled");
 		saveButton.append("  Save & Close ");
 		saveButton.click(() => saveCallback(textarea.val()));
 		container.append(saveButton);
@@ -84,14 +80,12 @@ module.exports = {
 				saveButton.removeClass("disabled");
 		});
 
-		var cancelButton = $(document.createElement("button"));
-		cancelButton.addClass("btn btn-default cancel-button");
+		var cancelButton = Elements.button("btn btn-default cancel-button");
 		cancelButton.append("Cancel");
 		cancelButton.click(cancelCallback);
 		container.append(cancelButton);
 
-		var previewButton = $(document.createElement("button"));
-		previewButton.addClass("btn btn-default");
+		var previewButton = Elements.button("btn btn-default");
 		previewButton.addClass(defaultState == "html" ? "html" : "md");
 		previewButton.append(defaultState == "html" ? "Markdown" : "Preview");
 		previewButton.click(function() {
@@ -130,7 +124,7 @@ module.exports = {
 	},
 
 	renderFirstField : function(item) {
-		var renderedField = $(document.createElement("div"));
+		var renderedField = Elements.div();
 
     let nameField = item.field('name');
     nameField = nameField || item.fields[0];
