@@ -4,7 +4,6 @@ var FeatureCollector = require('backend/faceting').FeatureCollector;
 var DropboxOperations = require('backend/dropbox').DropboxOperations;
 var localhost = require('backend/localhost');
 var LocalhostOperations = localhost.LocalhostOperations;
-var RejectingOperations = localhost.RejectingOperations;
 var LocalWrapperOperations = localhost.LocalWrapperOperations;
 var Query = require('query/query');
 var model = require('backend/model');
@@ -14,7 +13,7 @@ var performance = {
 };
 
 function addDocToIndex(doc, content, index, features) {
-  Util.log('Indexing', doc.id, 'rev', doc.rev);
+  //Util.log('Indexing', doc.id, 'rev', doc.rev);
   let analyzed = features.addDocContent(content);
 
   analyzed.id = doc.id;
@@ -35,16 +34,14 @@ async function rebuildIndex(indexOps, allFiles, features) {
   Util.log('Rebuilding index');
   let index = new elasticlunr.Index();
 
-  let promises = allFiles.map((entry) => {
-    return indexOps.getItem(entry).then((item) => {
-      let doc = {
-        id: entry.id,
-        name: model.toEntryName(item.id),
-        rev: entry.rev
-      };
-      addDocToIndex(doc, item.content, index, features);
-    });
-  });
+  let promises = allFiles.map(
+    entry => indexOps.getItem(entry).then(
+      item => addDocToIndex({
+        id: item.id,
+        rev: item.rev
+      }, item.content, index, features)
+    )
+  );
 
   await Promise.all(promises);
   features.calculateFieldFeatures();
@@ -93,8 +90,6 @@ class BaseSearchIndex {
 
   loadIndex() {}
 
-  saveIndex() {}
-
   search() {}
 
   saveItem() {}
@@ -111,53 +106,34 @@ class IndexWrapper extends BaseSearchIndex {
     this.index = new elasticlunr.Index();
     this.features = new FeatureCollector();
     this.path = catalog.path;
-    this.opsQueue = new Util.PromiseQueue();
-  }
-
-  saveIndex(localOnly) {
-    return this.opsQueue.exec(() => {
-      Util.log('Saving index');
-      let ops = this.indexOperations;
-      let indexItem = new model.CatalogItem(ops.indexId, null, JSON.stringify({
-        index: this.index.toJSON(),
-        features: this.features.toJSON(),
-        date: new Date().toUTCString()
-      }));
-      return localOnly ? ops.saveLocal(indexItem) : ops.saveItem(indexItem);
-    });
   }
 
   async loadIndex() {
-    let self = this;
-    return this.opsQueue.exec(async () => {
-      let indexOps = self.indexOperations,
-      allFiles = await indexOps.listItems(),
-      fileIndex = allFiles.findIndex((entry) => entry.id === indexOps.indexId),
-      existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
+    let indexOps = this.indexOperations,
+        allFiles = await indexOps.listItems(),
+        fileIndex = allFiles.findIndex((entry) => entry.id === indexOps.indexId),
+        existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
 
-      if(existingIndexEntry) {
-        Util.log('Found existing index');
-        existingIndexEntry = await indexOps.getItem(existingIndexEntry);
-        try {
-          let indexContent = JSON.parse(existingIndexEntry.content);
-          self.index = indexContent.index && elasticlunr.Index.load(indexContent.index);
-          self.features = indexContent.features && FeatureCollector.load(indexContent.features);
-        } catch(e) { Util.error(e); }
-      }
+    if(existingIndexEntry) {
+      Util.log('Found existing index');
+      existingIndexEntry = await indexOps.getItem(existingIndexEntry);
+      try {
+        let indexContent = JSON.parse(existingIndexEntry.content);
+        this.index = indexContent.index && elasticlunr.Index.load(indexContent.index);
+        this.features = indexContent.features && FeatureCollector.load(indexContent.features);
+      } catch(e) { Util.error(e); }
+    }
 
-      if(verifyUpToDate(self.index, allFiles)) {
-        Util.log('Index up to date');
-        return Promise.resolve();
-      } else {
-        Util.log('Index outdated');
+    if(verifyUpToDate(this.index, allFiles)) {
+      Util.log('Index up to date');
+    } else {
+      Util.log('Index outdated');
 
-        let features = new FeatureCollector();
-        let newIndex = await rebuildIndex(indexOps, allFiles, features);
-        self.index = newIndex;
-        self.features = features;
-        return self.saveIndex();
-      }
-    });
+      let features = new FeatureCollector();
+      let newIndex = await rebuildIndex(indexOps, allFiles, features);
+      this.index = newIndex;
+      this.features = features;
+    }
   }
 
   saveItem(item) {
@@ -193,7 +169,7 @@ class IndexWrapper extends BaseSearchIndex {
     return this.indexOperations.saveItem(new model.CatalogItem(id, null, content))
       .then((savedItem) => {
         self.reindexItem(savedItem);
-        return self.saveIndex().then(() => savedItem);
+        return savedItem;
       });
   }
 
@@ -207,27 +183,18 @@ class IndexWrapper extends BaseSearchIndex {
     this.features.calculateFieldFeatures();
   }
 
-  async sync() {
-    let self = this;
-    return this.opsQueue.exec(async () => {
-      if((await self.indexOperations.dirtyItems()).length === 0) {
-        Util.log('Synchronized');
-        return Promise.resolve();
-      }
-
-      Util.log('Synchronizing...');
-      function onItemSynced(err, catalogItem) {
-        if(catalogItem.id === self.indexOperations.indexFile) {
-          return;
-        }
-
-        self.reindexItem(catalogItem);
-        self.saveIndex(true);
-      }
-
-      return self.indexOperations.sync(onItemSynced)
-        .then(() => self.saveIndex());
-    });
+  sync() {
+    Util.log('Synchronizing...');
+    function conflictResolve(localItem, remoteItem) {
+      let resolution = {
+        action: 'to-remote',
+        item: localItem
+      };
+      Util.log('Resolving conflict', resolution);
+      return Promise.resolve(resolution);
+    }
+    return this.indexOperations.sync(conflictResolve)
+      .then(() => this.loadIndex());
   }
 
   dirtyItems() {
@@ -304,20 +271,9 @@ function verifyUpToDate(lunrIndex, files) {
   return upToDate;
 }
 
-function emptyIndex() {
-  let index = new IndexWrapper();
-  index.search = () => {
-    return {
-      results: [],
-      facets: []
-    };
-  };
-  return index;
-}
-
-let loadedIndices = {};
 elasticlunr.tokenizer.seperator = /([\s\-,]|(\. ))+/;
 
+let loadedIndices = {};
 exports.RebulasBackend = {
   commitCatalog: function(catalog) {
     return catalog.searchIndex.sync();
@@ -330,32 +286,30 @@ exports.RebulasBackend = {
     } else if (catalog.uri.startsWith('localhost')) {
       indexOps = new LocalhostOperations(catalog);
       Util.log('Loading Localhost index');
+    } else if (catalog.uri.startsWith('empty')) {
+      indexOps = new LocalWrapperOperations({
+        id: 'empty',
+        path: 'empty'
+      });
+      Util.log('Loading empty local index');
     }
     return new LocalWrapperOperations(catalog, indexOps);
   },
   loadIndex: async function(indexOps, catalog) {
     let index = new IndexWrapper(indexOps, catalog);
-    await index.loadIndex();
     catalog.searchIndex = index;
+    await index.sync();
     return index;
   },
   getCatalogIndex: async function(catalog) {
     if(loadedIndices[catalog.id]) {
       catalog.searchIndex = loadedIndices[catalog.id];
       Util.log('Found existing search index for catalog ', catalog.id);
-      return catalog.searchIndex;
+    } else {
+      let indexOps = exports.RebulasBackend.getIndexBackend(catalog);
+      catalog.searchIndex = await exports.RebulasBackend.loadIndex(indexOps, catalog);
     }
-
-    let indexOps = exports.RebulasBackend.getIndexBackend(catalog);
-    if (indexOps) {
-      let index = await exports.RebulasBackend.loadIndex(indexOps, catalog);
-      loadedIndices[catalog.id] = index;
-      return index;
-    }
-
-    return emptyIndex();
-  },
-  clearIndexCache: function () {
-    loadedIndices = {};
+    loadedIndices[catalog.id] = catalog.searchIndex;
+    return catalog.searchIndex;
   }
 };

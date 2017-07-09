@@ -158,11 +158,13 @@ class FeatureCollector {
       lengths = Object.keys(stats.values).map((t) => FeatureCollector.tokenizeFacetValue(t).length);
 
       let avg = FeatureCollector.mean(lengths),
-      variance = FeatureCollector.variance(lengths);
+          variance = FeatureCollector.variance(lengths);
+      /*
       Util.log(key,
                'Avg:', avg,
                'Var:', variance,
                'Sentences:', stats.sentenceCount);
+      */
 
       // Pretty much the only feature...
       stats.isFacet = stats.docCount === stats.plainListDocs || variance < 1;

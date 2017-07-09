@@ -3,15 +3,90 @@ var localforage = require('localforage');
 var lc = require("backend/local-storage"),
     model = require('./model');
 
+class CatalogSynchronization {
+  constructor(conflictResolve) {
+    this.conflictResolve = conflictResolve;
+  }
+
+  plan(srcItems, destItems) {
+    let actions = destItems.filter(
+      item => !(srcItems.find(src => src.id === item.id))
+    ).map(newItem => ({
+      action: 'to-local',
+      item: newItem
+    }));
+
+    srcItems.forEach(
+      srcItem => {
+        let destItem = destItems.find(destItem => srcItem.id === destItem.id);
+        // No remote item, so just save
+        if(!destItem) {
+          actions.push({
+            action: 'to-remote',
+            item: srcItem
+          });
+        } else if (!srcItem.remoteRev || destItem.rev !== srcItem.remoteRev) {
+          actions.push({
+            action: 'conflict',
+            sourceItem: srcItem,
+            destItem: destItem
+          });
+        }
+      }
+    );
+
+    return actions;
+  }
+
+  async sync(local, remote) {
+    let self = this,
+        plan = [];
+    try {
+      let allRemote = await remote.listItems();
+      let allLocal = await local.listItems();
+      plan = this.plan(allLocal, allRemote);
+    } catch(e) {
+      Util.log(e);
+    }
+
+    function save(from, to, item) {
+      return from.getItem(item)
+        .then(item => to.saveItem(item))
+        .then(toSaved => {
+          toSaved.remoteRev = toSaved.rev;
+          return from.saveItem(toSaved);
+        }
+      );
+    }
+
+    function executeAction(action) {
+      if(action.action === 'to-local') {
+        return save(remote, local, action.item);
+      } else if(action.action === 'to-remote') {
+        return save(local, remote, action.item);
+      } else if(action.sourceItem && action.destItem) {
+        return self.conflictResolve(action.sourceItem, action.destItem)
+          .then(executeAction);
+      }
+      return Promise.resolve();
+    }
+
+    return Promise.all(plan.map(executeAction));
+  }
+}
+
 class LocalWrapperOperations extends model.BaseCatalogOperations {
   constructor(catalog, delegate) {
     super(catalog);
     this.delegate = delegate;
-    this.storageId = "rebulas_local_storage_" + catalog.id;
+    this.storageId = "rebulas_local_" + catalog.id;
+    this.storage = localforage.createInstance({
+      name: this.storageId
+    });
   }
 
   toDelegatePath(path) {
-    return path.substring(this.storageId.length + 1);
+    return path.substring(this.storageId.length);
   }
 
   isLocalPath(path) {
@@ -23,39 +98,20 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   }
 
   async listItems() {
-    try {
-      return await this.delegate.listItems();
-    } catch(e) {
-      Util.error(e);
-    }
-
-    let self = this,
-        allKeys = await localforage.keys();
-
-    return allKeys.
-      filter((key) => self.isLocalPath(key)).
-      map((key) => self.toDelegatePath(key)).
-      map((key) => new model.CatalogItemEntry(key));
+    let self = this;
+    let entries = await this.storage.keys()
+        .then(
+          keys => keys.filter((key) => self.isLocalPath(key)).
+            map((key) => self.toDelegatePath(key)).
+            map((key) => new model.CatalogItemEntry(key))
+        );
+    return Promise.all(entries.map(entry => self.getItem(entry)));
   }
 
   saveItem(catalogItem) {
-    let self = this;
-
-    function saveRemote() {
-      return self.delegate.saveItem(catalogItem).catch((err) => {
-        Util.log('Failed to save', catalogItem.id, ':', err);
-        return self.addDirty(catalogItem).then(() => catalogItem, (err) => {
-          Util.error(err);
-          return err;
-        });
-      });
-    }
-
-    return this.saveLocal(catalogItem).then(saveRemote);
-  }
-
-  saveLocal(catalogItem) {
-    return localforage.setItem(this.toLocalPath(catalogItem.id), catalogItem.toJSON())
+    catalogItem.rev = this.storageId;
+    return this.storage.setItem(this.toLocalPath(catalogItem.id), catalogItem.toJSON())
+      .then(() => catalogItem)
       .catch((err) => {
         Util.log('Failed to save locally', catalogItem.id, ':', err);
         return catalogItem;
@@ -63,62 +119,13 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   }
 
   getItem(catalogItem) {
-    let self = this,
-        localPath = self.toLocalPath(catalogItem.id);
-
-    return self.delegate.getItem(catalogItem).then(
-      (savedItem) => localforage.setItem(localPath, savedItem.toJSON()).then(() => savedItem)
-    ).catch((err) => {
-      Util.error(err);
-      return localforage.getItem(localPath)
-        .then((localItem) => new model.CatalogItem().fromJSON(localItem));
-    });
+    let localPath = this.toLocalPath(catalogItem.id);
+    return this.storage.getItem(localPath)
+      .then((localItem) => new model.CatalogItem().fromJSON(localItem));
   }
 
-  async sync(listener) {
-    let dirty = await this.dirtyItems();
-
-    while(dirty.length) {
-      let entryPath = dirty[0];
-      Util.log('Saving remote', entryPath);
-
-      let localCopy = await localforage.getItem(entryPath),
-          catalogItem = new model.CatalogItem().fromJSON(localCopy);
-
-      try {
-        let savedItem = await this.saveItem(catalogItem);
-        dirty.splice(0, 1);
-        await this.saveDirtyItems(dirty);
-
-        if(listener) {
-          listener(null, savedItem, catalogItem);
-        }
-      } catch(e) {
-        Util.error(e);
-        listener(e, catalogItem);
-        break;
-      }
-    }
-  }
-
-  async addDirty(item) {
-    let localId = this.toLocalPath(item.id),
-        dirty = await this.dirtyItems(),
-        index = dirty.indexOf(localId);
-    if(index < 0) {
-      dirty.push(localId);
-    }
-    return this.saveDirtyItems(dirty);
-  }
-
-  saveDirtyItems(dirty) {
-    Util.log('Saving dirty:', dirty);
-    return localforage.setItem('dirty_items_' + this.storageId, dirty);
-  }
-
-  dirtyItems() {
-    return localforage.getItem('dirty_items_' + this.storageId)
-      .then((items) => items || [], (err) => { Util.log(err); return []; });
+  sync(conflictResolve) {
+    return new CatalogSynchronization(conflictResolve).sync(this, this.delegate);
   }
 }
 

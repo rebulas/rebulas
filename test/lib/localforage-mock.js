@@ -3,12 +3,16 @@ class LocalforageMock {
     this.store = new Map();
   }
 
+  createInstance() {
+    return this;
+  }
+
   keys() {
     let arr = [];
-    for(let k in this.store.keys()) {
-      arr.push(k);
-    }
-    return arr;
+    this.store.forEach((value, key) => {
+      arr.push(key);
+    });
+    return Promise.resolve(arr);
   }
 
   setItem(key, content) {

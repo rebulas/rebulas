@@ -6,10 +6,6 @@ let dropboxCatalog = {
   id: 1,
   uri: 'dropbox.com',
   path: 'rebulas-unittest',
-}, localCatalog = {
-  id: 2,
-  uri: 'localhost',
-  path: 'default'
 };
 
 async function clearDropboxFolder() {
@@ -32,11 +28,6 @@ module.exports = {
     cb();
   },
 
-  testLocalIndex : async function(test) {
-    await commonTests.verifyCatalog(test, localCatalog);
-    test.done();
-  },
-
   testDropboxIndex : async function(test) {
     try {
       if(dropboxCatalog.token) {
@@ -50,14 +41,21 @@ module.exports = {
     test.done();
   },
 
-  testLocalWrapper : async function(test) {
+  testDropboxInitialLoad: async function(test) {
     try {
-      await commonTests.verifyLocalWrapper(test, localCatalog);
+      if(dropboxCatalog.token) {
+        await clearDropboxFolder();
+        let ops = commonTests.RebulasBackend().getIndexBackend(dropboxCatalog).delegate;
+        await ops.saveItem(new model.CatalogItem('/rebulas-unittest/initial.txt', null,
+                                           `# Name\ninitial item`));
+        let index = await commonTests.RebulasBackend().getCatalogIndex(dropboxCatalog);
+        let results = index.search('initial');
+        test.equal(results.items.length, 1);
+      }
     } catch(e) {
       console.log(e);
       test.fail(e);
     }
-
     test.done();
   },
 
@@ -72,11 +70,6 @@ module.exports = {
       test.fail(e);
     }
 
-    test.done();
-  },
-
-  testLocalIndexReload : async function(test) {
-    await commonTests.verifyIndexReload(test, localCatalog);
     test.done();
   },
 

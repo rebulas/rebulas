@@ -6,9 +6,10 @@ function toEntryName(id) {
 }
 
 class CatalogItemEntry {
-  constructor(id, rev) {
+  constructor(id, rev, remoteRev) {
     this.id = id;
     this.rev = rev || 'local';
+    this.remoteRev = remoteRev || rev;
     this._name = '';
   }
 

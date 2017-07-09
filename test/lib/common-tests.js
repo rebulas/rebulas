@@ -23,7 +23,7 @@ let dummyItem = {
 module.exports.someIndex = async () =>
   await RebulasBackend.getCatalogIndex({
     id: 3,
-    uri: 'localhost',
+    uri: 'empty',
     path: 'default'
   });
 ;
@@ -42,15 +42,13 @@ module.exports.setUp = () => {
 module.exports.tearDown = () => {
   console.log('Clear localStorage');
   localMock.clear();
-
-  RebulasBackend.clearIndexCache();
+  localforageMock.clear();
 };
 
 module.exports.verifyIndexReload = async (test, catalog) => {
   await module.exports.verifyCatalog(test, catalog);
 
   let oldIndex = catalog.searchIndex;
-  RebulasBackend.clearIndexCache();
   catalog.searchIndex = null;
 
   await RebulasBackend.getCatalogIndex(catalog);
@@ -79,6 +77,8 @@ module.exports.verifyCatalog = async (test, catalog) => {
       (e) => e.rawContent === dummyItem.rawContent, 'Dummy not found in result'));
 
     test.ok(catalogIndex.index.documentStore.getDoc(savedItem.id), 'Has saved item in store');
+    test.deepEqual(await catalogIndex.indexOperations.getItem(savedItem), savedItem);
+    test.ok((await catalogIndex.indexOperations.listItems()).length >= 1);
   } catch(e) {
     console.error(e);
     test.ok(false, e);
@@ -87,7 +87,7 @@ module.exports.verifyCatalog = async (test, catalog) => {
 
 module.exports.verifyLocalWrapper = async (test, catalog) => {
   let indexOps = RebulasBackend.getIndexBackend(catalog),
-      originalOps = indexOps,
+      originalOps = indexOps.delegate,
       failingOps = new model.BaseCatalogOperations(catalog);
 
   indexOps = new localhost.LocalWrapperOperations(catalog, indexOps);
@@ -123,11 +123,6 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   // Restore backend and sync
   indexOps.delegate = originalOps;
 
-  dirtyItems = await indexOps.dirtyItems();
-  test.ok(dirtyItems.length > 0, 'Not dirty after failing save');
-  console.log(secondSavedItem);
-  //test.ok(await indexOps.isDirtyItem(secondSavedItem), 'Item not reported dirty');
-
   // Syncing would be performed in the background while the user keeps working
   // so don't 'await' it
   index.sync();
@@ -135,16 +130,13 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   let savedItem3 = await index.saveItem(dummyItem3);
 
   let remoteSecondSavedItem = await indexOps.getItem(secondSavedItem);
-  test.ok(secondSavedItem.rev !== remoteSecondSavedItem.rev);
+  test.equal(secondSavedItem.rev, remoteSecondSavedItem.rev);
 
   secondSavedItem.rev = remoteSecondSavedItem.rev;
   test.deepEqual(secondSavedItem, remoteSecondSavedItem,
                  'Not equal saved item in remote store');
   test.deepEqual(savedItem3, await indexOps.getItem(savedItem3),
                  'Not equal saved item in remote store');
-
-  dirtyItems = await indexOps.dirtyItems();
-  test.ok(dirtyItems.length === 0, 'Has dirty items after sync');
 
   // Verify it's synced now, loop to account for not immediate consistency
   let found = false;
@@ -155,7 +147,6 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   test.ok(found, 'Item 2 not found in original after sync');
 
   let oldIndex = catalog.searchIndex;
-  RebulasBackend.clearIndexCache();
   catalog.searchIndex = null;
 
   await RebulasBackend.getCatalogIndex(catalog);
