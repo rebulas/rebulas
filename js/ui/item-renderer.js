@@ -64,6 +64,7 @@ module.exports = {
 		saveButton.click(() => saveCallback(textarea.val()));
 		container.append(saveButton);
 
+		var changed = false;
 
 		// Handle Ctrl + S
 		textarea.on('keydown', function(e){
@@ -72,12 +73,14 @@ module.exports = {
 				saveCallback(textarea.val(), false);
 				saveButton.addClass("disabled");
 				saveButton.off("click");
+				changed = false;
         return false;
 	    }
 		});
 
 		textarea.on("input", function(e) {
 				saveButton.removeClass("disabled");
+				changed = true;
 		});
 
 		var cancelButton = Elements.button("btn btn-default cancel-button");
@@ -117,7 +120,7 @@ module.exports = {
 		},0);
 
 		detailContainer.keyup(function(e) {
-			if (e.which == 27) {
+			if (e.which == 27 && !changed) {
 				cancelCallback();
 			}
 		});

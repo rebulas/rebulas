@@ -2,6 +2,7 @@ var ItemRenderer = require("ui/item-renderer");
 var FacetRenderer = require("ui/facet-renderer");
 var Keymap = require("ui/keymap");
 var Elements = require("ui/elements");
+var Util = require("extra/util");
 var model = require("backend/model");
 
 module.exports = {
@@ -73,9 +74,14 @@ module.exports = {
 
 						if (close) {
 							hintPlaceholder.empty().append("Item saved").show();
+
 							setTimeout(function() {
 								hintPlaceholder.empty().append("Select element to show details");
-							}, 3000);
+	
+								// Reload the current result set with the new item in it
+								var q = Util.parseQueryString();
+								queryExecutor.navigate("?" + Util.queryObjectToString(q));
+							}, 2000);
 						}
 					} else if (close) {
 						hintPlaceholder.empty().append("Select element to show details").show();
