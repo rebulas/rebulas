@@ -37,7 +37,7 @@ class CatalogState {
   }
 
   isDirty(item) {
-    return this.state.remoteRevs.get(item.id) !== item.rev;
+    return !item.rev || this.state.remoteRevs.get(item.id) !== item.rev;
   }
 
   remoteRev(item) {
