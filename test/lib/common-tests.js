@@ -35,6 +35,7 @@ module.exports.setUp = () => {
   mock('localforage', localforageMock);
 
   dataload = require('backend/dataload.js');
+  dataload.indexCache.clear();
   RebulasBackend = dataload.RebulasBackend;
   localhost = require('backend/localhost');
 };
@@ -77,7 +78,8 @@ module.exports.verifyCatalog = async (test, catalog) => {
       (e) => e.rawContent === dummyItem.rawContent, 'Dummy not found in result'));
 
     test.ok(catalogIndex.index.documentStore.getDoc(savedItem.id), 'Has saved item in store');
-    test.deepEqual(await catalogIndex.indexOperations.getItem(savedItem), savedItem);
+    let remoteItem = await catalogIndex.indexOperations.getItem(savedItem);
+    test.deepEqual(remoteItem, savedItem);
     test.ok((await catalogIndex.indexOperations.listItems()).length >= 1);
   } catch(e) {
     console.error(e);

@@ -14,7 +14,7 @@ function createDownloadResult(catalogItem, response) {
   // Seems to behave differently in node and browser
   if(response.fileBinary !== undefined) {
     // node - directly the string in fileBinary
-    return new model.CatalogItem(catalogItem.id, response.rev, response.fileBinary);
+    return new model.CatalogItem(catalogItem.id, response.fileBinary, response.rev);
   }
 
   return new Promise((resolve, reject) => {
@@ -22,7 +22,7 @@ function createDownloadResult(catalogItem, response) {
     let blob = response.fileBlob;
     let reader = new FileReader();
     reader.onloadend = () => {
-      resolve(new model.CatalogItem(catalogItem.id, response.rev, reader.result));
+      resolve(new model.CatalogItem(catalogItem.id, reader.result, response.rev));
     };
     reader.onerror = reject;
     reader.readAsText(blob);
@@ -86,7 +86,7 @@ class DropboxOperations extends model.BaseCatalogOperations {
       mode: {
         '.tag': 'overwrite'
       }
-    }).then((entry) => new model.CatalogItem(catalogItem.id, entry.rev, catalogItem.content));
+    }).then((entry) => new model.CatalogItem(catalogItem.id, catalogItem.content, entry.rev));
   }
 
   async getItem(catalogItem) {

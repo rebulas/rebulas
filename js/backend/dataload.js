@@ -85,27 +85,16 @@ function processSelectionResults(selectionResults) {
   return minimalSelection.filter((doc) => selectionMaps.every((map) => map[doc.ref]));
 }
 
-class BaseSearchIndex {
-  constructor() {}
-
-  loadIndex() {}
-
-  search() {}
-
-  saveItem() {}
-
-  sync() {}
-
-  dirtyItems() {}
-}
-
-class IndexWrapper extends BaseSearchIndex {
+class CatalogSearchIndex {
   constructor(indexOperations, catalog) {
-    super();
     this.indexOperations = indexOperations;
     this.index = new elasticlunr.Index();
     this.features = new FeatureCollector();
     this.path = catalog.path;
+  }
+
+  get state() {
+    return this.indexOperations.state;
   }
 
   async loadIndex() {
@@ -124,10 +113,12 @@ class IndexWrapper extends BaseSearchIndex {
       } catch(e) { Util.error(e); }
     }
 
+    // While we'll never hit it currently, keeping this around
+    // if needed to speed up loading in the future
     if(verifyUpToDate(this.index, allFiles)) {
       Util.log('Index up to date');
     } else {
-      Util.log('Index outdated');
+      Util.log('Index outdated or none');
 
       let features = new FeatureCollector();
       let newIndex = await rebuildIndex(indexOps, allFiles, features);
@@ -166,7 +157,7 @@ class IndexWrapper extends BaseSearchIndex {
 
     Util.log('Saving item', id);
 
-    return this.indexOperations.saveItem(new model.CatalogItem(id, null, content))
+    return this.indexOperations.saveItem(new model.CatalogItem(id, content))
       .then((savedItem) => {
         self.reindexItem(savedItem);
         return savedItem;
@@ -273,7 +264,8 @@ function verifyUpToDate(lunrIndex, files) {
 
 elasticlunr.tokenizer.seperator = /([\s\-,]|(\. ))+/;
 
-let loadedIndices = {};
+let indexCache = new Map();
+exports.indexCache = indexCache;
 exports.RebulasBackend = {
   commitCatalog: function(catalog) {
     return catalog.searchIndex.sync();
@@ -296,20 +288,20 @@ exports.RebulasBackend = {
     return new LocalWrapperOperations(catalog, indexOps);
   },
   loadIndex: async function(indexOps, catalog) {
-    let index = new IndexWrapper(indexOps, catalog);
+    let index = new CatalogSearchIndex(indexOps, catalog);
     catalog.searchIndex = index;
     await index.sync();
     return index;
   },
   getCatalogIndex: async function(catalog) {
-    if(loadedIndices[catalog.id]) {
-      catalog.searchIndex = loadedIndices[catalog.id];
+    if(indexCache.has(catalog.id)) {
+      catalog.searchIndex = indexCache.get(catalog.id);
       Util.log('Found existing search index for catalog ', catalog.id);
     } else {
       let indexOps = exports.RebulasBackend.getIndexBackend(catalog);
       catalog.searchIndex = await exports.RebulasBackend.loadIndex(indexOps, catalog);
     }
-    loadedIndices[catalog.id] = catalog.searchIndex;
+    indexCache.set(catalog.id, catalog.searchIndex);
     return catalog.searchIndex;
   }
 };

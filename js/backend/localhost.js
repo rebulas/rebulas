@@ -3,9 +3,90 @@ var localforage = require('localforage');
 var lc = require("backend/local-storage"),
     model = require('./model');
 
+class ItemState {
+  constructor(item, state) {
+    this.item = item;
+    this.state = state;
+  }
+}
+
+class CatalogState {
+  constructor(storage, storageId) {
+    this.listeners = [ Util.log ];
+    this.state = {
+      remoteRevs: new Map()
+    };
+    this.storage = storage;
+    this.storageId = storageId;
+    this.queue = new Util.PromiseQueue();
+  }
+
+  load() {
+    return this.queue.exec(() => {
+      return this.storage.getItem('catalog_state_' + this.storageId)
+        .then((state) => {
+          this.state = state || this.state;
+        });
+    });
+  }
+
+  save() {
+    return this.queue.exec(() => {
+      return this.storage.setItem('catalog_state_' + this.storageId, this.state);
+    });
+  }
+
+  isDirty(item) {
+    return this.state.remoteRevs.get(item.id) !== item.rev;
+  }
+
+  remoteRev(item) {
+    return this.state.remoteRevs.get(item.id);
+  }
+
+  markDirty(item) {
+    return this.queue.exec(() => {
+      this.state.remoteRevs.set(item.id, this.storageId);
+      this.fire(new ItemState(item, 'dirty'));
+      return this.save().then(() => item);
+    });
+  }
+
+  unmarkDirty(item) {
+    return this.queue.exec(() => {
+      if(this.isDirty(item)) {
+        this.state.remoteRevs.set(item.id, item.rev);
+        this.fire(new ItemState(item, 'not-dirty'));
+      }
+      return this.save().then(() => item);
+    });
+  }
+
+  fire(event) {
+    this.listeners.forEach(listener => listener(event));
+  }
+
+  addListener(listener) {
+    let index = this.listeners.indexOf(listener);
+    if(index < 0)
+      this.listeners.push(listener);
+  }
+
+  removeAllListeners() {
+    this.listeners = [ Util.log ];
+  }
+
+  removeListener(listener) {
+    let index = this.listeners.indexOf(listener);
+    if(index >= 0)
+      this.listeners.splice(index, 1);
+  }
+}
+
 class CatalogSynchronization {
-  constructor(conflictResolve) {
+  constructor(conflictResolve, state) {
     this.conflictResolve = conflictResolve;
+    this.state = state;
   }
 
   plan(srcItems, destItems) {
@@ -20,12 +101,12 @@ class CatalogSynchronization {
       srcItem => {
         let destItem = destItems.find(destItem => srcItem.id === destItem.id);
         // No remote item, so just save
-        if(!destItem) {
+        if(!destItem || this.state.remoteRev(srcItem) !== destItem.rev) {
           actions.push({
             action: 'to-remote',
             item: srcItem
           });
-        } else if (!srcItem.remoteRev || destItem.rev !== srcItem.remoteRev) {
+        } else if (this.state.isDirty(srcItem)) {
           actions.push({
             action: 'conflict',
             sourceItem: srcItem,
@@ -42,33 +123,35 @@ class CatalogSynchronization {
     let self = this,
         plan = [];
     try {
+      await self.state.load();
       let allRemote = await remote.listItems();
       let allLocal = await local.listItems();
       plan = this.plan(allLocal, allRemote);
     } catch(e) {
-      Util.log(e);
+      Util.error(e);
     }
 
     function save(from, to, item) {
       return from.getItem(item)
-        .then(item => to.saveItem(item))
-        .then(toSaved => {
-          toSaved.remoteRev = toSaved.rev;
-          return from.saveItem(toSaved);
-        }
-      );
+        .then(item => to.saveItem(item));
     }
 
     function executeAction(action) {
-      if(action.action === 'to-local') {
+      switch(action.action) {
+      case 'to-local':
+        Util.log(action.item.id, 'remote -> local');
         return save(remote, local, action.item);
-      } else if(action.action === 'to-remote') {
-        return save(local, remote, action.item);
-      } else if(action.sourceItem && action.destItem) {
+      case 'to-remote':
+        Util.log(action.item.id, 'local -> remote');
+        return save(local, remote, action.item)
+          .then((item) => local.saveItem(item))
+          .catch(() => self.state.markDirty(action.item));
+      case 'conflict':
         return self.conflictResolve(action.sourceItem, action.destItem)
           .then(executeAction);
+      default:
+        return Promise.resolve();
       }
-      return Promise.resolve();
     }
 
     return Promise.all(plan.map(executeAction));
@@ -83,6 +166,7 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     this.storage = localforage.createInstance({
       name: this.storageId
     });
+    this.state = new CatalogState(this.storage, this.storageId);
   }
 
   toDelegatePath(path) {
@@ -105,11 +189,18 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
             map((key) => self.toDelegatePath(key)).
             map((key) => new model.CatalogItemEntry(key))
         );
-    return Promise.all(entries.map(entry => self.getItem(entry)));
+    return Promise.all(entries.map(
+      entry => self.getItem(entry)
+    ));
   }
 
   saveItem(catalogItem) {
-    catalogItem.rev = this.storageId;
+    if(!catalogItem.rev || catalogItem.rev === this.storageId) {
+      catalogItem.rev = this.storageId;
+      this.state.markDirty(catalogItem);
+    } else {
+      this.state.unmarkDirty(catalogItem);
+    }
     return this.storage.setItem(this.toLocalPath(catalogItem.id), catalogItem.toJSON())
       .then(() => catalogItem)
       .catch((err) => {
@@ -125,7 +216,8 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   }
 
   sync(conflictResolve) {
-    return new CatalogSynchronization(conflictResolve).sync(this, this.delegate);
+    return new CatalogSynchronization(conflictResolve, this.state)
+      .sync(this, this.delegate);
   }
 }
 
@@ -147,7 +239,7 @@ class LocalhostOperations extends model.BaseCatalogOperations {
 
   async listItems() {
     var list = JSON.parse(lc.getItem(this.storageId));
-    return Object.keys(list).map((path) => new model.CatalogItemEntry(path, 'localhost'));
+    return Object.keys(list).map((path) => new model.CatalogItemEntry(path));
   }
 
   saveItem(catalogItem) {
@@ -156,13 +248,12 @@ class LocalhostOperations extends model.BaseCatalogOperations {
     lc.setItem(this.storageId, JSON.stringify(list));
 
     return Promise.resolve(new model.CatalogItem(catalogItem.id,
-                                                 'localhost',
                                                  catalogItem.content));
   }
 
   getItem(entry) {
     var list = JSON.parse(lc.getItem(this.storageId));
-    return Promise.resolve(new model.CatalogItem(entry.id, 'localhost', list[entry.id]));
+    return Promise.resolve(new model.CatalogItem(entry.id, list[entry.id]));
   }
 }
 
