@@ -63,7 +63,7 @@ module.exports = {
 					}
 
 					let index = await RebulasBackend.getCatalogIndex(catalog);
-					let searchResult = index.search(queryObject);
+					let searchResult = index.search(queryObject.q);
 					result.facets = searchResult.facets;
 					result.items = searchResult.items;
 					result.count = result.items.length;

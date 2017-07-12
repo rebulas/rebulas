@@ -2,6 +2,7 @@ var Util = require("extra/util");
 var localforage = require('localforage');
 var lc = require("backend/local-storage"),
     model = require('./model');
+var hasher = require('sha.js');
 
 class ItemState {
   constructor(item, state) {
@@ -10,20 +11,33 @@ class ItemState {
   }
 }
 
-class CatalogState {
+class EmptyState {
+  constructor() {}
+  load(){}
+  isDirty(item) { return false; }
+  markDirty(item) {}
+  unmarkDirty(item) {}
+  fire(event) {}
+  addListener(listener) {}
+  removeAllListeners() {}
+  removeListener(listener) {}
+}
+
+class CatalogState extends EmptyState {
   constructor(storage, storageId) {
-    this.listeners = [ Util.log ];
+    super();
+    this.itemKey = '__catalog_state_' + storageId;
+    this.listeners = [(e) => Util.log(e.item.id, e.state, e.item.rev) ];
     this.state = {
       remoteRevs: new Map()
     };
     this.storage = storage;
-    this.storageId = storageId;
     this.queue = new Util.PromiseQueue();
   }
 
   load() {
     return this.queue.exec(() => {
-      return this.storage.getItem('catalog_state_' + this.storageId)
+      return this.storage.getItem(this.itemKey)
         .then((state) => {
           this.state = state || this.state;
         });
@@ -32,12 +46,12 @@ class CatalogState {
 
   save() {
     return this.queue.exec(() => {
-      return this.storage.setItem('catalog_state_' + this.storageId, this.state);
+      return this.storage.setItem(this.itemKey, this.state);
     });
   }
 
   isDirty(item) {
-    return this.state.remoteRevs.get(item.id) !== item.rev;
+    return !item.rev || this.state.remoteRevs.get(item.id) !== item.rev;
   }
 
   remoteRev(item) {
@@ -46,7 +60,6 @@ class CatalogState {
 
   markDirty(item) {
     return this.queue.exec(() => {
-      this.state.remoteRevs.set(item.id, this.storageId);
       this.fire(new ItemState(item, 'dirty'));
       return this.save().then(() => item);
     });
@@ -73,7 +86,7 @@ class CatalogState {
   }
 
   removeAllListeners() {
-    this.listeners = [ Util.log ];
+    this.listeners = [];
   }
 
   removeListener(listener) {
@@ -169,39 +182,30 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     this.state = new CatalogState(this.storage, this.storageId);
   }
 
-  toDelegatePath(path) {
-    return path.substring(this.storageId.length);
-  }
-
-  isLocalPath(path) {
-    return path.startsWith(this.storageId + '/');
-  }
-
-  toLocalPath(path) {
-    return this.storageId + path;
-  }
-
   async listItems() {
-    let self = this;
-    let entries = await this.storage.keys()
-        .then(
-          keys => keys.filter((key) => self.isLocalPath(key)).
-            map((key) => self.toDelegatePath(key)).
-            map((key) => new model.CatalogItemEntry(key))
-        );
+    let self = this,
+        keys = await this.storage.keys();
+    keys = keys.filter(key => key !== self.state.itemKey);
+
+    let entries = keys.map((key) => new model.CatalogItemEntry(key));
     return Promise.all(entries.map(
       entry => self.getItem(entry)
     ));
   }
 
+  isItemChanged(catalogItem) {
+    return !catalogItem.rev || catalogItem.rev === this.storageId;
+  }
+
   saveItem(catalogItem) {
-    if(!catalogItem.rev || catalogItem.rev === this.storageId) {
-      catalogItem.rev = this.storageId;
+    if(this.isItemChanged(catalogItem)) {
+      catalogItem.rev = hasher('sha256')
+        .update(catalogItem.content).digest('hex');
       this.state.markDirty(catalogItem);
     } else {
       this.state.unmarkDirty(catalogItem);
     }
-    return this.storage.setItem(this.toLocalPath(catalogItem.id), catalogItem.toJSON())
+    return this.storage.setItem(catalogItem.id, catalogItem.toJSON())
       .then(() => catalogItem)
       .catch((err) => {
         Util.log('Failed to save locally', catalogItem.id, ':', err);
@@ -210,8 +214,7 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   }
 
   getItem(catalogItem) {
-    let localPath = this.toLocalPath(catalogItem.id);
-    return this.storage.getItem(localPath)
+    return this.storage.getItem(catalogItem.id)
       .then((localItem) => new model.CatalogItem().fromJSON(localItem));
   }
 
@@ -219,6 +222,15 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     return new CatalogSynchronization(conflictResolve, this.state)
       .sync(this, this.delegate);
   }
+}
+
+class LocalOnlyOperations extends LocalWrapperOperations {
+  constructor(catalog) {
+    super(catalog);
+    this.state = new EmptyState();
+  }
+
+  isItemChanged(item) { return true; }
 }
 
 class LocalhostOperations extends model.BaseCatalogOperations {
@@ -259,3 +271,4 @@ class LocalhostOperations extends model.BaseCatalogOperations {
 
 module.exports.LocalhostOperations = LocalhostOperations;
 module.exports.LocalWrapperOperations = LocalWrapperOperations;
+module.exports.LocalOnlyOperations = LocalOnlyOperations;

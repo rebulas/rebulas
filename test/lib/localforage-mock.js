@@ -3,10 +3,6 @@ class LocalforageMock {
     this.store = new Map();
   }
 
-  createInstance() {
-    return this;
-  }
-
   keys() {
     let arr = [];
     this.store.forEach((value, key) => {
@@ -23,10 +19,14 @@ class LocalforageMock {
   getItem(key) {
     return Promise.resolve(this.store.get(key));
   }
-
-  clear() {
-    this.store = new Map();
-  }
 }
 
-module.exports = new LocalforageMock();
+let cache = new Map();
+module.exports = {
+  clear: () => cache = new Map(),
+  createInstance: (opts) => {
+    if(!cache.has(opts.name))
+      cache.set(opts.name, new LocalforageMock());
+    return cache.get(opts.name);
+  }
+};

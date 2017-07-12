@@ -5,6 +5,7 @@ var DropboxOperations = require('backend/dropbox').DropboxOperations;
 var localhost = require('backend/localhost');
 var LocalhostOperations = localhost.LocalhostOperations;
 var LocalWrapperOperations = localhost.LocalWrapperOperations;
+var LocalOnlyOperations = localhost.LocalOnlyOperations;
 var Query = require('query/query');
 var model = require('backend/model');
 
@@ -49,7 +50,11 @@ async function rebuildIndex(indexOps, allFiles, features) {
   return index;
 }
 
-function adaptFacets(facets) {
+function adaptFacets(facets, queryString) {
+  if(!queryString.endsWith('/')) {
+    queryString = queryString + '/';
+  }
+
   let result = [];
   Object.keys(facets).forEach((key) => {
     let facet = {
@@ -66,7 +71,7 @@ function adaptFacets(facets) {
       count: facetValue.count,
       id: facetValue.id,
       title: facetValue.value,
-      link: field + '=' + facetValue.value
+      link: queryString + field + '=' + facetValue.value
     };
   }
 }
@@ -192,12 +197,9 @@ class CatalogSearchIndex {
     return this.indexOperations.dirtyItems();
   }
 
-  search(queryObject) {
+  executeSearch(querySelections) {
     let startMark = performance.now(),
-        querySelections = new Query(queryObject.q).getSelections(),
-        self = this,
         index = this.index,
-        features = this.features,
         result = [];
 
     if (querySelections.length === 0) {
@@ -221,6 +223,7 @@ class CatalogSearchIndex {
             bool: 'AND'
           };
         }
+
         selectionResults = index.search(searchQuery, searchConfig);
         Util.log(JSON.stringify(searchQuery), '->', selectionResults.length);
         return selectionResults;
@@ -229,18 +232,25 @@ class CatalogSearchIndex {
       // Leave only docs that matched ALL the selections
       result = processSelectionResults(searchResults);
     }
-
-    let facetingResult = features.calculateResultFacets(result.map((d) => d.doc)),
-        facets = adaptFacets(facetingResult);
-    result = result.map((item) =>
-                        new model.DisplayItem(item.ref.substring(1), item.doc._content));
-
     Util.log(JSON.stringify(querySelections), ' -> ', result.length, '/',
              index.documentStore.length, 'items, took',
              performance.now() - startMark, 'ms');
+    return result;
+  }
+
+  search(queryString) {
+    let querySelections = new Query(queryString).getSelections(),
+        result = this.executeSearch(querySelections);
+
+    let facetingResult = this.features.calculateResultFacets(result.map((d) => d.doc)),
+        facets = adaptFacets(facetingResult, queryString);
+
+    let resultItems = result.map((item) =>
+                                 new model.DisplayItem(item.ref.substring(1),
+                                                       item.doc._content));
 
     return {
-      items: result,
+      items: resultItems,
       facets: facets
     };
   }
@@ -279,7 +289,7 @@ exports.RebulasBackend = {
       indexOps = new LocalhostOperations(catalog);
       Util.log('Loading Localhost index');
     } else if (catalog.uri.startsWith('empty')) {
-      indexOps = new LocalWrapperOperations({
+      indexOps = new LocalOnlyOperations({
         id: 'empty',
         path: 'empty'
       });
