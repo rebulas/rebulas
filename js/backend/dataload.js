@@ -50,8 +50,8 @@ async function rebuildIndex(indexOps, allFiles, features) {
   return index;
 }
 
-function adaptFacets(facets, queryString) {
-  if (queryString && !queryString.endsWith('/')) {
+function adaptFacets(facets, queryString="") {
+  if (!queryString.endsWith('/')) {
     queryString = queryString + '/';
   }
 
