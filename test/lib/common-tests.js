@@ -38,6 +38,7 @@ module.exports.setUp = () => {
   dataload.indexCache.clear();
   RebulasBackend = dataload.RebulasBackend;
   localhost = require('backend/localhost');
+  localforageMock.clear();
 };
 
 module.exports.tearDown = () => {
@@ -51,6 +52,7 @@ module.exports.verifyIndexReload = async (test, catalog) => {
   let oldIndex = catalog.searchIndex;
   catalog.searchIndex = null;
 
+  dataload.indexCache.clear();
   await RebulasBackend.getCatalogIndex(catalog);
 
   let newIndex = catalog.searchIndex;
@@ -58,7 +60,6 @@ module.exports.verifyIndexReload = async (test, catalog) => {
   let newJson = newIndex.index.toJSON(),
       oldJson = oldIndex.index.toJSON();
 
-  test.deepEqual(newIndex.date, oldIndex.date, 'Unequal dates');
   test.deepEqual(newJson.fields, oldJson.fields, 'Unequal fields');
   test.deepEqual(newJson.documentStore.docs, oldJson.documentStore.docs, 'Unequal docs');
   test.deepEqual(newJson.documentStore.docInfo, oldJson.documentStore.docInfo, 'Unequal docInfo');
@@ -69,6 +70,7 @@ module.exports.verifyIndexReload = async (test, catalog) => {
 module.exports.verifyCatalog = async (test, catalog) => {
   try {
     let catalogIndex = await RebulasBackend.getCatalogIndex(catalog);
+    catalogIndex.indexOperations = catalogIndex.indexOperations.delegate;
     let savedItem = await catalogIndex.saveItem(dummyItem);
     test.ok(savedItem.id, 'Has no id');
     let result = catalogIndex.search('dummy');
@@ -87,13 +89,9 @@ module.exports.verifyCatalog = async (test, catalog) => {
 };
 
 module.exports.verifyLocalWrapper = async (test, catalog) => {
-  let indexOps = RebulasBackend.getIndexBackend(catalog),
-      originalOps = indexOps.delegate,
-      failingOps = new model.BaseCatalogOperations(catalog);
-
-  indexOps = new localhost.LocalWrapperOperations(catalog, indexOps);
-
-  let index = await RebulasBackend.loadIndex(indexOps, catalog),
+  let index = await RebulasBackend.getCatalogIndex(catalog),
+      indexOps = index.indexOperations,
+      originalOps = index.indexOperations.delegate,
       firstSavedItem = await index.saveItem(dummyItem),
       secondSavedItem,
       searchResult = index.search('dummy'),
@@ -105,7 +103,6 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
     (e) => e.rawContent === dummyItem.rawContent, 'No dummy item as result'));
 
   // Swap out with a backend that will reject all operations
-  indexOps.delegate = failingOps;
   secondSavedItem = await index.saveItem(dummyItem2);
 
   searchResult = index.search('dummy');
@@ -121,35 +118,25 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   // Check that indeed we don't have the saved item in the original backend
   allFiles = await originalOps.listItems();
   test.ok(!allFiles.find((e) => e.name === secondSavedItem.name), 'Item 2 found in original');
-  // Restore backend and sync
-  indexOps.delegate = originalOps;
 
-  // Syncing would be performed in the background while the user keeps working
-  // so don't 'await' it
-  index.sync();
+  await index.sync();
 
-  let savedItem3 = await index.saveItem(dummyItem3);
-
-  let remoteSecondSavedItem = await indexOps.getItem(secondSavedItem);
-  test.equal(secondSavedItem.rev, remoteSecondSavedItem.rev);
-
+  let remoteSecondSavedItem = await originalOps.getItem(secondSavedItem);
   secondSavedItem.rev = remoteSecondSavedItem.rev;
   test.deepEqual(secondSavedItem, remoteSecondSavedItem,
-                 'Not equal saved item in remote store');
-  test.deepEqual(savedItem3, await indexOps.getItem(savedItem3),
                  'Not equal saved item in remote store');
 
   // Verify it's synced now, loop to account for not immediate consistency
   let found = false;
   for (let i = 0; i < 5 && !found; i++) {
     allFiles = await originalOps.listItems();
-    found = allFiles.find((e) => e.name === secondSavedItem.name);
+    found = allFiles.find((e) => e.id === secondSavedItem.id);
   }
   test.ok(found, 'Item 2 not found in original after sync');
 
   let oldIndex = catalog.searchIndex;
-  catalog.searchIndex = null;
 
+  dataload.indexCache.clear();
   await RebulasBackend.getCatalogIndex(catalog);
 
   let newIndex = catalog.searchIndex;
@@ -157,7 +144,6 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   let newJson = newIndex.index.toJSON(),
       oldJson = oldIndex.index.toJSON();
 
-  test.deepEqual(newIndex.date, oldIndex.date, 'Unequal dates');
   test.deepEqual(newJson.fields, oldJson.fields, 'Unequal fields');
   test.deepEqual(newJson.documentStore.docs, oldJson.documentStore.docs, 'Unequal docs');
   test.deepEqual(newJson.documentStore.docInfo, oldJson.documentStore.docInfo, 'Unequal docInfo');

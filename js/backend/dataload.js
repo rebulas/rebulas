@@ -5,6 +5,7 @@ var DropboxOperations = require('backend/dropbox').DropboxOperations;
 var localhost = require('backend/localhost');
 var LocalhostOperations = localhost.LocalhostOperations;
 var LocalWrapperOperations = localhost.LocalWrapperOperations;
+var LocalOnlyOperations = localhost.LocalOnlyOperations;
 var Query = require('query/query');
 var model = require('backend/model');
 
@@ -50,6 +51,10 @@ async function rebuildIndex(indexOps, allFiles, features) {
 }
 
 function adaptFacets(facets, queryString) {
+  if(!queryString.endsWith('/')) {
+    queryString = queryString + '/';
+  }
+
   let result = [];
   Object.keys(facets).forEach((key) => {
     let facet = {
@@ -284,7 +289,7 @@ exports.RebulasBackend = {
       indexOps = new LocalhostOperations(catalog);
       Util.log('Loading Localhost index');
     } else if (catalog.uri.startsWith('empty')) {
-      indexOps = new LocalWrapperOperations({
+      indexOps = new LocalOnlyOperations({
         id: 'empty',
         path: 'empty'
       });

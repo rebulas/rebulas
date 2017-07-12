@@ -65,7 +65,7 @@ facetval12`
       }),
     ]);
 
-    let results = index.search({ q: 'facet2=facetval22' });
+    let results = index.search('facet2=facetval22');
     test.equal(2, results.items.length);
     console.log(results.facets);
 
@@ -77,12 +77,12 @@ facetval12`
           count: 1,
           id: 'facetval11',
           title: 'facetval11',
-          link: 'facet1=facetval11'
+          link: 'facet2=facetval22/facet1=facetval11'
         }, {
           count: 1,
           id: 'facetval12',
           title: 'facetval12',
-          link: 'facet1=facetval12'
+          link: 'facet2=facetval22/facet1=facetval12'
         }
       ]
     };

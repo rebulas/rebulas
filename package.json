@@ -27,6 +27,7 @@
     "marked": "^0.3.6",
     "mock-require": "^2.0.2",
     "npm-run-all": "^4.0.2",
+    "sha.js": "^2.4.8",
     "watchify": "^3.9.0"
   }
 }
