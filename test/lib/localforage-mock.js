@@ -4,7 +4,7 @@ class LocalforageMock {
   }
 
   createInstance() {
-    return this;
+    return new LocalforageMock();
   }
 
   keys() {
@@ -22,10 +22,6 @@ class LocalforageMock {
 
   getItem(key) {
     return Promise.resolve(this.store.get(key));
-  }
-
-  clear() {
-    this.store = new Map();
   }
 }
 

@@ -1,5 +1,6 @@
 var Util = require("extra/util");
 var Elements = require("ui/elements");
+var Query = require("query/query");
 
 module.exports = {
 

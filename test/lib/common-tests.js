@@ -43,7 +43,6 @@ module.exports.setUp = () => {
 module.exports.tearDown = () => {
   console.log('Clear localStorage');
   localMock.clear();
-  localforageMock.clear();
 };
 
 module.exports.verifyIndexReload = async (test, catalog) => {

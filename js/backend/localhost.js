@@ -12,7 +12,7 @@ class ItemState {
 
 class CatalogState {
   constructor(storage, storageId) {
-    this.listeners = [ Util.log ];
+    this.listeners = [(e) => Util.log(e.item.id, e.state, e.item.rev) ];
     this.state = {
       remoteRevs: new Map()
     };
@@ -46,7 +46,6 @@ class CatalogState {
 
   markDirty(item) {
     return this.queue.exec(() => {
-      this.state.remoteRevs.set(item.id, this.storageId);
       this.fire(new ItemState(item, 'dirty'));
       return this.save().then(() => item);
     });
@@ -73,7 +72,7 @@ class CatalogState {
   }
 
   removeAllListeners() {
-    this.listeners = [ Util.log ];
+    this.listeners = [];
   }
 
   removeListener(listener) {
@@ -233,6 +232,7 @@ class LocalhostOperations extends model.BaseCatalogOperations {
 
         "/publishing-ui-imporovements.md" : "# Name\nPublishing UI improvements\n\n# Description\nThe UI for the punlishing went from not-granular at all to too granular all too quickly. We need improvements that allow for less input when publishing (auto-fill publish names) and ability to publish all - relevant for smaller customers that don't have large teams to collaborate.\n\n# Clients\nScrewfix, Hema, Intergramma\n\n# Releases\nFAS 8.3\n\n# People\nVincent, Tim, Kees"
       };
+      list = [];
       lc.setItem(this.storageId, JSON.stringify(list));
     }
   }
