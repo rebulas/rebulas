@@ -1,105 +1,23 @@
 var Util = require("extra/util");
-var elasticlunr = require('elasticlunr');
-var FeatureCollector = require('backend/faceting').FeatureCollector;
-var DropboxOperations = require('backend/dropbox').DropboxOperations;
-var localhost = require('backend/localhost');
-var LocalhostOperations = localhost.LocalhostOperations;
-var LocalWrapperOperations = localhost.LocalWrapperOperations;
-var LocalOnlyOperations = localhost.LocalOnlyOperations;
 var Query = require('query/query');
-var model = require('backend/model');
+var FeatureCollector = require('backend/faceting').FeatureCollector;
+var model = require("backend/model");
+var elasticlunr = require('elasticlunr');
+
+
+elasticlunr.tokenizer.seperator = /([\s\-,]|(\. ))+/;
 
 var performance = {
   now : () => new Date().getTime()
 };
 
-function addDocToIndex(doc, content, index, features) {
-  //Util.log('Indexing', doc.id, 'rev', doc.rev);
-  let analyzed = features.addDocContent(content);
-
-  analyzed.id = doc.id;
-  analyzed.rev = doc.rev;
-  analyzed._content = content;
-
-  Object.keys(analyzed).forEach((key) => {
-    if(key !== 'id' && index._fields.indexOf(key) < 0) {
-      Util.log('Adding new field', key);
-      index.addField(key);
-    }
-  });
-
-  index.addDoc(analyzed);
-}
-
-async function rebuildIndex(indexOps, allFiles, features) {
-  Util.log('Rebuilding index');
-  let index = new elasticlunr.Index();
-
-  let promises = allFiles.map(
-    entry => indexOps.getItem(entry).then(
-      item => addDocToIndex({
-        id: item.id,
-        rev: item.rev
-      }, item.content, index, features)
-    )
-  );
-
-  await Promise.all(promises);
-  features.calculateFieldFeatures();
-  Util.log('Entries in index:', index.documentStore.length);
-  return index;
-}
-
-function adaptFacets(facets, queryString="") {
-  if (!queryString.endsWith('/')) {
-    queryString = queryString + '/';
-  }
-
-  let result = [];
-  Object.keys(facets).forEach((key) => {
-    let facet = {
-      field: key,
-      title: key,
-      values: Object.keys(facets[key]).map((k) => adaptFacetValue(facets[key][k], key))
-    };
-    result.push(facet);
-  });
-  return result;
-
-  function adaptFacetValue(facetValue, field) {
-    return {
-      count: facetValue.count,
-      id: facetValue.id,
-      title: facetValue.value,
-      link: queryString + field + '=' + facetValue.value
-    };
-  }
-}
-
-function processSelectionResults(selectionResults) {
-  let minimalSelection = selectionResults.reduce(
-    (acc, val) => acc.length < val.length ? acc : val,
-    selectionResults[0]);
-  let selectionMaps = [];
-  selectionResults.forEach((result) => {
-    let map = {};
-    result.forEach((doc) => map[doc.ref] = true);
-    selectionMaps.push(map);
-  });
-
-  return minimalSelection.filter((doc) => selectionMaps.every((map) => map[doc.ref]));
-}
-
 class CatalogSearchIndex {
+
   constructor(indexOperations, catalog) {
     this.indexOperations = indexOperations;
     this.index = new elasticlunr.Index();
     this.features = new FeatureCollector();
     this.path = catalog.path;
-  }
-
-  get state() {
-    return this.indexOperations.state;
   }
 
   async loadIndex() {
@@ -193,8 +111,8 @@ class CatalogSearchIndex {
       .then(() => this.loadIndex());
   }
 
-  dirtyItems() {
-    return this.indexOperations.dirtyItems();
+  get state() {
+    return this.indexOperations.state;
   }
 
   executeSearch(querySelections) {
@@ -245,9 +163,11 @@ class CatalogSearchIndex {
     let facetingResult = this.features.calculateResultFacets(result.map((d) => d.doc)),
         facets = adaptFacets(facetingResult, queryString);
 
-    let resultItems = result.map((item) =>
-                                 new model.DisplayItem(item.ref.substring(1),
-                                                       item.doc._content));
+    let resultItems = result.map((item) => {
+      let id = item.ref.substring(1);
+      let catalogItem = new model.CatalogItem(id, item.doc._content, item.doc.rev);
+      return new model.DisplayItem(id, item.doc._content, catalogItem);
+    });
 
     return {
       items: resultItems,
@@ -255,6 +175,85 @@ class CatalogSearchIndex {
     };
   }
 }
+
+
+function addDocToIndex(doc, content, index, features) {
+  //Util.log('Indexing', doc.id, 'rev', doc.rev);
+  let analyzed = features.addDocContent(content);
+
+  analyzed.id = doc.id;
+  analyzed.rev = doc.rev;
+  analyzed._content = content;
+
+  Object.keys(analyzed).forEach((key) => {
+    if(key !== 'id' && index._fields.indexOf(key) < 0) {
+      Util.log('Adding new field', key);
+      index.addField(key);
+    }
+  });
+
+  index.addDoc(analyzed);
+}
+
+async function rebuildIndex(indexOps, allFiles, features) {
+  Util.log('Rebuilding index');
+  let index = new elasticlunr.Index();
+
+  let promises = allFiles.map(
+    entry => indexOps.getItem(entry).then(
+      item => addDocToIndex({
+        id: item.id,
+        rev: item.rev
+      }, item.content, index, features)
+    )
+  );
+
+  await Promise.all(promises);
+  features.calculateFieldFeatures();
+  Util.log('Entries in index:', index.documentStore.length);
+  return index;
+}
+function adaptFacets(facets, queryString="") {
+  if (!queryString.endsWith('/')) {
+    queryString = queryString + '/';
+  }
+
+  let result = [];
+  Object.keys(facets).forEach((key) => {
+    let facet = {
+      field: key,
+      title: key,
+      values: Object.keys(facets[key]).map((k) => adaptFacetValue(facets[key][k], key))
+    };
+    result.push(facet);
+  });
+  return result;
+
+  function adaptFacetValue(facetValue, field) {
+    return {
+      count: facetValue.count,
+      id: facetValue.id,
+      title: facetValue.value,
+      link: queryString + field + '=' + facetValue.value
+    };
+  }
+}
+
+function processSelectionResults(selectionResults) {
+  let minimalSelection = selectionResults.reduce(
+    (acc, val) => acc.length < val.length ? acc : val,
+    selectionResults[0]);
+  let selectionMaps = [];
+  selectionResults.forEach((result) => {
+    let map = {};
+    result.forEach((doc) => map[doc.ref] = true);
+    selectionMaps.push(map);
+  });
+
+  return minimalSelection.filter((doc) => selectionMaps.every((map) => map[doc.ref]));
+}
+
+
 
 function verifyUpToDate(lunrIndex, files) {
   if(!lunrIndex || files.length != lunrIndex.documentStore.length) {
@@ -272,46 +271,4 @@ function verifyUpToDate(lunrIndex, files) {
   return upToDate;
 }
 
-elasticlunr.tokenizer.seperator = /([\s\-,]|(\. ))+/;
-
-let indexCache = new Map();
-exports.indexCache = indexCache;
-exports.RebulasBackend = {
-  commitCatalog: function(catalog) {
-    return catalog.searchIndex.sync();
-  },
-  getIndexBackend: function(catalog) {
-    let indexOps;
-    if (catalog.uri.startsWith('dropbox.com')) {
-      indexOps = new DropboxOperations(catalog);
-      Util.log('Loading Dropbox index');
-    } else if (catalog.uri.startsWith('localhost')) {
-      indexOps = new LocalhostOperations(catalog);
-      Util.log('Loading Localhost index');
-    } else if (catalog.uri.startsWith('empty')) {
-      indexOps = new LocalOnlyOperations({
-        id: 'empty',
-        path: 'empty'
-      });
-      Util.log('Loading empty local index');
-    }
-    return new LocalWrapperOperations(catalog, indexOps);
-  },
-  loadIndex: async function(indexOps, catalog) {
-    let index = new CatalogSearchIndex(indexOps, catalog);
-    catalog.searchIndex = index;
-    await index.sync();
-    return index;
-  },
-  getCatalogIndex: async function(catalog) {
-    if(indexCache.has(catalog.id)) {
-      catalog.searchIndex = indexCache.get(catalog.id);
-      Util.log('Found existing search index for catalog ', catalog.id);
-    } else {
-      let indexOps = exports.RebulasBackend.getIndexBackend(catalog);
-      catalog.searchIndex = await exports.RebulasBackend.loadIndex(indexOps, catalog);
-    }
-    indexCache.set(catalog.id, catalog.searchIndex);
-    return catalog.searchIndex;
-  }
-};
+module.exports = CatalogSearchIndex;

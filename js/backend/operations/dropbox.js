@@ -1,6 +1,6 @@
+var Dropbox = require('dropbox');
 var Util = require("extra/util");
-var Dropbox = require('dropbox'),
-    model = require('./model');
+var model = require("backend/model");
 
 function createUploadPayload(content) {
   if(typeof Blob !== 'undefined') {
@@ -95,4 +95,4 @@ class DropboxOperations extends model.BaseCatalogOperations {
   }
 }
 
-module.exports.DropboxOperations = DropboxOperations;
+module.exports = DropboxOperations;

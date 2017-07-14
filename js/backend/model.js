@@ -126,13 +126,39 @@ class DocumentField {
 }
 
 class DisplayItem extends AnalyzedItem {
-  constructor(id, rawContent) {
+  constructor(id, rawContent, catalogItem) {
     super(id, rawContent);
+    this.catalogItem = catalogItem;
+  }
+
+  get rev() {
+    return this.catalogItem ? this.catalogItem.rev : undefined;
+  }
+}
+
+class EmptyState {
+  constructor() {}
+  load(){}
+  isDirty(item) { return false; }
+  markDirty(item) {}
+  unmarkDirty(item) {}
+  fire(event) {}
+  addListener(listener) {}
+  removeAllListeners() {}
+  removeListener(listener) {}
+}
+
+class ItemState {
+  constructor(item, state) {
+    this.item = item;
+    this.state = state;
   }
 }
 
 module.exports = {
   CatalogItemEntry: CatalogItemEntry,
+  EmptyState : EmptyState,
+  ItemState : ItemState,
   CatalogItem: CatalogItem,
   BaseCatalogOperations: BaseCatalogOperations,
   AnalyzedItem: AnalyzedItem,

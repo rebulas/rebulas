@@ -1,4 +1,4 @@
-var RebulasBackend = require("backend/dataload").RebulasBackend;
+var RebulasBackend = require("backend/rebulas-backend");
 var Query = require("query/query");
 var Catalogs = require("repository/repository-manager").Catalogs;
 var Util = require("extra/util");

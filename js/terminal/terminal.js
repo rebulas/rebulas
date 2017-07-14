@@ -1,7 +1,7 @@
 var Keymap = require("ui/keymap");
 var Util = require("extra/util");
 var Query = require("query/query");
-var Backend = require("backend/dataload.js").RebulasBackend;
+var RebulasBackend = require("backend/rebulas-backend");
 
 module.exports = {
 
@@ -157,7 +157,7 @@ module.exports = {
 					if (!catalog) {
 						terminal.echo("No catalog " + uri + " found");
 					} else {
-						let index = await Backend.getCatalogIndex(catalog);
+						let index = await RebulasBackend.getCatalogIndex(catalog);
 						result.items.forEach(item => {
 
 							// At present the item.id contains path information
@@ -177,7 +177,7 @@ module.exports = {
 					this.setHeight(height);
 				}
 			} else if (c.command == "commit") {
-				await Backend.commitCatalog(this.catalog);
+				await RebulasBackend.commitCatalog(this.catalog);
       }
   },
 

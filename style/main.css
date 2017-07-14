@@ -90,6 +90,11 @@ ul.item-list > li {
 	width: 300px;
 }
 
+ul.item-list > li.changed {
+	color: #5cb85c;
+}
+
+
 #head-container {
 	background-color: #eff4f2;
 	min-height: 100%;

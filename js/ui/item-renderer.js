@@ -26,6 +26,10 @@ module.exports = {
 			li.css("cursor", "pointer");
 			ul.append(li);
 
+      // if (catalog.searchIndex.state.isDirty(item)) {
+      //  li.addClass("changed");
+      //}
+
 			var renderedField = this.renderFirstField(item);
 			li.append(renderedField);
 		});

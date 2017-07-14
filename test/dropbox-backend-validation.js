@@ -46,8 +46,7 @@ module.exports = {
       if(dropboxCatalog.token) {
         await clearDropboxFolder();
         let ops = commonTests.RebulasBackend().getIndexBackend(dropboxCatalog).delegate;
-        await ops.saveItem(new model.CatalogItem('/rebulas-unittest/initial.txt', null,
-                                           `# Name\ninitial item`));
+        await ops.saveItem(new model.CatalogItem('/rebulas-unittest/initial.txt', `# Name\ninitial item`));
         let index = await commonTests.RebulasBackend().getCatalogIndex(dropboxCatalog);
         let results = index.search('initial');
         test.equal(results.items.length, 1);

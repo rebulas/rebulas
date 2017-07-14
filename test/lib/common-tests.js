@@ -8,8 +8,6 @@ let fs = require('fs'),
 var localforageMock = require('./localforage-mock');
 
 var localMock;
-var localhost;
-var dataload;
 var RebulasBackend;
 
 let dummyItem = {
@@ -31,13 +29,12 @@ module.exports.someIndex = async () =>
 module.exports.setUp = () => {
   let tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'testdata-'));
   localMock = new LocalStorage(tempDir);
-  mock('backend/local-storage', localMock);
+  mock('backend/operations/local-storage', localMock);
   mock('localforage', localforageMock);
 
-  dataload = require('backend/dataload.js');
-  dataload.indexCache.clear();
-  RebulasBackend = dataload.RebulasBackend;
-  localhost = require('backend/localhost');
+  RebulasBackend = require("backend/rebulas-backend");
+  RebulasBackend.purgeCache();
+
   localforageMock.clear();
 };
 
@@ -52,7 +49,7 @@ module.exports.verifyIndexReload = async (test, catalog) => {
   let oldIndex = catalog.searchIndex;
   catalog.searchIndex = null;
 
-  dataload.indexCache.clear();
+  RebulasBackend.purgeCache();
   await RebulasBackend.getCatalogIndex(catalog);
 
   let newIndex = catalog.searchIndex;
@@ -136,7 +133,7 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
 
   let oldIndex = catalog.searchIndex;
 
-  dataload.indexCache.clear();
+  RebulasBackend.purgeCache();
   await RebulasBackend.getCatalogIndex(catalog);
 
   let newIndex = catalog.searchIndex;
