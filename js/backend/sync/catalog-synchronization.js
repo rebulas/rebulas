@@ -63,7 +63,10 @@ class CatalogSynchronization {
         Util.log(action.item.id, 'local -> remote');
         return save(local, remote, action.item)
           .then((item) => local.saveItem(item))
-          .catch(() => self.state.markDirty(action.item));
+          .catch(e => {
+            Util.log("Error saving " + action.item.id + " from local to remote, error " + e + ". Leaving item marked as dirty.");
+            self.state.markDirty(action.item);
+          });
       case 'conflict':
         return self.conflictResolve(action.sourceItem, action.destItem)
           .then(executeAction);

@@ -30,13 +30,19 @@ class LocalCacheWrapper extends model.BaseCatalogOperations {
 
   isItemChanged(catalogItem) {
     var localItem = this.getItem(catalogItem);
-    console.log("Local item.rev " + localItem.rev);
-    return !catalogItem.rev || catalogItem.rev !== localItem.rev;
+
+    // Special case handling for the initial store cycle - the item has entered the system without rev, once it
+    // goes through the sync cycle, the storage issues a rev. Having nothing to compare it to, should mean we're
+    // just saving the revisioned item and should not consider this a change since no content is supposed to be changed
+    if (catalogItem.rev && !localItem.rev) {
+      return false;
+    } else {
+      return !catalogItem.rev || catalogItem.rev !== localItem.rev;
+    }
   }
 
   saveItem(catalogItem) {
     if (this.isItemChanged(catalogItem)) {
-      //catalogItem.rev = hasher('sha256').update(catalogItem.content).digest('hex');
       this.state.markDirty(catalogItem);
     } else {
       this.state.unmarkDirty(catalogItem);

@@ -21,7 +21,7 @@ module.exports = {
       indexOps = new LocalStorageOperations(catalog);
       Util.log('Loading Localhost index');
     } else if (catalog.uri.startsWith('empty')) {
-      indexOps = new LocalCacheWrapper({
+      indexOps = new LocalOnlyWrapper({
         id: 'empty',
         path: 'empty'
       });
