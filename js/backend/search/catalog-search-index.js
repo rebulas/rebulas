@@ -80,6 +80,8 @@ class CatalogSearchIndex {
 
     Util.log('Saving item', id);
 
+    // Note we don't pass on the revision - we've left revision stamping only to the backend storage.
+    // Until we hit there (upon sync), the item would go with revision undefined
     return this.indexOperations.saveItem(new model.CatalogItem(id, content))
       .then((savedItem) => {
         self.reindexItem(savedItem);
@@ -178,7 +180,7 @@ class CatalogSearchIndex {
 
 
 function addDocToIndex(doc, content, index, features) {
-  //Util.log('Indexing', doc.id, 'rev', doc.rev);
+  // Util.log('Indexing', doc.id, 'rev', doc.rev);
   let analyzed = features.addDocContent(content);
 
   analyzed.id = doc.id;

@@ -177,7 +177,25 @@ module.exports = {
 					this.setHeight(height);
 				}
 			} else if (c.command == "commit") {
+				// TODO return a promise to stop the terminal prompt until the command completes 
+				let searchIndex = await RebulasBackend.getCatalogIndex(this.catalog);
+
+				let counter = 0;
+				let listener = function(ev) {
+					if (ev.state == "not-dirty") {
+						counter++;
+					}
+				}
+				searchIndex.state.addListener(listener);
 				await RebulasBackend.commitCatalog(this.catalog);
+				searchIndex.state.removeListener(listener);
+
+				if (counter > 0) {
+					terminal.echo(counter == 1  ? "1 item synchronized" : counter + " items synchronized");
+
+					// FIXME this jquery thing should be taken out of the terminal code
+					$("ul > li.changed").removeClass("changed");
+				}
       }
   },
 

@@ -33,8 +33,10 @@ class CatalogState extends model.EmptyState {
   }
 
   isDirty(item) {
-    let remoteRev = this.state.remoteRevs[item.id];
-    return !item.rev || this.state.remoteRevs[item.id] !== item.rev;
+    let id = item.id.indexOf("/") != 0 ? "/" + item.id : item.id;
+    let remoteRev = this.state.remoteRevs[id];
+    console.log("Item id " + id + ", remote rev " + remoteRev + ", current rev " + item.rev);
+    return !item.rev || remoteRev !== item.rev;
   }
 
   markDirty(item) {
