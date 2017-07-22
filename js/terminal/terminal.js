@@ -185,7 +185,7 @@ module.exports = {
 					if (ev.state == "not-dirty") {
 						counter++;
 					}
-				}
+				};
 				searchIndex.state.addListener(listener);
 				await RebulasBackend.commitCatalog(this.catalog);
 				searchIndex.state.removeListener(listener);

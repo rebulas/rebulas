@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "browserify": "^5.10.0",
-    "dropbox": "^2.5.4",
+    "dropbox": "^2.5.7",
     "elasticlunr": "github:weixsong/elasticlunr.js#master",
     "localforage": "^1.5.0",
     "marked": "^0.3.6",

@@ -67,14 +67,11 @@ class CatalogSearchIndex {
     }
 
     // The item that has been read from the proper path has an id that contains the path
-    // Note the leading slash is not part of the item.id
     // Try do devise a file name that hints of the content
-    let id = undefined;
-    if (item.id) {
-      id = "/" +  item.id;
-    } else {
+    let id = item.id;
+    if (!id) {
       let uniq = Util.uniqueId();
-      id = '/' + this.path + "/";
+      id = '/' + this.path + '/';
       id += nameBasedId ? nameBasedId + "-" + uniq.substring(uniq.length - 2) : uniq;
     }
 
@@ -166,7 +163,7 @@ class CatalogSearchIndex {
         facets = adaptFacets(facetingResult, queryString);
 
     let resultItems = result.map((item) => {
-      let id = item.ref.substring(1);
+      let id = item.ref;
       let catalogItem = new model.CatalogItem(id, item.doc._content, item.doc.rev);
       return new model.DisplayItem(id, item.doc._content, catalogItem);
     });
