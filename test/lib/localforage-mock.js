@@ -19,6 +19,10 @@ class LocalforageMock {
   getItem(key) {
     return Promise.resolve(this.store.get(key));
   }
+
+  removeItem(key) {
+    return Promise.resolve(this.store.delete(key));
+  }
 }
 
 let cache = new Map();

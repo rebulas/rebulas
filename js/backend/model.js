@@ -142,6 +142,8 @@ class EmptyState {
   isDirty(item) { return false; }
   markDirty(item) {}
   unmarkDirty(item) {}
+  deleteItem(item) {}
+  isDeleted(item) {}
   fire(event) {}
   addListener(listener) {}
   removeAllListeners() {}

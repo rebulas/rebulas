@@ -86,6 +86,15 @@ class CatalogSearchIndex {
       });
   }
 
+  deleteItem(item) {
+    let doc = this.index.documentStore.getDoc(item.id);
+    if (doc) {
+      this.features.removeDocContent(doc._content);
+      this.index.removeDoc(doc);
+    }
+    return this.indexOperations.deleteItem(item);
+  }
+
   reindexItem(catalogItem) {
     let doc = this.index.documentStore.getDoc(catalogItem.id);
     if (doc) {

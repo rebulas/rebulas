@@ -1,11 +1,11 @@
 var Util = require("extra/util");
-var model = require('backend/model');
+var model = require("backend/model");
 var CatalogSynchronization = require("backend/sync/catalog-synchronization");
 var CatalogState = require("backend/sync/catalog-state");
-var localforage = require('localforage');
+var localforage = require("localforage");
 var hasher = require("sha.js");
 
-class LocalCacheWrapper extends model.BaseCatalogOperations {
+class LocalWrapperOperations extends model.BaseCatalogOperations {
 
   constructor(catalog, delegate) {
     super(catalog);
@@ -17,18 +17,23 @@ class LocalCacheWrapper extends model.BaseCatalogOperations {
     this.state = new CatalogState(this.storage, this.storageId);
   }
 
-  async listItems() {
+  async _listItems(filter) {
     let self = this,
         keys = await this.storage.keys();
     keys = keys.filter(key => key !== self.state.itemKey);
 
-    let entries = keys.map((key) => new model.CatalogItemEntry(key));
+    let entries = keys.map(key => new model.CatalogItemEntry(key))
+        .filter(filter || (() => true));
     return Promise.all(entries.map(
       entry => self.getItem(entry)
     ));
   }
 
-  isItemChanged(catalogItem) {
+  listItems() {
+    return this._listItems(item => !this.state.isDeleted(item));
+  }
+
+  _isItemChanged(catalogItem) {
     var localItem = this.getItem(catalogItem);
 
     // Special case handling for the initial store cycle - the item has entered the system without rev, once it
@@ -42,7 +47,7 @@ class LocalCacheWrapper extends model.BaseCatalogOperations {
   }
 
   saveItem(catalogItem) {
-    if (this.isItemChanged(catalogItem)) {
+    if (this._isItemChanged(catalogItem)) {
       this.state.markDirty(catalogItem);
     } else {
       this.state.unmarkDirty(catalogItem);
@@ -57,12 +62,30 @@ class LocalCacheWrapper extends model.BaseCatalogOperations {
 
   getItem(catalogItem) {
     return this.storage.getItem(catalogItem.id)
-      .then((localItem) => new model.CatalogItem().fromJSON(localItem));
+      .then(localItem => localItem ? new model.CatalogItem().fromJSON(localItem) : null);
+  }
+
+  deleteItem(catalogItem) {
+    return this.state.markDeleted(catalogItem);
+  }
+
+  realDeleteItem(catalogItem) {
+    return this.state.deleteItem(catalogItem)
+      .then(() => this.storage.removeItem(catalogItem.id));
   }
 
   sync(conflictResolve) {
     return new CatalogSynchronization(conflictResolve, this.state)
       .sync(this, this.delegate);
   }
+
+  listDeletedItems() {
+    return this._listItems(item => this.state.isDeleted(item));
+  }
+
+  restoreItem(catalogItem) {
+    return this.state.unmarkDeleted(catalogItem);
+  }
 }
-module.exports = LocalCacheWrapper;
+
+module.exports = LocalWrapperOperations;

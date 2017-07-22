@@ -29,6 +29,14 @@ function createDownloadResult(catalogItem, response) {
   });
 }
 
+function handleGetError(err) {
+  // returns 409 if not found
+  if(err.status === 409) {
+    return null;
+  }
+  throw err;
+}
+
 class DropboxOperations extends model.BaseCatalogOperations {
   constructor(catalog) {
     super(catalog);
@@ -57,13 +65,14 @@ class DropboxOperations extends model.BaseCatalogOperations {
       try {
         files = await this.dbx.filesListFolder({ path: folder });
       } catch(e) {
-		// Part of the regular execution flow, if the folder has been deleted we don't want to return cached content
+		    // Part of the regular execution flow, if the folder has been deleted
+        // we don't want to return cached content
         if (e.error && e.error.error_summary && e.error.error_summary.indexOf('path/not_found/') < 0) {
           Util.log(e);
         } else {
-			// Re-throw, we don't have access or there's an error we can't continue with
-			throw e;
-		}
+			    // Re-throw, we don't have access or there's an error we can't continue with
+			    throw e;
+		    }
       }
 
       files.entries.forEach((entry) => {
@@ -91,7 +100,16 @@ class DropboxOperations extends model.BaseCatalogOperations {
 
   async getItem(catalogItem) {
     return this.dbx.filesDownload({ path: catalogItem.id })
-      .then(createDownloadResult.bind(null, catalogItem));
+      .then(createDownloadResult.bind(null, catalogItem))
+      .catch(handleGetError);
+  }
+
+  deleteItem(catalogItem) {
+    if(!catalogItem.id.startsWith(this.path)) {
+      return Promise.reject(new Error('Cannot delete item with id ' + catalogItem.id));
+    }
+
+    return this.dbx.filesDeleteV2({ path: catalogItem.id });
   }
 }
 

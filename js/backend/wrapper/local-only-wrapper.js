@@ -1,15 +1,15 @@
-var LocalCacheWrapper = require("backend/wrapper/local-cache-wrapper");
+var LocalWrapperOperations = require("backend/wrapper/local-cache-wrapper");
 var model = require("backend/model");
 var hasher = require("sha.js");
 
-class LocalOnlyWrapper extends LocalCacheWrapper {
+class LocalOnlyWrapper extends LocalWrapperOperations {
 
   constructor(catalog) {
     super(catalog);
     this.state = new model.EmptyState();
   }
 
-  isItemChanged(item) { return true; }
+  _isItemChanged(item) { return true; }
 
   // We're using EmptyState so no need of firing events
   saveItem(item) {
@@ -17,6 +17,10 @@ class LocalOnlyWrapper extends LocalCacheWrapper {
     // Remote repos are responsible for issuing a revision for items stored
     item.rev = hasher('sha256').update(item.content).digest('hex');
     return super.saveItem(item);
+  }
+
+  deleteItem(catalogItem) {
+    return this.storage.removeItem(catalogItem.id);
   }
 }
 

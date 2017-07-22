@@ -17,23 +17,22 @@ async function clearDropboxFolder() {
   } catch(e) {}
 }
 
-module.exports = {
-  setUp : function(cb) {
+let tests = {
+  setUp : async function(cb) {
     commonTests.setUp();
+    await clearDropboxFolder();
     cb();
   },
 
-  tearDown : function(cb) {
+  tearDown : async function(cb) {
     commonTests.tearDown();
+    await clearDropboxFolder();
     cb();
   },
 
   testDropboxIndex : async function(test) {
     try {
-      if(dropboxCatalog.token) {
-        await clearDropboxFolder();
-        await commonTests.verifyCatalog(test, dropboxCatalog);
-      }
+      await commonTests.verifyCatalog(test, dropboxCatalog);
     } catch(e) {
       console.log(e);
       test.fail(e);
@@ -43,14 +42,11 @@ module.exports = {
 
   testDropboxInitialLoad: async function(test) {
     try {
-      if(dropboxCatalog.token) {
-        await clearDropboxFolder();
-        let ops = commonTests.RebulasBackend().getIndexBackend(dropboxCatalog).delegate;
-        await ops.saveItem(new model.CatalogItem('/rebulas-unittest/initial.txt', `# Name\ninitial item`));
-        let index = await commonTests.RebulasBackend().getCatalogIndex(dropboxCatalog);
-        let results = index.search('initial');
-        test.equal(results.items.length, 1);
-      }
+      let ops = commonTests.RebulasBackend().getIndexBackend(dropboxCatalog).delegate;
+      await ops.saveItem(new model.CatalogItem('/rebulas-unittest/initial.txt', `# Name\ninitial item`));
+      let index = await commonTests.RebulasBackend().getCatalogIndex(dropboxCatalog);
+      let results = index.search('initial');
+      test.equal(results.items.length, 1);
     } catch(e) {
       console.log(e);
       test.fail(e);
@@ -60,24 +56,27 @@ module.exports = {
 
   testDropboxLocalWrapper : async function(test) {
     try {
-      if(dropboxCatalog.token) {
-        await clearDropboxFolder();
-        await commonTests.verifyLocalWrapper(test, dropboxCatalog);
-      }
+      await commonTests.verifyLocalWrapper(test, dropboxCatalog);
     } catch(e) {
       console.log(e);
       test.fail(e);
     }
-
     test.done();
   },
 
   testDropboxIndexReload : async function(test) {
     try {
-      if(dropboxCatalog.token) {
-        await clearDropboxFolder();
-        await commonTests.verifyIndexReload(test, dropboxCatalog);
-      }
+      await commonTests.verifyIndexReload(test, dropboxCatalog);
+    } catch(e) {
+      console.log(e);
+      test.fail(e);
+    }
+    test.done();
+  },
+
+  testDropboxDelete : async function(test) {
+    try {
+      await commonTests.verifyDelete(test, dropboxCatalog);
     } catch(e) {
       console.log(e);
       test.fail(e);
@@ -85,3 +84,7 @@ module.exports = {
     test.done();
   }
 };
+
+if(dropboxCatalog.token) {
+  module.exports.dropbox = tests;
+}

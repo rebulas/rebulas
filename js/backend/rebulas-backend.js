@@ -1,7 +1,7 @@
 var Util = require("extra/util");
 var DropboxOperations = require('backend/operations/dropbox');
 var LocalStorageOperations = require("backend/operations/local");
-var LocalCacheWrapper = require("backend/wrapper/local-cache-wrapper");
+var LocalWrapperOperations = require("backend/wrapper/local-cache-wrapper");
 var LocalOnlyWrapper = require("backend/wrapper/local-only-wrapper");
 var CatalogSearchIndex = require("backend/search/catalog-search-index");
 
@@ -27,7 +27,7 @@ module.exports = {
       });
       Util.log('Loading empty local index');
     }
-    return new LocalCacheWrapper(catalog, indexOps);
+    return new LocalWrapperOperations(catalog, indexOps);
   },
 
   loadIndex: async function(indexOps, catalog) {

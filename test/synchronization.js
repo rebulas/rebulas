@@ -18,6 +18,47 @@ module.exports = {
     cb();
   },
 
+  testDeleteSynchronization: async function(test) {
+    try {
+      let item = new model.CatalogItem('1', 'local'),
+          index = await commonTests.RebulasBackend().getCatalogIndex(localCatalog),
+          remoteBackend = index.indexOperations.delegate, // LocalOnlyWrapper
+          localBackend = index.indexOperations, // LocalWrapperOperations
+          event;
+
+      await index.sync();
+      index.state.addListener((e) => {
+        event = e;
+      });
+
+      item = await localBackend.saveItem(item);
+      await index.sync();
+
+      await localBackend.deleteItem(item);
+
+      test.deepEqual(item, event.item);
+      test.equal('deleted', event.state);
+
+      await index.sync();
+
+      // make sure no info available for it anymore
+      test.ok(!index.state.isDeleted(item));
+      test.ok(!index.state.remoteRev(item));
+
+      let missing;
+      missing = await remoteBackend.getItem(item);
+      test.ok(!missing);
+
+      missing = await localBackend.getItem(item);
+      test.ok(!missing);
+      
+    } catch(e) {
+      test.fail('Error', e);
+      console.error(e);
+    }
+    test.done();
+  },
+
   testCatalogSynchronization: async function(test) {
     try {
       let local1 = new model.CatalogItem('1', 'local'),

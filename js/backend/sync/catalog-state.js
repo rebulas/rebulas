@@ -7,7 +7,8 @@ class CatalogState extends model.EmptyState {
     this.itemKey = '__catalog_state_' + storageId;
     this.listeners = [(e) => Util.log(e.item.id, e.state, e.item.rev) ];
     this.state = {
-      remoteRevs : {}
+      remoteRevs : {},
+      deleted : []
     };
     this.storage = storage;
     this.queue = new Util.PromiseQueue();
@@ -57,6 +58,42 @@ class CatalogState extends model.EmptyState {
     });
   }
 
+  markDeleted(item) {
+    return this.queue.exec(() => {
+      if(!this.isDeleted(item)) {
+        this.state.deleted.push(item.id);
+        this.fire(new model.ItemState(item, 'deleted'));
+      }
+      return this.save().then(() => item);
+    });
+  }
+
+  deleteItem(item) {
+    return this.queue.exec(() => {
+      let index = this.state.deleted.indexOf(item.id);
+      if(index >= 0) {
+        this.state.deleted.splice(index, 1);
+      }
+      delete this.state.remoteRevs[item.id];
+      return this.save().then(() => item);
+    });
+  }
+
+  unmarkDeleted(item) {
+    return this.queue.exec(() => {
+      let index = this.state.deleted.indexOf(item.id);
+      if(index >= 0) {
+        this.state.deleted.splice(index, 1);
+        this.fire(new model.ItemState(item, 'restored'));
+      }
+      return this.save().then(() => item);
+    });
+  }
+
+  isDeleted(item) {
+    return this.state.deleted.indexOf(item.id) >= 0;
+  }
+
   fire(event) {
     this.listeners.forEach(listener => listener(event));
   }
@@ -77,4 +114,5 @@ class CatalogState extends model.EmptyState {
       this.listeners.splice(index, 1);
   }
 }
+
 module.exports = CatalogState;

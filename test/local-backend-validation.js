@@ -38,4 +38,9 @@ module.exports = {
     await commonTests.verifyIndexReload(test, localCatalog);
     test.done();
   },
+
+  testLocalIndexDelete : async function(test) {
+    await commonTests.verifyDelete(test, localCatalog);
+    test.done();    
+  }
 };

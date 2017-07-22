@@ -148,4 +148,30 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   test.deepEqual(newIndex.features, oldIndex.features, 'Unequal features');
 };
 
+module.exports.verifyDelete = async (test, catalog) => {
+  try {
+    let catalogIndex = await RebulasBackend.getCatalogIndex(catalog);
+    catalogIndex.indexOperations = catalogIndex.indexOperations.delegate;
+
+    let savedItem = await catalogIndex.saveItem(dummyItem);
+    test.ok(savedItem.id, 'Has no id');
+    let result = catalogIndex.search('dummy');
+    test.ok(result.items.length >= 1, 'Not found in result');
+    test.ok(result.items.find(
+      (e) => e.rawContent === dummyItem.rawContent, 'Dummy not found in result'));
+
+    await catalogIndex.deleteItem(savedItem);
+    result = catalogIndex.search('dummy');
+    test.ok(!result.items.find(
+      (e) => e.rawContent === dummyItem.rawContent, 'Dummy found in result after delete'));
+
+    let deletedItem;
+    deletedItem = await catalogIndex.indexOperations.getItem(savedItem);
+    test.ok(!deletedItem);
+  } catch(e) {
+    console.error(e);
+    test.ok(false, e);
+  }
+};
+
 module.exports.RebulasBackend = () => RebulasBackend;
