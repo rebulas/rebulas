@@ -69,6 +69,10 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     return this.state.markDeleted(catalogItem);
   }
 
+  undeleteItem(catalogItem) {
+    return this.state.unmarkDeleted(catalogItem);
+  }
+
   realDeleteItem(catalogItem) {
     return this.state.deleteItem(catalogItem)
       .then(() => this.storage.removeItem(catalogItem.id));

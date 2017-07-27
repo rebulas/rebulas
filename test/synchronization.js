@@ -18,6 +18,48 @@ module.exports = {
     cb();
   },
 
+  testDeleteUndo: async function(test) {
+    try {
+      let item = new model.CatalogItem('1', 'local'),
+          index = await commonTests.RebulasBackend().getCatalogIndex(localCatalog),
+          remoteBackend = index.indexOperations.delegate, // LocalOnlyWrapper
+          localBackend = index.indexOperations, // LocalWrapperOperations
+          event;
+
+      await index.sync();
+      index.state.addListener((e) => {
+        event = e;
+      });
+
+      item = await localBackend.saveItem(item);
+      await index.sync();
+
+      await localBackend.deleteItem(item);
+
+      test.deepEqual(item, event.item);
+      test.equal('deleted', event.state);
+
+      await localBackend.undeleteItem(item);
+
+      test.deepEqual(item, event.item);
+      test.equal('not-deleted', event.state);
+
+      await index.sync();
+
+      // make sure no info available for it anymore
+      test.ok(!index.state.isDeleted(item));
+      test.ok(index.state.remoteRev(item));
+
+      test.ok(await remoteBackend.getItem(item));
+      test.ok(await localBackend.getItem(item));
+
+    } catch(e) {
+      test.fail('error', e);
+      console.error(e);
+    }
+    test.done();
+  },
+
   testDeleteSynchronization: async function(test) {
     try {
       let item = new model.CatalogItem('1', 'local'),

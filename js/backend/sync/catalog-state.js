@@ -19,6 +19,8 @@ class CatalogState extends model.EmptyState {
       return this.storage.getItem(this.itemKey)
         .then((state) => {
           this.state = state || this.state;
+          // Backwards compatibility
+          this.state.deleted = this.state.deleted || [];
         });
     });
   }
@@ -84,7 +86,7 @@ class CatalogState extends model.EmptyState {
       let index = this.state.deleted.indexOf(item.id);
       if(index >= 0) {
         this.state.deleted.splice(index, 1);
-        this.fire(new model.ItemState(item, 'restored'));
+        this.fire(new model.ItemState(item, 'not-deleted'));
       }
       return this.save().then(() => item);
     });
