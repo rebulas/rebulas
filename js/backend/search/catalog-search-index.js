@@ -221,6 +221,7 @@ async function rebuildIndex(indexOps, allFiles, features) {
   Util.log('Entries in index:', index.documentStore.length);
   return index;
 }
+
 function adaptFacets(facets, queryString="") {
   if (!queryString.endsWith('/')) {
     queryString = queryString + '/';
@@ -260,8 +261,6 @@ function processSelectionResults(selectionResults) {
 
   return minimalSelection.filter((doc) => selectionMaps.every((map) => map[doc.ref]));
 }
-
-
 
 function verifyUpToDate(lunrIndex, files) {
   if(!lunrIndex || files.length != lunrIndex.documentStore.length) {

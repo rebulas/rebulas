@@ -1,4 +1,5 @@
 const rebulasDropboxClientID = "ot4wauixsfog5px";
+const rebulasOneDriveClientID = '27e0658f-8cc1-4bf7-8e28-1850190246e5';
 
 // Register on-going OAuth sessions for mapping to OAuth callbacks
 window.OAuthSessions = [];
@@ -38,5 +39,29 @@ module.exports = {
 		};
 
 		window.open(oauthUrl, "OAuth");
-	}
+	},
+
+  "initOneDriveOAuth" : function (successCallback) {
+		let redirectUri = window.location.hostname == "localhost"
+				? "http://localhost:8080/oauth/oauth.html"
+				: "https://rebulas.com/app/oauth/oauth.html";
+    let loginId = Util.uniqueId();
+    redirectUri = redirectUri + '?api_type=onedrive&state=' + loginId;
+
+    window.OAuthSessions[loginId] = function(oauthArgs) {
+			var repositoryId = Util.hash(JSON.stringify(oauthArgs));
+			var repository = Repositories.add(repositoryId, 'onedrive', oauthArgs.code);
+      successCallback(repository);
+    };
+
+    let oauthUrl = [
+      'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?',
+      '?client_id=', rebulasOneDriveClientID,
+      '&scope=files.read',
+      '&response_type=code',
+      '&redirect_uri=', encodeURIComponent(redirectUri)
+    ].join('');
+
+    window.open(oauthUrl, "OAuth");
+  }
 }

@@ -1,5 +1,6 @@
 var Util = require("extra/util");
 var DropboxOperations = require('backend/operations/dropbox');
+var OneDriveOperations = require('backend/operations/onedrive');
 var LocalStorageOperations = require("backend/operations/local");
 var LocalWrapperOperations = require("backend/wrapper/local-cache-wrapper");
 var LocalOnlyWrapper = require("backend/wrapper/local-only-wrapper");
@@ -20,10 +21,19 @@ module.exports = {
     } else if (catalog.uri.startsWith('localhost')) {
       indexOps = new LocalStorageOperations(catalog);
       Util.log('Loading Localhost index');
+    } else if (catalog.uri.startsWith('onedrive.live.com')) {
+      indexOps = new OneDriveOperations(catalog);
+      Util.log('Loading OneDrive index');
     } else if (catalog.uri.startsWith('empty')) {
       indexOps = new LocalOnlyWrapper({
         id: 'empty',
         path: 'empty'
+      });
+      Util.log('Loading empty local index');
+    } else {
+      indexOps = new LocalOnlyWrapper({
+        id: 'unknown',
+        path: catalog.id
       });
       Util.log('Loading empty local index');
     }

@@ -87,9 +87,22 @@ module.exports = {
 			});
 			li.append(a);
 
+			// OneDrive
+			a = Elements.a("add-repository-link").append("OneDrive");
+			a.click(function() {
+				RepositoryController.initOneDriveOAuth(function(repository) {
+					var catalogId = repository.catalogs[0].id;
+					queryExecutor.navigate("?catalog=" + catalogId, function(result) {
+						self.render(args);
+					});
+				})
+			});
+			li.append(a);
+
 			// GitHub
 			a = Elements.a("add-repository-link").append("GitHub");
-			li.append(a);
+      // No support for github yet
+			//li.append(a);
 			listContainer.append(li);
 
 			repositoryContainer.fadeIn();

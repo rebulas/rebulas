@@ -11,6 +11,7 @@ var Repositories = {
 
       switch (type) {
         case "dropbox" : uri = "dropbox.com/rebulas"; break;
+        case "onedrive" : uri = "onedrive.live.com/rebulas"; break;
         default : uri = "localhost";
       }
 
@@ -18,8 +19,6 @@ var Repositories = {
       var catalogId = Util.hash(uri + "/" + defaultCatalogPath);
 
       // TODO invoke storage methods to create the default path
-
-
       var repository = {
         "id" : id,
         "uri" : uri,
@@ -66,7 +65,8 @@ var Repositories = {
     },
 
     supportsPaths : function(repository) {
-      return repository.uri.indexOf("dropbox.com") != -1;
+      return repository.uri.indexOf("dropbox.com") != -1
+        || repository.uri.indexOf("onedrive.live.com") != -1;
     }
 }
 
