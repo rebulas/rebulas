@@ -4,20 +4,23 @@
 <p id="message" align="center"></p>
 
 <script>
-var params = window.location.href.substr(window.location.origin.length);
-var q = parseQueryString(params);
+var q = {};
+var loc = window.location;
+var hashIndex = loc.href.indexOf('#');
+hashIndex = (hashIndex == -1) ? undefined : hashIndex;
+
+parseQueryString(loc.href.substring(loc.origin.length, hashIndex), q);
+parseQueryString(loc.hash.substr(1), q);
 
 if (window.opener.OAuthCallback) {
-  if (q.api_type === 'onedrive') {
-    window.opener.OAuthCallback(q);
-  }
+  window.opener.OAuthCallback(q);
   window.close();
 } else {
 	document.getElementById("message").innerHTML = "Your access token is " + q.access_token;
 }
 
-function parseQueryString(string) {
-	var queryString = {};
+function parseQueryString(string, result) {
+	var queryString = result || {};
     string.replace(
             new RegExp("([^?=&]+)(=([^&]*))?", "g"),
             function($0, $1, $2, $3) { queryString[$1] = $3; }

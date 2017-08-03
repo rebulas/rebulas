@@ -90,7 +90,7 @@ module.exports = {
 			// OneDrive
 			a = Elements.a("add-repository-link").append("OneDrive");
 			a.click(function() {
-				RepositoryController.initOneDriveOAuth(function(repository) {
+				RepositoryController.OneDrive.createRepository(function(repository) {
 					var catalogId = repository.catalogs[0].id;
 					queryExecutor.navigate("?catalog=" + catalogId, function(result) {
 						self.render(args);

@@ -73,6 +73,7 @@ class CatalogSearchIndex {
       let uniq = Util.uniqueId();
       id = '/' + this.path + '/';
       id += nameBasedId ? nameBasedId + "-" + uniq.substring(uniq.length - 2) : uniq;
+      id += '.md';
     }
 
     Util.log('Saving item', id);
