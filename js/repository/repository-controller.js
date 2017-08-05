@@ -1,5 +1,33 @@
+let Elements = require("ui/elements");
+
 const rebulasDropboxClientID = "ot4wauixsfog5px";
 const rebulasOneDriveClientID = '27e0658f-8cc1-4bf7-8e28-1850190246e5';
+
+class LoginDialog {
+  static prompt(confirm, reject) {
+    let dialog = $("#oauthLoginPopup");
+
+    let loginButton = $('#oauthLoginButton');
+    let confirmed = false;
+
+    let loginClick = () => {
+      confirmed = true;
+      dialog.modal('hide');
+      confirm();
+    };
+    loginButton.on('click', loginClick);
+
+    dialog.on('hide.bs.modal', () => {
+      loginButton.unbind('click', loginClick);
+
+      if(!confirmed && reject) {
+        reject();
+      }
+    });
+
+    dialog.modal('show');
+  }
+}
 
 class OneDrive {
   static get client_id() {
@@ -26,7 +54,7 @@ class OneDrive {
 
     window.OAuthSessions[loginId] = oauthArgs => {
       delete window.OAuthSessions[loginId];
-      callback(oauthArgs.access_token);
+      callback(null, oauthArgs.access_token);
     };
 
     let oauthUrl = [
@@ -37,7 +65,10 @@ class OneDrive {
       '&redirect_uri=', encodeURIComponent(redirectUri)
     ].join('');
 
-    window.open(oauthUrl, "OAuth");
+    LoginDialog.prompt(() => {
+      window.open(oauthUrl, "OAuth");
+    }, () => callback(new Error('Login dismissed')));
+    //window.open(oauthUrl, "OAuth");
   }
 }
 
