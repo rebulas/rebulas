@@ -29,6 +29,7 @@ module.exports.someIndex = async () =>
 module.exports.setUp = () => {
   let tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'testdata-'));
   localMock = new LocalStorage(tempDir);
+  mock('extra/window', {});
   mock('backend/operations/local-storage', localMock);
   mock('localforage', localforageMock);
 

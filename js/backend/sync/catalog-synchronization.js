@@ -59,6 +59,12 @@ class CatalogSynchronization {
       Util.error(e);
     }
 
+    return this.apply(local, remote, plan);
+  }
+
+  apply(local, remote, plan) {
+    let self = this;
+
     function save(from, to, item) {
       return from.getItem(item)
         .then(item => to.saveItem(item));

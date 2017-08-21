@@ -1,4 +1,5 @@
-let Elements = require("ui/elements");
+let Elements = require("ui/elements"),
+    window = require('../extra/window');
 
 const rebulasDropboxClientID = "ot4wauixsfog5px";
 const rebulasOneDriveClientID = '27e0658f-8cc1-4bf7-8e28-1850190246e5';
