@@ -7,7 +7,7 @@ class CatalogSynchronization {
     this.state = state;
   }
 
-  plan(srcItems, toDelete, destItems) {
+  planActions(srcItems, toDelete, destItems) {
     let actions = destItems.filter(
       item => !(srcItems.find(src => src.id === item.id)) &&
         !(toDelete.find(itemToDelete => itemToDelete.id === item.id))
@@ -46,19 +46,42 @@ class CatalogSynchronization {
     return actions;
   }
 
-  async sync(local, remote) {
-    let self = this,
-        plan = [];
+  async plan(local, remote) {
     try {
-      await self.state.load();
+      await this.state.load();
+
       let allRemote = await remote.listItems();
       let allLocal = await local.listItems();
       let deletedLocal = await local.listDeletedItems();
-      plan = this.plan(allLocal, deletedLocal, allRemote);
+
+      let plan = this.planActions(allLocal, deletedLocal, allRemote);
+      plan = await Promise.all(plan.map(
+        action => {
+          if(action.action === 'conflict') {
+            return self.conflictResolve(action);
+          } else {
+            return action;
+          }
+        }));
+      return plan;
     } catch(e) {
       Util.error(e);
     }
 
+    return [];
+  }
+
+  async push(local, remote) {
+    let plan = await this.plan(local, remote);
+    plan = plan.filter(
+      action => ['to-remote', 'delete-remote'].indexOf(action.action) >= 0);
+    return this.apply(local, remote, plan);
+  }
+
+  async pull(local, remote) {
+    let plan = await this.plan(local, remote);
+    plan = plan.filter(
+      action => ['to-local'].indexOf(action.action) >= 0);
     return this.apply(local, remote, plan);
   }
 
@@ -83,9 +106,6 @@ class CatalogSynchronization {
             Util.log("Error saving " + action.item.id + " from local to remote, error " + e + ". Leaving item marked as dirty.");
             self.state.markDirty(action.item);
           });
-      case 'conflict':
-        return self.conflictResolve(action.sourceItem, action.destItem)
-          .then(executeAction);
       case 'delete-remote':
         return remote.deleteItem(action.item)
           .then(() => local.realDeleteItem(action.item));

@@ -176,7 +176,7 @@ module.exports = {
 					this.container.height(height);
 					this.setHeight(height);
 				}
-			} else if (c.command == "commit") {
+			} else if (['push', 'pull'].indexOf(c.command) >= 0) {
 				// TODO return a promise to stop the terminal prompt until the command completes 
 				let searchIndex = await RebulasBackend.getCatalogIndex(this.catalog);
 
@@ -187,7 +187,11 @@ module.exports = {
 					}
 				};
 				searchIndex.state.addListener(listener);
-				await RebulasBackend.commitCatalog(this.catalog);
+        if(c.command === 'push') {
+				  await RebulasBackend.pushCatalog(this.catalog);
+        } else {
+          await RebulasBackend.pullCatalog(this.catalog);
+        }
 				searchIndex.state.removeListener(listener);
 
 				if (counter > 0) {

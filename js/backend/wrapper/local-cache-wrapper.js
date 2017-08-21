@@ -78,9 +78,14 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
       .then(() => this.storage.removeItem(catalogItem.id));
   }
 
-  sync(conflictResolve) {
-    return new CatalogSynchronization(conflictResolve, this.state)
-      .sync(this, this.delegate);
+  push(conflictResolve) {
+    let synchronization = new CatalogSynchronization(conflictResolve, this.state);
+    return synchronization.push(this, this. delegate);
+  }
+
+  pull(conflictResolve) {
+    let synchronization = new CatalogSynchronization(conflictResolve, this.state);
+    return synchronization.pull(this, this. delegate);
   }
 
   listDeletedItems() {

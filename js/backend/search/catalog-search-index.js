@@ -106,17 +106,24 @@ class CatalogSearchIndex {
     this.features.calculateFieldFeatures();
   }
 
-  sync() {
-    Util.log('Synchronizing...');
-    function conflictResolve(localItem, remoteItem) {
+  static CONFLICT_RESOLVE(localItem, remoteItem) {
       let resolution = {
         action: 'to-remote',
         item: localItem
       };
       Util.log('Resolving conflict', resolution);
       return Promise.resolve(resolution);
-    }
-    return this.indexOperations.sync(conflictResolve)
+  }
+
+  push() {
+    Util.log('Pushing...');
+    return this.indexOperations.push(CatalogSearchIndex.CONFLICT_RESOLVE)
+      .then(() => this.loadIndex());
+  }
+
+  pull() {
+    Util.log('Pulling...');
+    return this.indexOperations.pull(CatalogSearchIndex.CONFLICT_RESOLVE)
       .then(() => this.loadIndex());
   }
 

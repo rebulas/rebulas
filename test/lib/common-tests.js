@@ -117,7 +117,7 @@ module.exports.verifyLocalWrapper = async (test, catalog) => {
   allFiles = await originalOps.listItems();
   test.ok(!allFiles.find((e) => e.name === secondSavedItem.name), 'Item 2 found in original');
 
-  await index.sync();
+  await index.push();
 
   let remoteSecondSavedItem = await originalOps.getItem(secondSavedItem);
   secondSavedItem.rev = remoteSecondSavedItem.rev;

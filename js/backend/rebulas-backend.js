@@ -9,8 +9,11 @@ var CatalogSearchIndex = require("backend/search/catalog-search-index");
 let indexCache = new Map();
 module.exports = {
 
-  commitCatalog: function(catalog) {
-    return catalog.searchIndex.sync();
+  pullCatalog: function(catalog) {
+    return catalog.searchIndex.pull();
+  },
+  pushCatalog: function(catalog) {
+    return catalog.searchIndex.push();
   },
 
   getIndexBackend: function(catalog) {
@@ -43,7 +46,7 @@ module.exports = {
   loadIndex: async function(indexOps, catalog) {
     let index = new CatalogSearchIndex(indexOps, catalog);
     catalog.searchIndex = index;
-    await index.sync();
+    await index.pull();
     return index;
   },
 

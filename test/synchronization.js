@@ -26,13 +26,13 @@ module.exports = {
           localBackend = index.indexOperations, // LocalWrapperOperations
           event;
 
-      await index.sync();
+      await index.pull();
       index.state.addListener((e) => {
         event = e;
       });
 
       item = await localBackend.saveItem(item);
-      await index.sync();
+      await index.push();
 
       await localBackend.deleteItem(item);
 
@@ -44,7 +44,7 @@ module.exports = {
       test.deepEqual(item, event.item);
       test.equal('not-deleted', event.state);
 
-      await index.sync();
+      await index.push();
 
       // make sure no info available for it anymore
       test.ok(!index.state.isDeleted(item));
@@ -68,20 +68,20 @@ module.exports = {
           localBackend = index.indexOperations, // LocalWrapperOperations
           event;
 
-      await index.sync();
+      await index.pull();
       index.state.addListener((e) => {
         event = e;
       });
 
       item = await localBackend.saveItem(item);
-      await index.sync();
+      await index.push();
 
       await localBackend.deleteItem(item);
 
       test.deepEqual(item, event.item);
       test.equal('deleted', event.state);
 
-      await index.sync();
+      await index.push();
 
       // make sure no info available for it anymore
       test.ok(!index.state.isDeleted(item));
@@ -110,7 +110,7 @@ module.exports = {
           localBackend = index.indexOperations, // LocalCacheWrapper
           event;
 
-      await index.sync();
+      await index.pull();
       index.state.addListener((e) => {
         event = e;
       });
@@ -131,7 +131,7 @@ module.exports = {
       // Should get planned as local to remote, local has state dirty i.e. rev = 0, remote reports rev as undefined
       // The save to remote should assign a revision to the item, a subsequent call to save on local should store the item
       // with the revision and remove the dirty mark
-      await index.sync();
+      await index.push();
 
       local1 = await localBackend.getItem(local1);
       test.deepEqual(local1, event.item);
