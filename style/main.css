@@ -72,13 +72,18 @@ html, body {
 }
 
 .save-button {
-	margin: 0px 10px 0px 0px;
+	margin: 0px 5px 0px 0px;
 	width: 150px;
 }
 
 .cancel-button {
-	margin: 0px 25px 0px 0px;
+	margin: 0px 5px 0px 0px;
 }
+
+.delete-button {
+	margin: 0px 5px 0px 25px;
+}
+
 
 ul.item-list {
     list-style: circle;

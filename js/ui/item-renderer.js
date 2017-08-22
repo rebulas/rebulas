@@ -43,6 +43,7 @@ module.exports = {
 		var item = args.item;
 		var saveCallback = args.saveCallback;
 		var cancelCallback = args.cancelCallback;
+		var deleteCallback = args.deleteCallback;
 
 		container.empty();
 
@@ -114,6 +115,11 @@ module.exports = {
 			}
 		});
 		container.append(previewButton);
+
+		var deleteButton = Elements.button("btn btn-default delete-button");
+		deleteButton.append("Delete");
+		deleteButton.click(deleteCallback);
+		container.append(deleteButton);
 
 		// Since renderDetails is called within the event chain of the click that triggered it
 		// the focus here is overtaken by the focus of the element the event was attached to.

@@ -77,7 +77,7 @@ module.exports = {
 
 							setTimeout(function() {
 								hintPlaceholder.empty().append("Select element to show details");
-	
+
 								// Reload the current result set with the new item in it
 								var q = Util.parseQueryString();
 								queryExecutor.navigate("?" + Util.queryObjectToString(q));
@@ -88,12 +88,31 @@ module.exports = {
 					}
 				};
 
+				var deleteCallback = function(item) {
+					if (confirm("Are you sure you want to delete this item")) {
+						detailsContainer.empty().hide();
+						itemsContainer.fadeIn();
+
+						catalog.searchIndex.deleteItem(item);
+						hintPlaceholder.empty().append("Item deleted").show();
+
+						setTimeout(function() {
+							hintPlaceholder.empty().append("Select element to show details");
+
+							// Reload the current result set with the new item in it
+							var q = Util.parseQueryString();
+							queryExecutor.navigate("?" + Util.queryObjectToString(q));
+						}, 2000);
+					}
+				};
+
 				ItemRenderer.renderDetails({
 					"container" : detailsContainer,
 					"item" : item,
 					"catalog" : catalog,
 					"saveCallback" : saveCallback.bind(null, item),
-					"cancelCallback" : saveCallback
+					"cancelCallback" : saveCallback,
+					"deleteCallback" : deleteCallback.bind(null, item)
 				});
 
 				hintPlaceholder.empty().hide();
