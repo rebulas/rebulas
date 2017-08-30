@@ -106,10 +106,10 @@ class CatalogSearchIndex {
     this.features.calculateFieldFeatures();
   }
 
-  static CONFLICT_RESOLVE(localItem, remoteItem) {
+  static CONFLICT_RESOLVE(action) {
       let resolution = {
         action: 'to-remote',
-        item: localItem
+        item: action.srcItem
       };
       Util.log('Resolving conflict', resolution);
       return Promise.resolve(resolution);

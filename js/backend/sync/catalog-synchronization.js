@@ -8,6 +8,7 @@ class CatalogSynchronization {
   }
 
   planActions(srcItems, toDelete, destItems) {
+    // Fetch all items that are not found locally but exist on remote unless they are scheduled for deletion
     let actions = destItems.filter(
       item => !(srcItems.find(src => src.id === item.id)) &&
         !(toDelete.find(itemToDelete => itemToDelete.id === item.id))
@@ -16,22 +17,34 @@ class CatalogSynchronization {
       item: newItem
     }));
 
+
     srcItems.forEach(
       srcItem => {
         let destItem = destItems.find(destItem => srcItem.id === destItem.id);
-        // No remote item, so just save
-        let remoteUnchanged = !destItem || this.state.remoteRev(srcItem) !== destItem.rev,
-            localChanged = this.state.isDirty(srcItem);
 
-        if(remoteUnchanged) {
+        let dirty = this.state.isDirty(srcItem);
+        let remoteRev = this.state.remoteRev(srcItem);
+
+        if (!destItem || (dirty && remoteRev == destItem.rev)) {
+          // The item does not exist on the remote or it's unchanged on remote and we've changed it locally
+          // Push
           actions.push({
             action: 'to-remote',
             item: srcItem
           });
-        } else if (localChanged) {
+        } else if (!dirty && remoteRev !== destItem.rev) {
+          // No local changes but there seems to be remote changes
+          // Fetch
+          actions.push({
+            action: 'to-local',
+            item: destItem
+          });
+        } else if (this.state.isDirty(srcItem) && this.state.remoteRev(srcItem) !== destItem.rev) {
+          // We've changed the item locally but the remote revision differs from the local one
+          // We have a conflict to resolve
           actions.push({
             action: 'conflict',
-            sourceItem: srcItem,
+            srcItem: srcItem,
             destItem: destItem
           });
         }
@@ -47,6 +60,7 @@ class CatalogSynchronization {
   }
 
   async plan(local, remote) {
+    let self = this;
     try {
       await this.state.load();
 
@@ -57,7 +71,7 @@ class CatalogSynchronization {
       let plan = this.planActions(allLocal, deletedLocal, allRemote);
       plan = await Promise.all(plan.map(
         action => {
-          if(action.action === 'conflict') {
+          if (action.action === 'conflict') {
             return self.conflictResolve(action);
           } else {
             return action;
@@ -95,22 +109,29 @@ class CatalogSynchronization {
 
     function executeAction(action) {
       switch(action.action) {
-      case 'to-local':
-        Util.log(action.item.id, 'remote -> local');
-        return save(remote, local, action.item);
-      case 'to-remote':
-        Util.log(action.item.id, 'local -> remote');
-        return save(local, remote, action.item)
-          .then(item => local.saveItem(item))
-          .catch(e => {
-            Util.log("Error saving " + action.item.id + " from local to remote, error " + e + ". Leaving item marked as dirty.");
-            self.state.markDirty(action.item);
-          });
-      case 'delete-remote':
-        return remote.deleteItem(action.item)
-          .then(() => local.realDeleteItem(action.item));
-      default:
-        return Promise.resolve();
+        case 'to-local':
+          Util.log(action.item.id, 'remote -> local');
+          return save(remote, local, action.item)
+                  .then(item => self.state.unmarkDirty(item));
+        case 'to-remote':
+          Util.log(action.item.id, 'local -> remote');
+          return save(local, remote, action.item)
+            .then(item => {
+                local.saveItem(item);
+                self.state.unmarkDirty(item);
+            })
+            .catch(e => {
+              Util.log("Error saving " + action.item.id + " from local to remote, error " + e + ". Leaving item marked as dirty.");
+              self.state.markDirty(action.item);
+            });
+        case 'delete-remote':
+          return remote.deleteItem(action.item)
+            .then(() => {
+              local.realDeleteItem(action.item);
+              self.state.clearDirty(action.item);
+            });
+        default:
+          return Promise.resolve();
       }
     }
 

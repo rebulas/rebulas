@@ -17,7 +17,7 @@ module.exports = {
     commonTests.tearDown();
     cb();
   },
-
+  
   testDeleteUndo: async function(test) {
     try {
       let item = new model.CatalogItem('1', 'local'),
@@ -93,7 +93,7 @@ module.exports = {
 
       missing = await localBackend.getItem(item);
       test.ok(!missing);
-      
+
     } catch(e) {
       test.fail('Error', e);
       console.error(e);
@@ -118,7 +118,7 @@ module.exports = {
       local1 = await localBackend.saveItem(local1); // Marks it dirty, throws dirty event
       test.deepEqual(local1, event.item);
       test.equal('dirty', event.state);
-      test.equal(0, localBackend.state.state.remoteRevs[local1.id]); // Check marked as dirty in internal state
+      test.ok(localBackend.state.isDirty(local1)); // Check marked as dirty in internal state
       event = null;
 
       remote1 = await remoteBackend.saveItem(remote1); // remoteBackend uses EmptyState, does not fire events

@@ -8,7 +8,8 @@ class CatalogState extends model.EmptyState {
     this.listeners = [(e) => Util.log(e.item.id, e.state, e.item.rev) ];
     this.state = {
       remoteRevs : {},
-      deleted : []
+      deleted : [],
+      dirty : []
     };
     this.storage = storage;
     this.queue = new Util.PromiseQueue();
@@ -21,6 +22,7 @@ class CatalogState extends model.EmptyState {
           this.state = state || this.state;
           // Backwards compatibility
           this.state.deleted = this.state.deleted || [];
+          this.state.dirty = this.state.dirty || [];
         });
     });
   }
@@ -36,28 +38,37 @@ class CatalogState extends model.EmptyState {
   }
 
   isDirty(item) {
-    let id = item.id;
-    let remoteRev = this.state.remoteRevs[id];
-    console.log("Item id " + id + ", remote rev " + remoteRev + ", current rev " + item.rev);
-    return !item.rev || remoteRev !== item.rev;
+    return this.state.dirty.indexOf(item.id) != -1
   }
 
   markDirty(item) {
     return this.queue.exec(() => {
-      this.fire(new model.ItemState(item, 'dirty'));
-      this.state.remoteRevs[item.id] = 0;
+      if (!this.isDirty(item)) {
+          this.state.dirty.push(item.id);
+          this.fire(new model.ItemState(item, 'dirty'));
+      };
+
       return this.save().then(() => item);
     });
   }
 
+  /* TODO Fix naming, unmarkDirty has side effects of storing remoteRevs */
   unmarkDirty(item) {
     return this.queue.exec(() => {
-      if(this.isDirty(item)) {
-        this.state.remoteRevs[item.id] = item.rev;
-        this.fire(new model.ItemState(item, 'not-dirty'));
-      }
+      this.clearDirty(item);
+
+      this.state.remoteRevs[item.id] = item.rev;
+      this.fire(new model.ItemState(item, 'not-dirty'));
+
       return this.save().then(() => item);
     });
+  }
+
+  clearDirty(item) {
+    var index = this.state.dirty.indexOf(item.id);
+    if (index > -1) {
+      Util.arrayRemove(this.state.dirty, index);
+    }
   }
 
   markDeleted(item) {

@@ -80,12 +80,12 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
 
   push(conflictResolve) {
     let synchronization = new CatalogSynchronization(conflictResolve, this.state);
-    return synchronization.push(this, this. delegate);
+    return synchronization.push(this, this.delegate);
   }
 
   pull(conflictResolve) {
     let synchronization = new CatalogSynchronization(conflictResolve, this.state);
-    return synchronization.pull(this, this. delegate);
+    return synchronization.pull(this, this.delegate);
   }
 
   listDeletedItems() {
