@@ -53,7 +53,9 @@ module.exports = {
 		// The Terminal
 		// The listener is required for cases where commands require re-rendering of the result
 		var terminal = this.container.terminal(function(command, term) {
-      self.processCommand(command, term, queryExecutor);
+      return new Promise((resolve, reject) => {
+				self.processCommand(command, term, queryExecutor, resolve, reject);
+			});
 		}, settings);
 
     return {
@@ -104,15 +106,17 @@ module.exports = {
 		return buffer;
 	},
 
-  "processCommand" : async function(command, terminal, queryExecutor) {
+  "processCommand" : async function(command, terminal, queryExecutor, resolve, reject) {
       var queryObject = Util.parseQueryString();
   		var q = new Query(queryObject.q);
 
       var c = this.parseCommand(command);
       if (c.command == "h" || c.command == "help") {
 				this.helpListener();
+				resolve();
 			} else if (c.command == "intro") {
 				this.introListener();
+				resolve();
       } else if (c.command == "s") {
           var term = c.args.join(" ");
 
@@ -124,30 +128,40 @@ module.exports = {
       			queryObject.q = q.toString();
       		}
 
-          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject));
+          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
+						resolve(); // We may print search count or other stuff
+					});
       } else  if (c.command == "cd") {
         if (c.args[0] == ".." || c.args[0] == "../") {
           q.removeSelectionAt(q.getSelections().length - 1);
           queryObject.q = q.toString();
-          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject));
+          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
+						resolve();
+					});
 				} else if (c.args.length == 0 || c.args[0] == '') {
 					delete queryObject.q;
-          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject));
+          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
+						resolve();
+					});
 				} else if (c.args[0] == '-') {
 					window.history.back();
+					resolve();
         } else if (c.args.length == 2){
           q.addSelection(c.args[0], "=", c.args[1]);
           queryObject.q = q.toString();
 
-          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject));
+          queryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
+						resolve();
+					});
         }
 			} else if (c.command == "new") {
 				// Give away the focus, the opening of the add/edit screen will capture it
 				terminal.focus(false);
 				this.newItemListener(this.catalog);
+				resolve();
 			} else if (c.command == "cp") {
 				if (c.args[0] != "*") {
-					terminal.echo("Only bulk operations via the * are supported");
+					resolve("Only bulk operations via the * are supported");
 				} else {
 					var result = this.currentResult;
 
@@ -155,7 +169,7 @@ module.exports = {
 					let catalog = Catalogs.getByURI(uri);
 
 					if (!catalog) {
-						terminal.echo("No catalog " + uri + " found");
+						resolve("No catalog " + uri + " found");
 					} else {
 						let index = await RebulasBackend.getCatalogIndex(catalog);
 						result.items.forEach(item => {
@@ -167,7 +181,7 @@ module.exports = {
 
 							index.saveItem(clone);
 						});
-						terminal.echo(result.count + " items copied");
+						resolve(result.count + " items copied");
 					}
 				}
       } else if (c.command == "height") {
@@ -176,8 +190,8 @@ module.exports = {
 					this.container.height(height);
 					this.setHeight(height);
 				}
+				resolve();
 			} else if (['push', 'pull'].indexOf(c.command) >= 0) {
-				// TODO return a promise to stop the terminal prompt until the command completes 
 				let searchIndex = await RebulasBackend.getCatalogIndex(this.catalog);
 
 				let counter = 0;
@@ -187,7 +201,8 @@ module.exports = {
 					}
 				};
 				searchIndex.state.addListener(listener);
-        if(c.command === 'push') {
+
+				if (c.command === 'push') {
 				  await RebulasBackend.pushCatalog(this.catalog);
         } else {
           await RebulasBackend.pullCatalog(this.catalog);
@@ -195,10 +210,12 @@ module.exports = {
 				searchIndex.state.removeListener(listener);
 
 				if (counter > 0) {
-					terminal.echo(counter == 1  ? "1 item synchronized" : counter + " items synchronized");
+					resolve(counter == 1  ? "1 item synchronized" : counter + " items synchronized");
 
 					// FIXME this jquery thing should be taken out of the terminal code
 					$("ul > li.changed").removeClass("changed");
+				} else {
+					resolve("No items to synchronize");
 				}
       }
   },
