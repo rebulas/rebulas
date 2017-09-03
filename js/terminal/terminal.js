@@ -154,7 +154,9 @@ module.exports = {
           queryExecutor.navigate("?" + Util.queryObjectToString(queryObject), function(result) {
 						resolve();
 					});
-        }
+        } else {
+					resolve("Illegal selection");
+				}
 			} else if (c.command == "new") {
 				// Give away the focus, the opening of the add/edit screen will capture it
 				terminal.focus(false);
