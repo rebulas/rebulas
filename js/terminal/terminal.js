@@ -2,6 +2,7 @@ var Keymap = require("ui/keymap");
 var Util = require("extra/util");
 var Query = require("query/query");
 var RebulasBackend = require("backend/rebulas-backend");
+var Catalogs = require("repository/repository-manager").Catalogs;
 
 module.exports = {
 
