@@ -218,7 +218,9 @@ module.exports = {
 				} else {
 					resolve("No items to synchronize");
 				}
-      }
+      } else {
+				resolve("Unknown command");
+			}
   },
 
 	"setHeight" : function(height) {
