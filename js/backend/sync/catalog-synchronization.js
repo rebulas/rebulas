@@ -17,44 +17,54 @@ class CatalogSynchronization {
       item: newItem
     }));
 
+    Util.log('New items', actions.map(a => ({
+      itemRev: a.item.rev
+    })));
 
-    srcItems.forEach(
-      srcItem => {
-        let destItem = destItems.find(destItem => srcItem.id === destItem.id);
+    srcItems.forEach(srcItem => {
+      let destItem = destItems.find(destItem => srcItem.id === destItem.id),
+          localItemDirty = this.state.isDirty(srcItem),
+          knownRemoteRev = this.state.remoteRev(srcItem),
+          actionDetailsString = JSON.stringify({
+            itemId: srcItem.id,
+            remoteItemRev: (destItem || {}).rev,
+            knownRemoteRev: knownRemoteRev,
+            localItemDirty: localItemDirty
+          }, null, 2);
 
-        let dirty = this.state.isDirty(srcItem);
-        let remoteRev = this.state.remoteRev(srcItem);
-
-        if (!destItem || (dirty && remoteRev == destItem.rev)) {
-          // The item does not exist on the remote or it's unchanged on remote and we've changed it locally
-          // Push
-          actions.push({
-            action: 'to-remote',
-            item: srcItem
-          });
-        } else if (!dirty && remoteRev !== destItem.rev) {
-          // No local changes but there seems to be remote changes
-          // Fetch
-          actions.push({
-            action: 'to-local',
-            item: destItem
-          });
-        } else if (this.state.isDirty(srcItem) && this.state.remoteRev(srcItem) !== destItem.rev) {
-          // We've changed the item locally but the remote revision differs from the local one
-          // We have a conflict to resolve
-          actions.push({
-            action: 'conflict',
-            srcItem: srcItem,
-            destItem: destItem
-          });
-        }
+      if (!destItem || (localItemDirty && knownRemoteRev == destItem.rev)) {
+        // The item does not exist on the remote or it's unchanged on remote and we've changed it locally
+        // Push
+        actions.push({
+          action: 'to-remote',
+          item: srcItem
+        });
+        Util.log('Plan', 'to-remote', actionDetailsString);
+      } else if (!localItemDirty && knownRemoteRev !== destItem.rev) {
+        // No local changes but there seems to be remote changes
+        // Fetch
+        actions.push({
+          action: 'to-local',
+          item: destItem
+        });
+        Util.log('Plan', 'to-local', actionDetailsString);
+      } else if (localItemDirty && knownRemoteRev !== destItem.rev) {
+        // We've changed the item locally but the remote revision differs from the local one
+        // We have a conflict to resolve
+        actions.push({
+          action: 'conflict',
+          srcItem: srcItem,
+          destItem: destItem
+        });
+        Util.log('Plan', 'conflict', actionDetailsString);
       }
-    );
+    });
 
     toDelete.forEach(item => actions.push({
       item: item,
       action: 'delete-remote'
     }));
+    Util.log('Local deleted items in remote', toDelete.map(item => item.id));
 
     return actions;
   }
@@ -69,14 +79,19 @@ class CatalogSynchronization {
       let deletedLocal = await local.listDeletedItems();
 
       let plan = this.planActions(allLocal, deletedLocal, allRemote);
-      plan = await Promise.all(plan.map(
-        action => {
-          if (action.action === 'conflict') {
-            return self.conflictResolve(action);
-          } else {
-            return action;
-          }
-        }));
+      plan = await Promise.all(plan.map(action => {
+        if (action.action === 'conflict') {
+          return self.conflictResolve(action);
+        } else {
+          return action;
+        }
+      }));
+      Util.debugUtil('lastPlan', plan);
+      Util.debugUtil('lastPlanInput', {
+        localItems: allLocal,
+        remoteItems: allRemote,
+        localDeleted: deletedLocal
+      });
       return plan;
     } catch(e) {
       Util.error(e);

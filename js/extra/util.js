@@ -155,5 +155,12 @@ module.exports = {
   },
 
   log: console.log,
-  error: console.error
+  error: console.error,
+  debug: console.log,
+  debugUtil: (id, value) => {
+    try {
+      window.RebulasDebug = window.RebulasDebug || {};
+      window.RebulasDebug[id] = value;
+    } catch(e) {}
+  }
 };

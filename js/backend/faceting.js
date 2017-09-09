@@ -149,7 +149,7 @@ class FeatureCollector {
   }
 
   calculateFieldFeatures() {
-    Util.log('Calculating field features');
+    Util.debug('Calculating field features');
     let fieldFeatures = this.fieldFeatures;
     Object.keys(fieldFeatures).forEach((key) => {
       let fieldName = key,
@@ -158,12 +158,10 @@ class FeatureCollector {
 
       let avg = FeatureCollector.mean(lengths),
           variance = FeatureCollector.variance(lengths);
-      /*
-      Util.log(key,
+      Util.debug(key,
                'Avg:', avg,
                'Var:', variance,
                'Sentences:', stats.sentenceCount);
-      */
 
       // Pretty much the only feature...
       stats.isFacet = stats.docCount === stats.plainListDocs || variance < 1;
@@ -172,7 +170,7 @@ class FeatureCollector {
   }
 
   calculateResultFacets(documents) {
-    Util.log('Calculating result facets over', documents.length, 'items');
+    Util.debug('Calculating result facets over', documents.length, 'items');
     let resultFacets = {},
         features = this.fieldFeatures;
 
