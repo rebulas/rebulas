@@ -25,7 +25,8 @@ var Repositories = {
         "token" : token,
         "catalogs" : [{
           "id" : catalogId,
-          "path" : defaultCatalogPath
+          "path" : defaultCatalogPath,
+          "token" : token
         }]
       };
 
