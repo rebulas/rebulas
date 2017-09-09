@@ -11,6 +11,27 @@ var performance = {
   now : () => new Date().getTime()
 };
 
+function generateId(item) {
+  let nameBasedId = undefined,
+      content = item.rawContent;
+  let analyzed = new model.AnalyzedItem(null, content);
+  if (analyzed.fields.length > 0) {
+    nameBasedId = analyzed.fields[0].textValue
+      .toLowerCase()
+      .replace("'", "")
+      .replace(/[^a-zA-Z0-9]/g, '-');
+  }
+
+  // The item that has been read from the proper path has an id that contains the path
+  // Try do devise a file name that hints of the content
+  let id;
+  let uniq = Util.uniqueId();
+  id = '/' + this.path + '/';
+  id += nameBasedId ? nameBasedId + "-" + uniq.substring(uniq.length - 2) : uniq;
+  id += '.md';
+  return id;
+}
+
 class CatalogSearchIndex {
 
   constructor(indexOperations, catalog) {
@@ -53,29 +74,9 @@ class CatalogSearchIndex {
   saveItem(item) {
     let self = this,
         content = item.rawContent,
-        indexOps = this.indexOperations,
-        features = this.features,
-        index = this.index;
+        features = this.features;
 
-    let nameBasedId = undefined;
-    let analyzed = new model.AnalyzedItem(null, content);
-    if (analyzed.fields.length > 0) {
-      nameBasedId = analyzed.fields[0].textValue
-        .toLowerCase()
-        .replace("'", "")
-        .replace(/[^a-zA-Z0-9]/g, '-');
-    }
-
-    // The item that has been read from the proper path has an id that contains the path
-    // Try do devise a file name that hints of the content
-    let id = item.id;
-    if (!id) {
-      let uniq = Util.uniqueId();
-      id = '/' + this.path + '/';
-      id += nameBasedId ? nameBasedId + "-" + uniq.substring(uniq.length - 2) : uniq;
-      id += '.md';
-    }
-
+    let id = item.id ? item.id : generateId(item);
     Util.log('Saving item', id);
 
     // Note we don't pass on the revision - we've left revision stamping only to the backend storage.

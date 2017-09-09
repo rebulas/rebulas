@@ -27,7 +27,7 @@ var Repositories = {
           "id" : catalogId,
           "path" : defaultCatalogPath
         }]
-      }
+      };
 
       var data = localStorage.getItem("repositories");
       var repos = data ? JSON.parse(data) : [];
@@ -68,112 +68,109 @@ var Repositories = {
       return repository.uri.indexOf("dropbox.com") != -1
         || repository.uri.indexOf("onedrive.live.com") != -1;
     }
-}
+};
 
-var Catalogs = {
+class Catalogs {
+  static add(repositoryId, path) {
+    var stored = localStorage.getItem("repositories");
 
-    add : function(repositoryId, path) {
-      var stored = localStorage.getItem("repositories");
+    var repositories = [];
+    repositories = stored ? repositories.concat(JSON.parse(stored)) : repositories;
 
-      var repositories = [];
-      repositories = stored ? repositories.concat(JSON.parse(stored)) : repositories;
-
-      var r = repositories.find(repo => repo.id == repositoryId);
-      if (r) {
-        r.catalogs.push({
-          "id" : Util.hash(r.uri + "/" + path),
-          "path" : path
-        });
-
-        localStorage.setItem("repositories", JSON.stringify(repositories));
-      }
-    },
-
-    get : function(id) {
-      var catalog;
-      var repository;
-
-      Repositories.getAll().forEach(r => {
-        let found = r.catalogs.find(c => c.id == id);
-        if (found) {
-          catalog = found;
-          repository = r;
-        }
-      });
-
-      return repository && catalog ? this.denormalize(repository, catalog) : undefined;
-    },
-
-    getAll : function() {
-      var results = [];
-
-      Repositories.getAll().forEach(r => {
-        r.catalogs.forEach(c => {
-          results.push(this.denormalize(r, c));
-        })
-      });
-
-      return results;
-    },
-
-    getByURI : function(uri) {
-
-      if (!uri) {
-        return undefined;
-      }
-
-      var catalog;
-      var repository;
-
-      if (uri[uri.length - 1] == "/") {
-        uri = uri.slice(0, -1);
-      }
-
-      Repositories.getAll().forEach(r => {
-        r.catalogs.forEach(c => {
-          var u = r.uri + "/" + c.path;
-          if (u[u.length - 1] == "/") {
-            u = u.slice(0, -1);
-          }
-
-          if (u == uri) {
-            catalog = c;
-            repository = r;
-          }
-        });
-      });
-
-      return repository && catalog ? this.denormalize(repository, catalog) : undefined;
-    },
-
-    remove : function(id) {
-      var stored = localStorage.getItem("repositories");
-
-      var repositories = [];
-      repositories = stored ? repositories.concat(JSON.parse(stored)) : repositories;
-
-      repositories.forEach(r => {
-        var catalogs = r.catalogs.filter(c => c.id != id);
-        r.catalogs = catalogs;
+    var r = repositories.find(repo => repo.id === repositoryId);
+    if (r) {
+      r.catalogs.push({
+        "id" : Util.hash(r.uri + "/" + path),
+        "path" : path
       });
 
       localStorage.setItem("repositories", JSON.stringify(repositories));
-    },
-
-    denormalize : function(repository, catalog) {
-      return {
-        "id" : catalog.id,
-        "path" : catalog.path,
-        "uri" :  repository.uri + (catalog.path ? "/" + catalog.path : ""),
-        "token" : repository.token,
-        "repository" : {
-          "id" : repository.id,
-          "uri" : repository.uri
-        }
-      }
     }
-}
+  }
 
+  static get(id) {
+    var catalog;
+    var repository;
+
+    Repositories.getAll().forEach(r => {
+      let found = r.catalogs.find(c => c.id == id);
+      if (found) {
+        catalog = found;
+        repository = r;
+      }
+    });
+
+    return repository && catalog ? Catalogs.denormalize(repository, catalog) : undefined;
+  }
+
+  static getAll() {
+    let results = [];
+
+    Repositories.getAll().forEach(r => {
+      r.catalogs.forEach(
+        c => results.push(this.denormalize(r, c))
+      );
+    });
+
+    return results;
+  }
+
+  static getByURI(uri) {
+    if (!uri) {
+      return undefined;
+    }
+
+    var catalog;
+    var repository;
+
+    if (uri[uri.length - 1] == "/") {
+      uri = uri.slice(0, -1);
+    }
+
+    Repositories.getAll().forEach(r => {
+      r.catalogs.forEach(c => {
+        var u = r.uri + "/" + c.path;
+        if (u[u.length - 1] == "/") {
+          u = u.slice(0, -1);
+        }
+
+        if (u == uri) {
+          catalog = c;
+          repository = r;
+        }
+      });
+    });
+
+    return repository && catalog ? Catalogs.denormalize(repository, catalog) : undefined;
+  }
+
+  static remove(id) {
+    var stored = localStorage.getItem("repositories");
+
+    var repositories = [];
+    repositories = stored ? repositories.concat(JSON.parse(stored)) : repositories;
+
+    repositories.forEach(r => {
+      var catalogs = r.catalogs.filter(c => c.id != id);
+      r.catalogs = catalogs;
+    });
+
+    localStorage.setItem("repositories", JSON.stringify(repositories));
+  }
+
+  static denormalize(repository, catalog) {
+    return {
+      "id" : catalog.id,
+      "path" : catalog.path,
+      "uri" :  repository.uri + (catalog.path ? "/" + catalog.path : ""),
+      "token" : repository.token,
+      "repository" : {
+        "id" : repository.id,
+        "uri" : repository.uri
+      }
+    };
+  }
+}
 
 module.exports.Catalogs = Catalogs;
 module.exports.Repositories = Repositories;

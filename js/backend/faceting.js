@@ -1,5 +1,4 @@
 var Util = require("extra/util");
-var marked = require("marked");
 var model = require('backend/model');
 
 class FeatureCollector {
