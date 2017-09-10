@@ -1,12 +1,18 @@
-var Util = require("extra/util");
-var model = require('backend/model');
+let Util = require("extra/util"),
+    model = require('backend/model'),
+    uuid = require('uuid');
 
 class CatalogState extends model.EmptyState {
   constructor(storage, storageId) {
     super();
     this.itemKey = '__catalog_state_' + storageId;
-    this.listeners = [(e) => Util.log(e.item.id, 'in state', e.state, e.item.rev) ];
+    this.listeners = [
+      (e) => Util.log(e.item.id, 'in state', e.state,
+                      'rev', e.item.rev,
+                      'remoteRev', this.remoteRev(e.item))
+    ];
     this.state = {
+      id: uuid.v4(),
       remoteRevs : {},
       deleted : [],
       dirty : []
@@ -15,16 +21,23 @@ class CatalogState extends model.EmptyState {
     this.queue = new Util.PromiseQueue();
   }
 
+  toJson() {
+    return this.state;
+  }
+
+  get id() {
+    return this.state.id;
+  }
+
   load() {
-    return this.queue.exec(() => {
-      return this.storage.getItem(this.itemKey)
-        .then((state) => {
-          this.state = state || this.state;
-          // Backwards compatibility
+    return this.queue.exec(
+      () => this.storage.getItem(this.itemKey)
+        .then((savedState) => {
+          this.state = savedState || this.state;
           this.state.deleted = this.state.deleted || [];
           this.state.dirty = this.state.dirty || [];
-        });
-    });
+        })
+    );
   }
 
   save() {
@@ -38,7 +51,7 @@ class CatalogState extends model.EmptyState {
   }
 
   isDirty(item) {
-    return this.state.dirty.indexOf(item.id) != -1
+    return this.state.dirty.indexOf(item.id) != -1;
   }
 
   markDirty(item) {
@@ -74,7 +87,10 @@ class CatalogState extends model.EmptyState {
   markDeleted(item) {
     return this.queue.exec(() => {
       if(!this.isDeleted(item)) {
-        this.state.deleted.push(item.id);
+        this.state.deleted.push({
+          id: item.id,
+          rev: this.remoteRev(item)
+        });
         this.fire(new model.ItemState(item, 'deleted'));
       }
       return this.save().then(() => item);
@@ -83,7 +99,7 @@ class CatalogState extends model.EmptyState {
 
   deleteItem(item) {
     return this.queue.exec(() => {
-      let index = this.state.deleted.indexOf(item.id);
+      let index = this.state.deleted.findIndex(e => e.id === item.id);
       if(index >= 0) {
         this.state.deleted.splice(index, 1);
       }
@@ -94,7 +110,7 @@ class CatalogState extends model.EmptyState {
 
   unmarkDeleted(item) {
     return this.queue.exec(() => {
-      let index = this.state.deleted.indexOf(item.id);
+      let index = this.state.deleted.findIndex(e => e.id === item.id);
       if(index >= 0) {
         this.state.deleted.splice(index, 1);
         this.fire(new model.ItemState(item, 'not-deleted'));
@@ -104,7 +120,7 @@ class CatalogState extends model.EmptyState {
   }
 
   isDeleted(item) {
-    return this.state.deleted.indexOf(item.id) >= 0;
+    return this.state.deleted.findIndex(e => e.id === item.id) >= 0;
   }
 
   fire(event) {

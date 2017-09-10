@@ -7,6 +7,11 @@ let localCatalog = {
   path: '/default'
 };
 
+let itemId = 0;
+function generateItemId() {
+  return `${localCatalog.path}/${itemId++}`;
+}
+
 module.exports = {
   setUp : function(cb) {
     commonTests.setUp();
@@ -20,7 +25,7 @@ module.exports = {
   
   testDeleteUndo: async function(test) {
     try {
-      let item = new model.CatalogItem('1', 'local'),
+      let item = new model.CatalogItem(generateItemId(), 'local'),
           index = await commonTests.RebulasBackend().getCatalogIndex(localCatalog),
           remoteBackend = index.indexOperations.delegate, // LocalOnlyWrapper
           localBackend = index.indexOperations, // LocalWrapperOperations
@@ -62,16 +67,14 @@ module.exports = {
 
   testDeleteSynchronization: async function(test) {
     try {
-      let item = new model.CatalogItem('1', 'local'),
+      let item = new model.CatalogItem(generateItemId(), 'local'),
           index = await commonTests.RebulasBackend().getCatalogIndex(localCatalog),
           remoteBackend = index.indexOperations.delegate, // LocalOnlyWrapper
           localBackend = index.indexOperations, // LocalWrapperOperations
           event;
 
       await index.pull();
-      index.state.addListener((e) => {
-        event = e;
-      });
+      index.state.addListener(e => event = e);
 
       item = await localBackend.saveItem(item);
       await index.push();
@@ -103,9 +106,10 @@ module.exports = {
 
   testCatalogSynchronization: async function(test) {
     try {
-      let local1 = new model.CatalogItem('1', 'local'),
-          remote1 = new model.CatalogItem('1', 'remote'),
-          index = await commonTests.RebulasBackend().getCatalogIndex(localCatalog),
+      let index = await commonTests.RebulasBackend().getCatalogIndex(localCatalog),
+          itemId = generateItemId(),
+          local1 = new model.CatalogItem(itemId, 'local'),
+          remote1 = new model.CatalogItem(itemId, 'remote'),
           remoteBackend = index.indexOperations.delegate, // LocalOnlyWrapper
           localBackend = index.indexOperations, // LocalCacheWrapper
           event;
@@ -119,7 +123,6 @@ module.exports = {
       test.deepEqual(local1, event.item);
       test.equal('dirty', event.state);
       test.ok(localBackend.state.isDirty(local1)); // Check marked as dirty in internal state
-      event = null;
 
       remote1 = await remoteBackend.saveItem(remote1); // remoteBackend uses EmptyState, does not fire events
       let localItems = await localBackend.listItems(),
@@ -131,14 +134,16 @@ module.exports = {
       // Should get planned as local to remote, local has state dirty i.e. rev = 0, remote reports rev as undefined
       // The save to remote should assign a revision to the item, a subsequent call to save on local should store the item
       // with the revision and remove the dirty mark
+      event = null;
       await index.push();
 
       local1 = await localBackend.getItem(local1);
+
       test.deepEqual(local1, event.item);
       test.deepEqual('not-dirty', event.state);
       test.ok(!localBackend.state.isDirty(local1));
 
-      local1 = new model.CatalogItem('1', 'local2');
+      local1 = new model.CatalogItem(itemId, 'local2');
       local1 = await localBackend.saveItem(local1);
       test.deepEqual(local1, event.item);
       test.deepEqual('dirty', event.state);

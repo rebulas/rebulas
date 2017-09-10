@@ -53,7 +53,7 @@ class BaseCatalogOperations {
   }
 
   // Return an array of CatalogItemEntry
-  listItems() {
+  listItems(listPath) {
     return Promise.reject(new Error());
   }
 

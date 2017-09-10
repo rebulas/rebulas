@@ -12,9 +12,10 @@ var performance = {
 };
 
 function generateId(item, path) {
-  let nameBasedId = undefined,
-      content = item.rawContent;
-  let analyzed = new model.AnalyzedItem(null, content);
+  let nameBasedId,
+      content = item.rawContent,
+      analyzed = new model.AnalyzedItem(null, content);
+
   if (analyzed.fields.length > 0) {
     nameBasedId = analyzed.fields[0].textValue
       .toLowerCase()
@@ -26,7 +27,7 @@ function generateId(item, path) {
   // Try do devise a file name that hints of the content
   let id;
   let uniq = Util.uniqueId();
-  id = '/' + path + '/';
+  id = (path.startsWith('/') ? '' : '/') + path + '/';
   id += nameBasedId ? nameBasedId + "-" + uniq.substring(uniq.length - 2) : uniq;
   id += '.md';
   return id;
@@ -38,7 +39,10 @@ class CatalogSearchIndex {
     this.indexOperations = indexOperations;
     this.index = new elasticlunr.Index();
     this.features = new FeatureCollector();
-    this.path = catalog.path;
+  }
+
+  get path() {
+    return this.indexOperations.path;
   }
 
   async loadIndex() {
