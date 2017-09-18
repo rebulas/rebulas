@@ -49,7 +49,10 @@ module.exports = {
 
 		var detailContainer = Elements.div("details-container-inner");
 
-		var textarea = Elements.textArea("item-details-textarea");
+		//var textarea = Elements.textArea("item-details-textarea");
+		//textarea.append(item.rawContent);
+		var textarea = Elements.div("item-details-textarea");
+		textarea.attr("id", "texteditor");
 		textarea.append(item.rawContent);
 
 		// Remember the default state and initilize the screen with it
@@ -64,9 +67,17 @@ module.exports = {
 
 		container.append(detailContainer);
 
+		var editor = ace.edit("texteditor");
+    editor.setTheme("ace/theme/tomorrow");
+    editor.getSession().setMode("ace/mode/markdown");
+		editor.renderer.setShowGutter(false);
+		editor.renderer.setOption("fontSize", 13);
+		editor.renderer.setOption("fontFamily", "monospace");
+		editor.getSession().setUseWrapMode(true);
+
 		var saveButton = Elements.button("btn btn-success save-button disabled");
 		saveButton.append("  Save & Close ");
-		saveButton.click(() => saveCallback(textarea.val()));
+		saveButton.click(() => saveCallback(editor.getValue()));
 		container.append(saveButton);
 
 		var changed = false;
@@ -75,7 +86,7 @@ module.exports = {
 		textarea.on('keydown', function(e){
 			if (e.keyCode == 83 && (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey))      {
 				e.preventDefault();
-				saveCallback(textarea.val(), false);
+				saveCallback(editor.getValue(), false);
 				saveButton.addClass("disabled");
 				saveButton.off("click");
 				changed = false;
@@ -83,9 +94,9 @@ module.exports = {
 	    }
 		});
 
-		textarea.on("input", function(e) {
-				saveButton.removeClass("disabled");
-				changed = true;
+		editor.getSession().on('change', function(e) {
+			saveButton.removeClass("disabled");
+			changed = true;
 		});
 
 		var cancelButton = Elements.button("btn btn-default cancel-button");
@@ -98,7 +109,7 @@ module.exports = {
 		previewButton.append(defaultState == "html" ? "Markdown" : "Preview");
 		previewButton.click(function() {
 			if (previewButton.hasClass("md")) {
-				detailContainer.empty().html(marked(textarea.val()));
+				detailContainer.empty().html(marked(editor.getValue()));
 				previewButton.removeClass("md").addClass("html");
 				previewButton.empty().append("Markdown");
 
