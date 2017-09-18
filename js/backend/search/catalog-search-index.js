@@ -11,6 +11,27 @@ var performance = {
   now : () => new Date().getTime()
 };
 
+function generateId(item, path) {
+  let nameBasedId = undefined,
+      content = item.rawContent;
+  let analyzed = new model.AnalyzedItem(null, content);
+  if (analyzed.fields.length > 0) {
+    nameBasedId = analyzed.fields[0].textValue
+      .toLowerCase()
+      .replace("'", "")
+      .replace(/[^a-zA-Z0-9]/g, '-');
+  }
+
+  // The item that has been read from the proper path has an id that contains the path
+  // Try do devise a file name that hints of the content
+  let id;
+  let uniq = Util.uniqueId();
+  id = '/' + path + '/';
+  id += nameBasedId ? nameBasedId + "-" + uniq.substring(uniq.length - 2) : uniq;
+  id += '.md';
+  return id;
+}
+
 class CatalogSearchIndex {
 
   constructor(indexOperations, catalog) {
@@ -27,7 +48,7 @@ class CatalogSearchIndex {
         existingIndexEntry = fileIndex >= 0 && allFiles.splice(fileIndex, 1)[0];
 
     if(existingIndexEntry) {
-      Util.log('Found existing index');
+      Util.debug('Found existing index');
       existingIndexEntry = await indexOps.getItem(existingIndexEntry);
       try {
         let indexContent = JSON.parse(existingIndexEntry.content);
@@ -39,9 +60,9 @@ class CatalogSearchIndex {
     // While we'll never hit it currently, keeping this around
     // if needed to speed up loading in the future
     if(verifyUpToDate(this.index, allFiles)) {
-      Util.log('Index up to date');
+      Util.debug('Index up to date');
     } else {
-      Util.log('Index outdated or none');
+      Util.debug('Index outdated or none');
 
       let features = new FeatureCollector();
       let newIndex = await rebuildIndex(indexOps, allFiles, features);
@@ -53,30 +74,10 @@ class CatalogSearchIndex {
   saveItem(item) {
     let self = this,
         content = item.rawContent,
-        indexOps = this.indexOperations,
-        features = this.features,
-        index = this.index;
+        features = this.features;
 
-    let nameBasedId = undefined;
-    let analyzed = new model.AnalyzedItem(null, content);
-    if (analyzed.fields.length > 0) {
-      nameBasedId = analyzed.fields[0].textValue
-        .toLowerCase()
-        .replace("'", "")
-        .replace(/[^a-zA-Z0-9]/g, '-');
-    }
-
-    // The item that has been read from the proper path has an id that contains the path
-    // Try do devise a file name that hints of the content
-    let id = item.id;
-    if (!id) {
-      let uniq = Util.uniqueId();
-      id = '/' + this.path + '/';
-      id += nameBasedId ? nameBasedId + "-" + uniq.substring(uniq.length - 2) : uniq;
-      id += '.md';
-    }
-
-    Util.log('Saving item', id);
+    let id = item.id ? item.id : generateId(item, this.path);
+    Util.log('Saving item', id, 'rev:', item.rev);
 
     // Note we don't pass on the revision - we've left revision stamping only to the backend storage.
     // Until we hit there (upon sync), the item would go with revision undefined
@@ -118,13 +119,19 @@ class CatalogSearchIndex {
   push() {
     Util.log('Pushing...');
     return this.indexOperations.push(CatalogSearchIndex.CONFLICT_RESOLVE)
-      .then(() => this.loadIndex());
+      .then(() => this.loadIndex()).then(ret => {
+        Util.log('Done');
+        return ret;
+      });;
   }
 
   pull() {
     Util.log('Pulling...');
     return this.indexOperations.pull(CatalogSearchIndex.CONFLICT_RESOLVE)
-      .then(() => this.loadIndex());
+      .then(() => this.loadIndex()).then(ret => {
+        Util.log('Done');
+        return ret;
+      });
   }
 
   get state() {
@@ -159,14 +166,14 @@ class CatalogSearchIndex {
         }
 
         selectionResults = index.search(searchQuery, searchConfig);
-        Util.log(JSON.stringify(searchQuery), '->', selectionResults.length);
+        Util.debug(JSON.stringify(searchQuery), '->', selectionResults.length);
         return selectionResults;
       });
 
       // Leave only docs that matched ALL the selections
       result = processSelectionResults(searchResults);
     }
-    Util.log(JSON.stringify(querySelections), ' -> ', result.length, '/',
+    Util.debug(JSON.stringify(querySelections), ' -> ', result.length, '/',
              index.documentStore.length, 'items, took',
              performance.now() - startMark, 'ms');
     return result;
@@ -203,7 +210,7 @@ function addDocToIndex(doc, content, index, features) {
 
   Object.keys(analyzed).forEach((key) => {
     if(key !== 'id' && index._fields.indexOf(key) < 0) {
-      Util.log('Adding new field', key);
+      Util.debug('Adding new field', key);
       index.addField(key);
     }
   });
@@ -212,7 +219,7 @@ function addDocToIndex(doc, content, index, features) {
 }
 
 async function rebuildIndex(indexOps, allFiles, features) {
-  Util.log('Rebuilding index');
+  Util.debug('Rebuilding index');
   let index = new elasticlunr.Index();
 
   let promises = allFiles.map(
@@ -226,7 +233,7 @@ async function rebuildIndex(indexOps, allFiles, features) {
 
   await Promise.all(promises);
   features.calculateFieldFeatures();
-  Util.log('Entries in index:', index.documentStore.length);
+  Util.debug('Entries in index:', index.documentStore.length);
   return index;
 }
 
@@ -277,9 +284,9 @@ function verifyUpToDate(lunrIndex, files) {
   let upToDate = files.every((entry) => {
     let doc = lunrIndex.documentStore.getDoc(entry.id);
     if(!doc) {
-      Util.log('New document', entry.id);
+      Util.debug('New document', entry.id);
     } else if(doc.rev !== entry.rev) {
-      Util.log('Updated document', entry.id);
+      Util.debug('Updated document', entry.id);
     }
     return doc && doc.rev === entry.rev;
   });

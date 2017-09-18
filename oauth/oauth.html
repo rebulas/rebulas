@@ -12,7 +12,7 @@ hashIndex = (hashIndex == -1) ? undefined : hashIndex;
 parseQueryString(loc.href.substring(loc.origin.length, hashIndex), q);
 parseQueryString(loc.hash.substr(1), q);
 
-if (window.opener.OAuthCallback) {
+if (window.opener.OAuthCallback && q.access_token) {
   window.opener.OAuthCallback(q);
   window.close();
 } else {

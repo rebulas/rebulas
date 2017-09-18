@@ -42,10 +42,14 @@ class OneDrive {
   }
 
   static createRepository(callback) {
-    OneDrive.obtainNewToken(access_token => {
-      var repositoryId = Util.hash(OneDrive.client_id);
-      var repository = Repositories.add(repositoryId, 'onedrive', access_token);
-      callback(repository);
+    OneDrive.obtainNewToken((err, access_token) => {
+      if(err) {
+        callback(null);
+      } else {
+        let repositoryId = Util.hash(OneDrive.client_id),
+            repository = Repositories.add(repositoryId, 'onedrive', access_token);
+        callback(repository);
+      }
     });
   }
 

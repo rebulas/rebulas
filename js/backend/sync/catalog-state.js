@@ -5,7 +5,7 @@ class CatalogState extends model.EmptyState {
   constructor(storage, storageId) {
     super();
     this.itemKey = '__catalog_state_' + storageId;
-    this.listeners = [(e) => Util.log(e.item.id, e.state, e.item.rev) ];
+    this.listeners = [(e) => Util.log(e.item.id, 'in state', e.state, e.item.rev) ];
     this.state = {
       remoteRevs : {},
       deleted : [],

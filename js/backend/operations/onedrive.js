@@ -65,7 +65,9 @@ class OneDriveOperations extends model.BaseCatalogOperations {
       }
       let catalogItems = children.value
         .filter(child => !child.folder)
-        .map(child => new model.CatalogItemEntry([this.path, '/', child.name].join('')));
+          .map(child => new model.CatalogItemEntry(
+            [this.path, '/', child.name].join(''), child.eTag
+          ));
       return catalogItems;
     });
   }
