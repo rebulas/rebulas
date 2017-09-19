@@ -132,7 +132,7 @@ class DisplayItem extends AnalyzedItem {
   }
 
   get rev() {
-    return this.catalogItem.rev;
+    return this.catalogItem ? this.catalogItem.rev : undefined;
   }
 }
 
