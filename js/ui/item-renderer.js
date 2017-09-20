@@ -37,6 +37,8 @@ module.exports = {
 		container.append(ul);
 	},
 
+	// TODO refactor the spaghetti calls below, too much functionality for one
+	// method
 	renderDetails : function(args) {
 		var container = args.container;
 		var catalog = args.catalog;
@@ -77,7 +79,10 @@ module.exports = {
 
 		var saveButton = Elements.button("btn btn-success save-button disabled");
 		saveButton.append("  Save & Close ");
-		saveButton.click(() => saveCallback(editor.getValue()));
+		saveButton.click(() => {
+			editor.destroy();
+			saveCallback(editor.getValue())
+		});
 		container.append(saveButton);
 
 		var changed = false;
@@ -101,7 +106,10 @@ module.exports = {
 
 		var cancelButton = Elements.button("btn btn-default cancel-button");
 		cancelButton.append("Cancel");
-		cancelButton.click(cancelCallback);
+		cancelButton.click(function() {
+			editor.destroy();
+			cancelCallback();
+		});
 		container.append(cancelButton);
 
 		var previewButton = Elements.button("btn btn-default");
@@ -121,7 +129,7 @@ module.exports = {
 
 				localStorage.setItem("default-details-state", "md");
 				setTimeout(function() {
-						textarea.focus();
+						editor.focus();
 				},0);
 			}
 		});
@@ -129,7 +137,10 @@ module.exports = {
 
 		var deleteButton = Elements.button("btn btn-default delete-button");
 		deleteButton.append("Delete");
-		deleteButton.click(deleteCallback);
+		deleteButton.click(function() {
+			editor.destroy();
+			deleteCallback();
+		});
 		container.append(deleteButton);
 
 		// Since renderDetails is called within the event chain of the click that triggered it
@@ -142,6 +153,7 @@ module.exports = {
 
 		detailContainer.keyup(function(e) {
 			if (e.which == 27 && !changed) {
+				editor.destroy();
 				cancelCallback();
 			}
 		});
