@@ -137,7 +137,7 @@ module.exports = {
 		// Use setTimeout, yes it's ugly but attaching to the mouseup event of the element
 		// to focus the textarea is also not elegant.
 		setTimeout(function() {
-				textarea.focus();
+				editor.focus();
 		},0);
 
 		detailContainer.keyup(function(e) {
