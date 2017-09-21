@@ -138,7 +138,7 @@ class DisplayItem extends AnalyzedItem {
 
 class EmptyState {
   constructor() {}
-  load(){}
+  refresh(){}
   isDirty(item) { return false; }
   markDirty(item) {}
   unmarkDirty(item) {}

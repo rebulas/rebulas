@@ -29,11 +29,16 @@ class CatalogState extends model.EmptyState {
     return this.state.id;
   }
 
-  load() {
+  refresh() {
     return this.queue.exec(
       () => this.storage.getItem(this.itemKey)
-        .then((savedState) => {
+        .then(savedState => {
+          if(!savedState) {
+            return;
+          }
+
           this.state = savedState || this.state;
+          this.state.id = savedState.id || this.state.id;
           this.state.deleted = this.state.deleted || [];
           this.state.dirty = this.state.dirty || [];
         })
@@ -104,7 +109,7 @@ class CatalogState extends model.EmptyState {
         this.state.deleted.splice(index, 1);
       }
       delete this.state.remoteRevs[item.id];
-      return this.save().then(() => item);
+      return this.clearDirty(item);
     });
   }
 
@@ -141,6 +146,13 @@ class CatalogState extends model.EmptyState {
     let index = this.listeners.indexOf(listener);
     if(index >= 0)
       this.listeners.splice(index, 1);
+  }
+
+  cleanUp(remoteState, remoteItems) {
+    let cleanDeleted = this.state.deleted.filter(
+      item => !remoteItems.find(remoteItem => remoteItem.id === item.id)
+    );
+    //this.state.deleted = cleanDeleted;
   }
 }
 

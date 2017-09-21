@@ -153,5 +153,53 @@ module.exports = {
       console.error(e);
     }
     test.done();
+  },
+
+  testRemoteDeletion: async function(test) {
+    let cat1 = Object.assign({}, localCatalog),
+        cat2 = Object.assign({}, localCatalog);
+    cat1.id = 1111;
+    cat2.id = 2222;
+
+    let index1 = await commonTests.RebulasBackend().getCatalogIndex(cat1),
+        index2 = await commonTests.RebulasBackend().getCatalogIndex(cat2);
+
+    let itemId = generateItemId(),
+        item = new model.DisplayItem(null, 'local');
+
+    try {
+      let savedItem = await index1.saveItem(item);
+
+      item = savedItem;
+      test.ok(item);
+      await index1.push();
+      await index2.pull();
+
+      test.ok(await index1.indexOperations.getItem(item));
+      test.ok(await index2.indexOperations.getItem(item));
+
+      await index2.deleteItem(item);
+
+      await index2.push();
+      await index1.pull();
+
+      item = await index1.indexOperations.getItem(item);
+      test.ok(!item);
+
+      // now verify we no longer reference it anywhere
+      //await index1.push();
+      await index2.pull();
+
+      test.ok(!index1.indexOperations.state.isDirty(savedItem));
+      test.ok(!index1.indexOperations.state.isDeleted(savedItem));
+
+      test.ok(!index2.indexOperations.state.isDirty(savedItem));
+      //test.ok(!index2.indexOperations.state.isDeleted(savedItem));
+    } catch(e) {
+      console.error(e);
+      test.ok(false);
+    }
+
+    test.done();
   }
 };
