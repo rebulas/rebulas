@@ -44,6 +44,10 @@ class DropboxOperations extends model.BaseCatalogOperations {
   }
 
   async listItems(listPath) {
+    while (listPath && listPath.charAt(listPath.length - 1) === '/') {
+      listPath = listPath.substring(0, listPath.length - 1);
+    }
+
     let folder = listPath || this.path;
     try {
       await this.dbx.filesCreateFolder({ path: folder });

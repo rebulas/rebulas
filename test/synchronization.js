@@ -65,7 +65,7 @@ module.exports = {
     test.done();
   },
 
-  testDeleteSynchronization: async function(test) {
+  testDeletePush: async function(test) {
     try {
       let item = new model.CatalogItem(generateItemId(), 'local'),
           index = await commonTests.RebulasBackend().getCatalogIndex(localCatalog),
@@ -78,15 +78,14 @@ module.exports = {
 
       item = await localBackend.saveItem(item);
       await index.push();
+      test.ok(await remoteBackend.getItem(item));
 
       await localBackend.deleteItem(item);
-
       test.deepEqual(item, event.item);
       test.equal('deleted', event.state);
+      test.ok(await localBackend.state.isDeleted(item));
 
       await index.push();
-
-      // make sure no info available for it anymore
       test.ok(!index.state.isDeleted(item));
       test.ok(!index.state.remoteRev(item));
 
@@ -155,7 +154,7 @@ module.exports = {
     test.done();
   },
 
-  testRemoteDeletion: async function(test) {
+  testRemoteDeletionPull: async function(test) {
     let cat1 = Object.assign({}, localCatalog),
         cat2 = Object.assign({}, localCatalog);
     cat1.id = 1111;
@@ -180,21 +179,27 @@ module.exports = {
 
       await index2.deleteItem(item);
 
+      debugger;
       await index2.push();
       await index1.pull();
 
       item = await index1.indexOperations.getItem(item);
       test.ok(!item);
+      test.done(); return;
 
       // now verify we no longer reference it anywhere
-      //await index1.push();
+      await index1.push();
       await index2.pull();
 
-      test.ok(!index1.indexOperations.state.isDirty(savedItem));
-      test.ok(!index1.indexOperations.state.isDeleted(savedItem));
+      test.ok(!(await index1.indexOperations.getItem(item)));
+      test.ok(!(await index2.indexOperations.getItem(item)));
 
-      test.ok(!index2.indexOperations.state.isDirty(savedItem));
-      //test.ok(!index2.indexOperations.state.isDeleted(savedItem));
+      let isReferenced = index => {
+        console.log(index.state.toJson());
+        return JSON.stringify(index.state.toJson()).indexOf(savedItem.id) >= 0;
+      };
+      test.ok(!isReferenced(index1));
+      test.ok(!isReferenced(index2));
     } catch(e) {
       console.error(e);
       test.ok(false);

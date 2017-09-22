@@ -91,11 +91,14 @@ class CatalogSynchronization {
       }
     });
 
-    deletedLocally.forEach(item => actions.push({
-      item: item,
-      action: 'delete-remote'
-    }));
-    Util.log('Locally deleted items', deletedLocally.map(item => item.id));
+    deletedLocally.forEach(item => {
+      let action = {
+        item: item,
+        action: 'delete-remote'
+      };
+      Util.log('Plan', 'delete-remote', JSON.stringify(action, null, 2));
+      actions.push(action);
+    });
 
     return actions;
   }
@@ -111,12 +114,18 @@ class CatalogSynchronization {
         remoteStates => remoteStates.map(state => JSON.parse(state.content))
       ).then(remoteStates => {
         let remoteState = new RemoteCatalogStateAggregation(),
-            deleted = {};
+            deleted = {},
+            remoteRevs = {};
 
         remoteStates.forEach(
-          state => state.deleted.forEach(
-            item => deleted[item.id] = item.rev
-          )
+          state => {
+            state.deleted.forEach(
+              item => deleted[item.id] = item.rev
+            );
+            Object.keys(state.remoteRevs).forEach(
+              itemId => remoteRevs[itemId] = state.remoteRevs[itemId]
+            );
+          }
         );
 
         // This will only use the last remoteRev, i.e.
@@ -128,6 +137,8 @@ class CatalogSynchronization {
             rev: deleted[id]
           })
         );
+        remoteState.state.remoteRevs = remoteRevs;
+
         Util.log(`Loaded ${remoteStates.length} remote states`);
         Util.log(remoteState);
         return remoteState;
@@ -145,9 +156,6 @@ class CatalogSynchronization {
         this.localStore.listItems()
       ]);
 
-      this.localState.cleanUp(remoteStateAggregation, allRemote);
-      Util.log(this.localState.toJson());
-
       let deletedLocal = await this.localStore.listDeletedItems();
       let plan = this.planActions(allLocal, deletedLocal,
                                   allRemote, remoteStateAggregation);
@@ -163,36 +171,50 @@ class CatalogSynchronization {
         localDeleted: deletedLocal
       });
 
-      return plan;
+      return {
+        actions: plan,
+        remoteItems: allRemote,
+        remoteState: remoteStateAggregation
+      };
     } catch(e) {
       Util.error(e);
     }
 
-    return [];
+    return {
+      actions: [],
+      remoteItems: []
+    };
   }
 
-  async pushLocalState(remote) {
-    let stateItem = new model.CatalogItem(
-      this.stateItemId,
-      JSON.stringify(this.localState.toJson(), null, 2)
-    );
-    return remote.saveItem(stateItem);
+  async _pushLocalState(remote, remoteState) {
+    await remote.listItems().then(
+      remoteItems => this.localState.cleanUp(remoteItems, remoteState)
+    ).then(() => {
+      let stateItem = new model.CatalogItem(
+        this.stateItemId,
+        JSON.stringify(this.localState.toJson(), null, 2)
+      );
+      Util.log('pushing state to remote', this.localState);
+      return remote.saveItem(stateItem);
+    });
   }
 
-  async push(remote) {
-    let plan = await this.plan(remote);
-    plan = plan.filter(
-      action => ['to-remote', 'delete-remote'].indexOf(action.action) >= 0
+  async _sync(remote, allowedActions) {
+    let syncPlan = await this.plan(remote);
+    syncPlan.actions = syncPlan.actions.filter(
+      action => allowedActions.indexOf(action.action) >= 0
     );
-    return this.apply(remote, plan).then(() => this.pushLocalState(remote));
+    return this.apply(remote, syncPlan.actions).then(
+      () => this._pushLocalState(remote, syncPlan.remoteState)
+    );
   }
 
-  async pull(remote) {
-    let plan = await this.plan(remote);
-    plan = plan.filter(
-      action => ['to-local', 'delete-local'].indexOf(action.action) >= 0
-    );
-    return this.apply(remote, plan).then(() => this.pushLocalState(remote));
+  push(remote) {
+    return this._sync(remote, ['to-remote', 'delete-remote']);
+  }
+
+  pull(remote) {
+    return this._sync(remote, ['to-local', 'delete-local']);
   }
 
   apply(remote, plan) {
@@ -219,12 +241,15 @@ class CatalogSynchronization {
           })
           .catch(e => {
             Util.log("Error saving", action.item.id,
-                     " from local to remote, error", e,
+                     "from local to remote, error", e,
                      ". Leaving item marked as dirty.");
             self.localState.markDirty(action.item);
           });
       case 'delete-remote':
-        return remote.deleteItem(action.item);
+        return remote.deleteItem(action.item)
+          .then(() => {
+            local.realDeleteItem(action.item);
+          });
       case 'delete-local':
         return local.deleteItem(action.item)
           .then(() => {

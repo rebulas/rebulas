@@ -104,10 +104,6 @@ class CatalogState extends model.EmptyState {
 
   deleteItem(item) {
     return this.queue.exec(() => {
-      let index = this.state.deleted.findIndex(e => e.id === item.id);
-      if(index >= 0) {
-        this.state.deleted.splice(index, 1);
-      }
       delete this.state.remoteRevs[item.id];
       return this.clearDirty(item);
     });
@@ -148,11 +144,17 @@ class CatalogState extends model.EmptyState {
       this.listeners.splice(index, 1);
   }
 
-  cleanUp(remoteState, remoteItems) {
-    let cleanDeleted = this.state.deleted.filter(
-      item => !remoteItems.find(remoteItem => remoteItem.id === item.id)
-    );
-    //this.state.deleted = cleanDeleted;
+  async cleanUp(remoteItems, remoteState) {
+    return this.queue.exec(() => {
+      // keep deleted reference to items still in remote,
+      // or referenced somewhere else
+      let referencedDeleted = this.state.deleted.filter(item => {
+        return remoteItems.find(remoteItem => remoteItem.id === item.id)
+          || remoteState.remoteRev(item);
+      });
+      this.state.deleted = referencedDeleted;
+      return this.save();
+    });
   }
 }
 
