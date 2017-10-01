@@ -43,48 +43,40 @@ class DropboxOperations extends model.BaseCatalogOperations {
     this.dbx = new Dropbox({ accessToken: catalog.token });
   }
 
-  async listItems() {
-    let allFiles = [];
+  async listItems(listPath) {
+    while (listPath && listPath.charAt(listPath.length - 1) === '/') {
+      listPath = listPath.substring(0, listPath.length - 1);
+    }
 
+    let folder = listPath || this.path;
     try {
-      await this.dbx.filesCreateFolder({ path: this.path });
+      await this.dbx.filesCreateFolder({ path: folder });
     } catch(e) {
       if(e.status !== 409) {
         Util.error(e);
       } else {
-        Util.log('Exists', this.path);
+        Util.debug('Exists', folder);
       }
     }
 
-    let folders = [this.path];
-    while(folders.length !== 0) {
-      let folder = folders[0];
-      folders.splice(0, 1);
-
-      let files = { entries: [] };
-      try {
-        files = await this.dbx.filesListFolder({ path: folder });
-      } catch(e) {
-		    // Part of the regular execution flow, if the folder has been deleted
-        // we don't want to return cached content
-        if (e.error && e.error.error_summary && e.error.error_summary.indexOf('path/not_found/') < 0) {
-          Util.log(e);
-        } else {
-			    // Re-throw, we don't have access or there's an error we can't continue with
-			    throw e;
-		    }
-      }
-
-      files.entries.forEach((entry) => {
-        if (entry['.tag'] == 'folder') {
-          folders.push(entry.path_lower);
-        } else {
-          allFiles.push(new model.CatalogItemEntry(entry.path_lower, entry.rev));
-        }
-      });
+    let files = { entries: [] };
+    try {
+      files = await this.dbx.filesListFolder({ path: folder });
+    } catch(e) {
+		  // Part of the regular execution flow, if the folder has been deleted
+      // we don't want to return cached content
+      if (e.error && e.error.error_summary &&
+          e.error.error_summary.indexOf('path/not_found/') < 0) {
+        Util.log(e);
+      } else {
+			  // Re-throw, we don't have access or there's an error we can't continue with
+			  throw e;
+		  }
     }
 
-    return allFiles;
+    let entries = files.entries.filter(e => e['.tag'] !== 'folder')
+        .map(entry => new model.CatalogItemEntry(entry.path_lower, entry.rev));
+    return entries;
   }
 
   saveItem(catalogItem) {

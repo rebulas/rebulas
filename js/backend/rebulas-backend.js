@@ -30,13 +30,13 @@ module.exports = {
     } else if (catalog.uri.startsWith('empty')) {
       indexOps = new LocalOnlyWrapper({
         id: 'empty',
-        path: 'empty'
+        path: catalog.path
       });
       Util.log('Loading empty local index');
     } else {
       indexOps = new LocalOnlyWrapper({
         id: 'unknown',
-        path: catalog.id
+        path: catalog.path
       });
       Util.log('Loading empty local index');
     }
@@ -59,6 +59,7 @@ module.exports = {
       catalog.searchIndex = await this.loadIndex(indexOps, catalog);
     }
     indexCache.set(catalog.id, catalog.searchIndex);
+    Util.debugUtil('searchIndex', catalog.searchIndex);
     return catalog.searchIndex;
   },
 

@@ -1,6 +1,6 @@
 var Util = require("extra/util");
 var model = require("backend/model");
-var CatalogSynchronization = require("backend/sync/catalog-synchronization");
+var CatalogSynchronization = require("backend/sync/catalog-synchronization").CatalogSynchronization;
 var CatalogState = require("backend/sync/catalog-state");
 var localforage = require("localforage");
 var hasher = require("sha.js");
@@ -14,13 +14,24 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     this.storage = localforage.createInstance({
       name: this.storageId
     });
-    this.state = new CatalogState(this.storage, this.storageId);
+    this.state = CatalogState.fromStorage(this.storage, this.storageId);
   }
 
-  async _listItems(filter) {
+  async _listItems(listPath, filter) {
     let self = this,
         keys = await this.storage.keys();
+
     keys = keys.filter(key => key !== self.state.itemKey);
+
+    if (listPath) {
+      keys = keys.filter(key => key.startsWith(listPath))
+        .filter(key => !key.startsWith(listPath + '/'));
+    } else {
+      keys = keys.filter(
+        key => key.startsWith(this.path) &&
+          key.substring(this.path.length + 1).indexOf('/') < 0
+      );
+    }
 
     let entries = keys.map(key => new model.CatalogItemEntry(key))
         .filter(filter || (() => true));
@@ -29,8 +40,8 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     ));
   }
 
-  listItems() {
-    return this._listItems(item => !this.state.isDeleted(item));
+  listItems(listPath) {
+    return this._listItems(listPath, item => !this.state.isDeleted(item));
   }
 
   _isItemChanged(catalogItem) {
@@ -55,7 +66,7 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     return this.storage.setItem(catalogItem.id, catalogItem.toJSON())
       .then(() => catalogItem)
       .catch((err) => {
-        Util.log('Failed to save locally', catalogItem.id, ':', err);
+        Util.error('Failed to save locally', catalogItem.id, ':', err);
         return catalogItem;
       });
   }
@@ -79,17 +90,13 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   }
 
   push(conflictResolve) {
-    let synchronization = new CatalogSynchronization(conflictResolve, this.state);
-    return synchronization.push(this, this.delegate);
+    let synchronization = new CatalogSynchronization(conflictResolve, this);
+    return synchronization.push(this.delegate);
   }
 
   pull(conflictResolve) {
-    let synchronization = new CatalogSynchronization(conflictResolve, this.state);
-    return synchronization.pull(this, this.delegate);
-  }
-
-  listDeletedItems() {
-    return this._listItems(item => this.state.isDeleted(item));
+    let synchronization = new CatalogSynchronization(conflictResolve, this);
+    return synchronization.pull(this.delegate);
   }
 
   restoreItem(catalogItem) {

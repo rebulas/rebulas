@@ -50,23 +50,24 @@ class OneDriveOperations extends model.BaseCatalogOperations {
     return this.client.api('/drive/special/approot' + path);
   }
 
-  async listItems() {
+  async listItems(listPath) {
+    let folder = this.path || listPath;
     return this.resubmitIfTokenExpired(async () => {
       await this.api(`/children`).post({
-        name: this.path.split('/')[1],
+        name: folder.substring(1),
         folder: {}
       });
 
       let children = [];
       try {
-        children = await this.api(`:${this.path}:/children`).get();
+        children = await this.api(`:${folder}:/children`).get();
       } catch(e) {
         Util.error(e);
       }
       let catalogItems = children.value
         .filter(child => !child.folder)
           .map(child => new model.CatalogItemEntry(
-            [this.path, '/', child.name].join(''), child.eTag
+            [folder, '/', child.name].join(''), child.eTag
           ));
       return catalogItems;
     });

@@ -53,7 +53,7 @@ class BaseCatalogOperations {
   }
 
   // Return an array of CatalogItemEntry
-  listItems() {
+  listItems(listPath) {
     return Promise.reject(new Error());
   }
 
@@ -138,7 +138,6 @@ class DisplayItem extends AnalyzedItem {
 
 class EmptyState {
   constructor() {}
-  load(){}
   isDirty(item) { return false; }
   markDirty(item) {}
   unmarkDirty(item) {}
