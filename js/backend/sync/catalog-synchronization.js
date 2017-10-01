@@ -1,36 +1,18 @@
 var Util = require("extra/util"),
-    CatalogState = require('./catalog-state'),
+    CatalogState = require('./catalog-state').CatalogState,
     model = require('../model');
 
-class RemoteCatalogStateAggregation extends CatalogState {
-  constructor() {
-    super();
+class DefaultPlanner {
+  constructor(localState) {
+    this.localState = localState;
   }
 
-  refresh() {}
-  save() {}
-}
+  planActions(localItems, remoteItems, remoteState) {
+    let localState = this.localState;
 
-class CatalogSynchronization {
-  constructor(conflictResolve, localStore) {
-    this.conflictResolve = conflictResolve;
-    this.localStore = localStore;
-  }
-
-  get stateItemId() {
-    return `${this.remoteStatesPath}/${this.localState.id}.json`;
-  }
-
-  get remoteStatesPath() {
-    return `${this.localStore.path}/.rebulas`;
-  }
-
-  get localState() {
-    return this.localStore.state;
-  }
-
-  planActions(localItems, deletedLocally, remoteItems, remoteState) {
     // Fetch all items that are not found locally but exist on remote unless they are scheduled for deletion
+
+    let deletedLocally = localState.listDeleted();
     let actions = remoteItems.filter(
       item => !(localItems.find(src => src.id === item.id)) &&
         !(deletedLocally.find(itemToDelete => itemToDelete.id === item.id))
@@ -45,8 +27,8 @@ class CatalogSynchronization {
 
     localItems.forEach(localItem => {
       let remoteItem = remoteItems.find(remoteItem => localItem.id === remoteItem.id),
-          localItemDirty = this.localState.isDirty(localItem),
-          knownRemoteRev = this.localState.remoteRev(localItem),
+          localItemDirty = localState.isDirty(localItem),
+          knownRemoteRev = localState.remoteRev(localItem),
           remoteRevMatches = () => knownRemoteRev === remoteItem.rev,
           remoteItemDeleted = remoteState.isDeleted(localItem),
           actionDetailsString = JSON.stringify({
@@ -102,6 +84,26 @@ class CatalogSynchronization {
 
     return actions;
   }
+}
+
+class CatalogSynchronization {
+  constructor(conflictResolve, localStore, planner) {
+    this.planner = planner || new DefaultPlanner(localStore.state);
+    this.conflictResolve = conflictResolve;
+    this.localStore = localStore;
+  }
+
+  get localState() {
+    return this.planner.localState;
+  }
+
+  get stateItemId() {
+    return `${this.remoteStatesPath}/${this.localState.id}.json`;
+  }
+
+  get remoteStatesPath() {
+    return `${this.localStore.path}/.rebulas`;
+  }
 
   async refreshRemoteStateAggregation(remote) {
     Util.debug('Loading remote states');
@@ -113,7 +115,7 @@ class CatalogSynchronization {
       ).then(
         remoteStates => remoteStates.map(state => JSON.parse(state.content))
       ).then(remoteStates => {
-        let remoteState = new RemoteCatalogStateAggregation(),
+        let remoteState = new CatalogState(),
             deleted = {},
             remoteRevs = {};
 
@@ -156,9 +158,7 @@ class CatalogSynchronization {
         this.localStore.listItems()
       ]);
 
-      let deletedLocal = await this.localStore.listDeletedItems();
-      let plan = this.planActions(allLocal, deletedLocal,
-                                  allRemote, remoteStateAggregation);
+      let plan = this.planner.planActions(allLocal, allRemote, remoteStateAggregation);
 
       plan = await Promise.all(
         plan.map(action => action.action === 'conflict' ? self.conflictResolve(action) : action)
@@ -168,7 +168,7 @@ class CatalogSynchronization {
       Util.debugUtil('lastPlanInput', {
         localItems: allLocal,
         remoteItems: allRemote,
-        localDeleted: deletedLocal
+        localDeleted: this.localState.listDeleted()
       });
 
       return {
@@ -264,4 +264,7 @@ class CatalogSynchronization {
   }
 }
 
-module.exports = CatalogSynchronization;
+module.exports = {
+  CatalogSynchronization: CatalogSynchronization,
+  DefaultPlanner: DefaultPlanner
+};

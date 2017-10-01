@@ -1,6 +1,6 @@
 var Util = require("extra/util");
 var model = require("backend/model");
-var CatalogSynchronization = require("backend/sync/catalog-synchronization");
+var CatalogSynchronization = require("backend/sync/catalog-synchronization").CatalogSynchronization;
 var CatalogState = require("backend/sync/catalog-state");
 var localforage = require("localforage");
 var hasher = require("sha.js");
@@ -14,7 +14,7 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
     this.storage = localforage.createInstance({
       name: this.storageId
     });
-    this.state = new CatalogState(this.storage, this.storageId);
+    this.state = CatalogState.fromStorage(this.storage, this.storageId);
   }
 
   async _listItems(listPath, filter) {
@@ -97,10 +97,6 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   pull(conflictResolve) {
     let synchronization = new CatalogSynchronization(conflictResolve, this);
     return synchronization.pull(this.delegate);
-  }
-
-  listDeletedItems() {
-    return this._listItems(null, item => this.state.isDeleted(item));
   }
 
   restoreItem(catalogItem) {

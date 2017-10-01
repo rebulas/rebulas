@@ -3,9 +3,8 @@ let Util = require("extra/util"),
     uuid = require('uuid');
 
 class CatalogState extends model.EmptyState {
-  constructor(storage, storageId) {
+  constructor() {
     super();
-    this.itemKey = '__catalog_state_' + storageId;
     this.listeners = [
       (e) => Util.log(e.item.id, 'in state', e.state,
                       'rev', e.item.rev,
@@ -17,7 +16,6 @@ class CatalogState extends model.EmptyState {
       deleted : [],
       dirty : []
     };
-    this.storage = storage;
     this.queue = new Util.PromiseQueue();
   }
 
@@ -25,30 +23,16 @@ class CatalogState extends model.EmptyState {
     return this.state;
   }
 
+  // TODO: Figure out how not to have save/refresh here...
+  save() {
+    return Promise.resolve();
+  }
+  refresh() {
+    return Promise.resolve();
+  }
+
   get id() {
     return this.state.id;
-  }
-
-  refresh() {
-    return this.queue.exec(
-      () => this.storage.getItem(this.itemKey)
-        .then(savedState => {
-          if(!savedState) {
-            return;
-          }
-
-          this.state = savedState || this.state;
-          this.state.id = savedState.id || this.state.id;
-          this.state.deleted = this.state.deleted || [];
-          this.state.dirty = this.state.dirty || [];
-        })
-    );
-  }
-
-  save() {
-    return this.queue.exec(() => {
-      return this.storage.setItem(this.itemKey, this.state);
-    });
   }
 
   remoteRev(item) {
@@ -100,6 +84,10 @@ class CatalogState extends model.EmptyState {
       }
       return this.save().then(() => item);
     });
+  }
+
+  listDeleted() {
+    return this.state.deleted;
   }
 
   deleteItem(item) {
@@ -158,4 +146,41 @@ class CatalogState extends model.EmptyState {
   }
 }
 
-module.exports = CatalogState;
+class StorageBackedState extends CatalogState {
+  constructor(storage, storageId) {
+    super();
+    this.storage = storage;
+    this.itemKey = '__catalog_state_' + storageId;
+  }
+
+  refresh() {
+    return this.queue.exec(
+      () => this.storage.getItem(this.itemKey)
+        .then(savedState => {
+          if(!savedState) {
+            return;
+          }
+
+          this.state = savedState || this.state;
+          this.state.id = savedState.id || this.state.id;
+          this.state.deleted = this.state.deleted || [];
+          this.state.dirty = this.state.dirty || [];
+        })
+    );
+  }
+
+  save() {
+    return this.queue.exec(() => {
+      return this.storage.setItem(this.itemKey, this.state);
+    });
+  }
+}
+
+function createStorageBackedState(storage, storageId) {
+  return new StorageBackedState(storage, storageId);
+}
+
+module.exports = {
+  CatalogState: CatalogState,
+  fromStorage: createStorageBackedState
+};
