@@ -78,7 +78,7 @@ class CatalogState extends model.EmptyState {
       if(!this.isDeleted(item)) {
         this.state.deleted.push({
           id: item.id,
-          rev: this.remoteRev(item)
+          rev: item.rev
         });
         this.fire(new model.ItemState(item, 'deleted'));
       }

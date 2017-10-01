@@ -38,7 +38,8 @@ class DefaultPlanner {
             localItemDirty: localItemDirty
           }, null, 2);
 
-      if ((!remoteItem && !remoteItemDeleted) || (localItemDirty && remoteRevMatches())) {
+      if ((!remoteItem && !remoteItemDeleted) ||
+          (localItemDirty && remoteItem && remoteRevMatches())) {
         // The item does not exist on the remote and not deleted remotely or
         // it's unchanged on remote and we've changed it locally
         // Push
@@ -55,7 +56,7 @@ class DefaultPlanner {
           item: remoteItem
         });
         Util.log('Plan', 'to-local', actionDetailsString);
-      } else if (!localItemDirty && remoteItemDeleted) {
+      } else if (remoteItemDeleted) {
         actions.push({
           action: 'delete-local',
           item: localItem
@@ -73,9 +74,11 @@ class DefaultPlanner {
       }
     });
 
-    deletedLocally.forEach(item => {
+    deletedLocally.filter(
+      locallyDeletedItem => remoteItems.find(remoteItem => locallyDeletedItem.id === remoteItem.id)
+    ).forEach(item => {
       let action = {
-        item: item,
+        item: new model.CatalogItemEntry(item.id, item.rev),
         action: 'delete-remote'
       };
       Util.log('Plan', 'delete-remote', JSON.stringify(action, null, 2));
