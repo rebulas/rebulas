@@ -179,20 +179,18 @@ module.exports = {
 
       await index2.deleteItem(item);
 
-      debugger;
       await index2.push();
       await index1.pull();
 
-      item = await index1.indexOperations.getItem(item);
+      item = await index1.indexOperations.getItem(savedItem);
       test.ok(!item);
-      test.done(); return;
 
       // now verify we no longer reference it anywhere
       await index1.push();
       await index2.pull();
 
-      test.ok(!(await index1.indexOperations.getItem(item)));
-      test.ok(!(await index2.indexOperations.getItem(item)));
+      test.ok(!(await index1.indexOperations.getItem(savedItem)));
+      test.ok(!(await index2.indexOperations.getItem(savedItem)));
 
       let isReferenced = index => {
         console.log(index.state.toJson());
@@ -200,6 +198,52 @@ module.exports = {
       };
       test.ok(!isReferenced(index1));
       test.ok(!isReferenced(index2));
+    } catch(e) {
+      console.error(e);
+      test.ok(false);
+    }
+
+    test.done();
+  },
+
+  testRemoteDeletionRename: async function(test) {
+    let cat1 = Object.assign({}, localCatalog),
+        cat2 = Object.assign({}, localCatalog);
+    cat1.id = 1111;
+    cat2.id = 2222;
+
+    let index1 = await commonTests.RebulasBackend().getCatalogIndex(cat1),
+        index2 = await commonTests.RebulasBackend().getCatalogIndex(cat2);
+
+    let itemId = generateItemId(),
+        item = new model.DisplayItem(null, 'local');
+
+    try {
+      let savedItem = await index1.saveItem(item);
+
+      item = savedItem;
+      test.ok(item);
+
+      await index1.push();
+      await index2.pull();
+
+      test.ok(await index1.indexOperations.getItem(item));
+      test.ok(await index2.indexOperations.getItem(item));
+
+      await index2.deleteItem(item);
+      await index1.saveItem(new model.DisplayItem(item.id, item.content));
+
+      await index2.push();
+      test.ok(await index1.indexOperations.getItem(item));
+      test.ok(!(await index2.indexOperations.getItem(item)));
+
+      await index1.pull();
+      let allIndex1Items =  await index1.indexOperations.listItems();
+      // Find an item with the same content, but different id
+      let renamedItem = allIndex1Items.find(
+        it => it.id !== item.id && it.content == item.content
+      );
+      test.ok(renamedItem);
     } catch(e) {
       console.error(e);
       test.ok(false);

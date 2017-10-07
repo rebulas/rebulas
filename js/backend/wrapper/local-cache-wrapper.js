@@ -58,6 +58,10 @@ class LocalWrapperOperations extends model.BaseCatalogOperations {
   }
 
   saveItem(catalogItem) {
+    if(!catalogItem.id.startsWith(this.path)) {
+      throw new Error(`Cannot save item with id ${catalogItem.id}`);
+    }
+
     if (this._isItemChanged(catalogItem)) {
       this.state.markDirty(catalogItem);
     } else {
