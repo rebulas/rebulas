@@ -115,13 +115,22 @@ class CatalogSynchronization {
 
   async refreshRemoteStateAggregation(remote) {
     Util.debug('Loading remote states');
+    let stateEntryToObject = state => {
+      try {
+        return JSON.parse(state.content);
+      } catch(e) {
+        Util.log('Error parsing remote client state, ignoring: ', state.content);
+        return null;
+      }
+    };
+
     return remote.listItems(`${this.localStore.path}/.rebulas/`)
       .then(
         remoteStateItems => remoteStateItems.filter(item => item.id !== this.stateItemId)
       ).then(
         remoteStates => Promise.all(remoteStates.map(remoteState => remote.getItem(remoteState)))
       ).then(
-        remoteStates => remoteStates.map(state => JSON.parse(state.content))
+        remoteStates => remoteStates.map(state => JSON.parse(state.content)).filter(s => s)
       ).then(remoteStates => {
         let remoteState = new CatalogState(),
             deleted = {},
