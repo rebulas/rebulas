@@ -50,8 +50,7 @@ class OneDriveOperations extends model.BaseCatalogOperations {
         return await apiCall();
       }
 
-      Util.error(e);
-      return Promise.reject(e);
+      throw e;
     }
   }
 

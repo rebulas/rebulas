@@ -194,7 +194,7 @@ class CatalogSynchronization {
         remoteState: remoteStateAggregation
       };
     } catch(e) {
-      Util.error(e);
+      Util.error('Error during synchronization', e);
     }
 
     return {
@@ -204,7 +204,7 @@ class CatalogSynchronization {
   }
 
   async _pushLocalState(remote, remoteState) {
-    await remote.listItems().then(
+    return remote.listItems().then(
       remoteItems => this.localState.cleanUp(remoteItems, remoteState)
     ).then(() => {
       let stateItem = new model.CatalogItem(
@@ -213,7 +213,7 @@ class CatalogSynchronization {
       );
       Util.log('pushing state to remote', this.localState);
       return remote.saveItem(stateItem);
-    });
+    }).catch(err => Util.error('Could not push local state', err));
   }
 
   async _sync(remote, allowedActions) {
