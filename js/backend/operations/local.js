@@ -11,13 +11,13 @@ class LocalStorageOperations extends model.BaseCatalogOperations {
     if (!list) {
       list = {};
 
-      let id = "/improved-authentication-merchanism.md";
-      let content = "# Name\nImproved Authentication mechanism\n\n# Description\nIn our cloud we require multiple logins while we could centralise the auth via LDAP across all login channels\n\n# Clients\nWaitrose, Cloud Team\n\n## Releases\nFAS 8.3";
+      let id = "/flying-spaghetti-saucer.md";
+      let content = "# Name\nFlying spaghetti saucer\n\n# Content\nAdd a flying spaghetti saucer to the Mothership. Should be able to hold enough spaghetti to feed 4 crew members for a week, plus additional compartments for parmesan cheese and sauce ingredients. Should be able to fly autonomously for a week, no hibernation pods though.\n\n# Clients\nAsteroid Inc., Chipotle Space Catering\n\n## Releases\nv7\n\n# People\nPrivate Public";
       let rev = hasher('sha256').update(content).digest('hex');
       list[id] = new model.CatalogItem(id, content, rev).toJSON();
 
-      id = "/publishing-ui-imporovements.md";
-      content = "# Name\nPublishing UI improvements\n\n# Description\nThe UI for the punlishing went from not-granular at all to too granular all too quickly. We need improvements that allow for less input when publishing (auto-fill publish names) and ability to publish all - relevant for smaller customers that don't have large teams to collaborate.\n\n# Clients\nScrewfix, Hema, Intergramma\n\n# Releases\nFAS 8.3\n\n# People\nVincent, Tim, Kees";
+      id = "/emergency-meatballs-for-fighter-co-pilots.md";
+      content = "# Name\nEmergency meatballs for Fighter co-pilots\n\n# Content\nIn the previous release, the Fighter design included additional compartment in the pilot cockpit holding 4 emergency meatballs. In case of long battles, ambushes or other time-consuming activities, this backup nutrition proves invaluable. We should add the same compartment for the co-pilot cockpit as well.\n\n# Clients\nEmpire Space corps, Rebel Alliance, Chipotle Space Catering\n\n# Releases\nv7, v6.5\n\n# People\nGeneral Specific, Major Disaster";
       rev = hasher('sha256').update(content).digest('hex');
       list[id] = new model.CatalogItem(id, content, rev).toJSON();
 
