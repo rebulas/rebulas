@@ -28,18 +28,17 @@ class DefaultPlanner {
     localItems.forEach(localItem => {
       let remoteItem = remoteItems.find(remoteItem => localItem.id === remoteItem.id),
           localItemDirty = localState.isDirty(localItem),
-          knownRemoteRev = localState.remoteRev(localItem),
-          remoteRevMatches = () => knownRemoteRev === remoteItem.rev,
+          remoteItemDirty = () => localState.remoteRev(localItem) !== remoteItem.rev,
           remoteItemDeleted = remoteState.isDeleted(localItem),
           actionDetailsString = JSON.stringify({
             itemId: localItem.id,
             remoteItemRev: (remoteItem || {}).rev,
-            knownRemoteRev: knownRemoteRev,
+            knownRemoteRev: localState.remoteRev(localItem),
             localItemDirty: localItemDirty
           }, null, 2);
 
       if ((!remoteItem && !remoteItemDeleted) ||
-          (localItemDirty && remoteItem && remoteRevMatches())) {
+          (localItemDirty && remoteItem && !remoteItemDirty())) {
         // The item does not exist on the remote and not deleted remotely or
         // it's unchanged on remote and we've changed it locally
         // Push
@@ -48,7 +47,7 @@ class DefaultPlanner {
           item: localItem
         });
         Util.log('Plan', 'to-remote', actionDetailsString);
-      } else if (!(remoteItemDeleted || localItemDirty || remoteRevMatches())) {
+      } else if (!(remoteItemDeleted || localItemDirty || !remoteItemDirty())) {
         // No local changes but there seems to be remote changes
         // Pull
         actions.push({
@@ -56,13 +55,19 @@ class DefaultPlanner {
           item: remoteItem
         });
         Util.log('Plan', 'to-local', actionDetailsString);
+      } else if (remoteItemDeleted && localItemDirty) {
+        actions.push({
+          action: 'rename-local',
+          item: localItem
+        });
+        Util.log('Plan', 'rename-local', actionDetailsString);
       } else if (remoteItemDeleted) {
         actions.push({
           action: 'delete-local',
           item: localItem
         });
         Util.log('Plan', 'delete-local', actionDetailsString);
-      } else if (localItemDirty && knownRemoteRev !== remoteItem.rev) {
+      } else if (localItemDirty && remoteItemDirty()) {
         // We've changed the item locally but the remote revision differs from the local one
         // We have a conflict to resolve
         actions.push({
@@ -110,13 +115,22 @@ class CatalogSynchronization {
 
   async refreshRemoteStateAggregation(remote) {
     Util.debug('Loading remote states');
+    let stateEntryToObject = state => {
+      try {
+        return JSON.parse(state.content);
+      } catch(e) {
+        Util.log('Error parsing remote client state, ignoring: ', state.content);
+        return null;
+      }
+    };
+
     return remote.listItems(`${this.localStore.path}/.rebulas/`)
       .then(
         remoteStateItems => remoteStateItems.filter(item => item.id !== this.stateItemId)
       ).then(
         remoteStates => Promise.all(remoteStates.map(remoteState => remote.getItem(remoteState)))
       ).then(
-        remoteStates => remoteStates.map(state => JSON.parse(state.content))
+        remoteStates => remoteStates.map(state => JSON.parse(state.content)).filter(s => s)
       ).then(remoteStates => {
         let remoteState = new CatalogState(),
             deleted = {},
@@ -180,7 +194,7 @@ class CatalogSynchronization {
         remoteState: remoteStateAggregation
       };
     } catch(e) {
-      Util.error(e);
+      Util.error('Error during synchronization', e);
     }
 
     return {
@@ -190,7 +204,7 @@ class CatalogSynchronization {
   }
 
   async _pushLocalState(remote, remoteState) {
-    await remote.listItems().then(
+    return remote.listItems().then(
       remoteItems => this.localState.cleanUp(remoteItems, remoteState)
     ).then(() => {
       let stateItem = new model.CatalogItem(
@@ -199,7 +213,7 @@ class CatalogSynchronization {
       );
       Util.log('pushing state to remote', this.localState);
       return remote.saveItem(stateItem);
-    });
+    }).catch(err => Util.error('Could not push local state', err));
   }
 
   async _sync(remote, allowedActions) {
@@ -217,7 +231,7 @@ class CatalogSynchronization {
   }
 
   pull(remote) {
-    return this._sync(remote, ['to-local', 'delete-local']);
+    return this._sync(remote, ['to-local', 'delete-local', 'rename-local']);
   }
 
   apply(remote, plan) {
@@ -257,6 +271,13 @@ class CatalogSynchronization {
         return local.deleteItem(action.item)
           .then(() => {
             local.realDeleteItem(action.item);
+          });
+      case 'rename-local':
+        return local.deleteItem(action.item)
+          .then(() => local.realDeleteItem(action.item))
+          .then(() => {
+            action.item.id = model.generateItemId(action.item, remote);
+            return local.saveItem(action.item);
           });
       default:
         return Promise.resolve();

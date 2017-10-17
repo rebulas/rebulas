@@ -149,7 +149,7 @@ module.exports = {
     localItemState: 'dirty',
     remoteItemState: 'deleted'
   }, [{
-    action: 'delete-local',
+    action: 'rename-local',
     item: 'local'
   }], test),
 

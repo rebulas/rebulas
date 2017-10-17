@@ -11,38 +11,12 @@ var performance = {
   now : () => new Date().getTime()
 };
 
-function generateId(item, path) {
-  let nameBasedId,
-      content = item.rawContent,
-      analyzed = new model.AnalyzedItem(null, content);
-
-  if (analyzed.fields.length > 0) {
-    nameBasedId = analyzed.fields[0].textValue
-      .toLowerCase()
-      .replace("'", "")
-      .replace(/[^a-zA-Z0-9]/g, '-');
-  }
-
-  // The item that has been read from the proper path has an id that contains the path
-  // Try do devise a file name that hints of the content
-  let id;
-  let uniq = Util.uniqueId();
-  id = (path.startsWith('/') ? '' : '/') + path + '/';
-  id += nameBasedId ? nameBasedId + "-" + uniq.substring(uniq.length - 2) : uniq;
-  id += '.md';
-  return id;
-}
-
 class CatalogSearchIndex {
 
   constructor(indexOperations, catalog) {
     this.indexOperations = indexOperations;
     this.index = new elasticlunr.Index();
     this.features = new FeatureCollector();
-  }
-
-  get path() {
-    return this.indexOperations.path;
   }
 
   async loadIndex() {
@@ -80,7 +54,7 @@ class CatalogSearchIndex {
         content = item.rawContent,
         features = this.features;
 
-    let id = item.id ? item.id : generateId(item, this.path);
+    let id = item.id ? item.id : model.generateItemId(item, this.indexOperations);
     Util.log('Saving item', id, 'rev:', item.rev);
 
     // Note we don't pass on the revision - we've left revision stamping only to the backend storage.

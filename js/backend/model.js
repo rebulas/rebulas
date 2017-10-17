@@ -1,4 +1,5 @@
-let marked = require('marked');
+let marked = require('marked'),
+    Util = require('../extra/util');
 
 function toEntryName(id) {
   let split = id.split('/');
@@ -156,6 +157,29 @@ class ItemState {
   }
 }
 
+function generateItemId(item, ops) {
+  let nameBasedId,
+      path = ops.path,
+      content = item.rawContent || item.content,
+      analyzed = new AnalyzedItem(null, content);
+
+  if (analyzed.fields.length > 0) {
+    nameBasedId = analyzed.fields[0].textValue
+      .toLowerCase()
+      .replace("'", "")
+      .replace(/[^a-zA-Z0-9]/g, '-');
+  }
+
+  // The item that has been read from the proper path has an id that contains the path
+  // Try do devise a file name that hints of the content
+  let id;
+  let uniq = Util.uniqueId();
+  id = (path.startsWith('/') ? '' : '/') + path + '/';
+  id += nameBasedId ? nameBasedId + "-" + uniq.substring(uniq.length - 2) : uniq;
+  id += '.md';
+  return id;
+}
+
 module.exports = {
   CatalogItemEntry: CatalogItemEntry,
   EmptyState : EmptyState,
@@ -164,5 +188,6 @@ module.exports = {
   BaseCatalogOperations: BaseCatalogOperations,
   AnalyzedItem: AnalyzedItem,
   DisplayItem: DisplayItem,
-  toEntryName: toEntryName
+  toEntryName: toEntryName,
+  generateItemId: generateItemId
 };

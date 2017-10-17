@@ -1,7 +1,16 @@
 let Util = require('extra/util'),
-    RepositoryController = require('repository/repository-controller');
+    RepositoryController = require('repository/repository-controller'),
     model = require('backend/model'),
     GraphApi = require('@microsoft/microsoft-graph-client');
+
+function toFolderNameAndParent(path) {
+  let split = path.split('/');
+  if (split.length > 2) {
+    return [ split[2], split[1] ];
+  } else {
+    return [ split[1], null ];
+  }
+}
 
 class OneDriveOperations extends model.BaseCatalogOperations {
   constructor(catalog) {
@@ -41,7 +50,7 @@ class OneDriveOperations extends model.BaseCatalogOperations {
         return await apiCall();
       }
 
-      return Promise.reject(e);
+      throw e;
     }
   }
 
@@ -51,18 +60,25 @@ class OneDriveOperations extends model.BaseCatalogOperations {
   }
 
   async listItems(listPath) {
-    let folder = this.path || listPath;
+    let folder = listPath || this.path;
     return this.resubmitIfTokenExpired(async () => {
-      await this.api(`/children`).post({
-        name: folder.substring(1),
+      let [ folderName, folderParent ] = toFolderNameAndParent(folder);
+
+      await this.api(`${folderParent ? ':/' + folderParent + ':' : '' }/children`).post({
+        name: folderName,
         folder: {}
       });
 
-      let children = [];
+      let children = { value: [] };
       try {
+        while (folder.endsWith('/')) {
+          folder = folder.substring(0, folder.length - 1);
+        }
         children = await this.api(`:${folder}:/children`).get();
-      } catch(e) {
-        Util.error(e);
+      } catch (e) {
+        if(e.statusCode !== 404) {
+          throw e;
+        }
       }
       let catalogItems = children.value
         .filter(child => !child.folder)
