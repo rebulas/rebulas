@@ -108,8 +108,13 @@ ul.item-list > li.changed {
 	color: #FFFAFA;
 	display: flex;
 	flex-direction: column;
-	align-items: center;
 	justify-content: space-between;
+}
+
+#watermark-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
 @media(max-width: 1650px) {
