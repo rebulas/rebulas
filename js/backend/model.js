@@ -1,3 +1,4 @@
+const slugify = require('transliteration').slugify;
 let marked = require('marked'),
     Util = require('../extra/util');
 
@@ -157,23 +158,23 @@ class ItemState {
   }
 }
 
-function generateItemId(item, ops) {
+function generateItemId(item, ops, generator) {
   let nameBasedId,
       path = ops.path,
       content = item.rawContent || item.content,
       analyzed = new AnalyzedItem(null, content);
 
   if (analyzed.fields.length > 0) {
-    nameBasedId = analyzed.fields[0].textValue
-      .toLowerCase()
-      .replace("'", "")
-      .replace(/[^a-zA-Z0-9]/g, '-');
+    let val = analyzed.fields[0].textValue;
+    val = val.substring(0, 100);
+    nameBasedId = slugify(val);
   }
 
   // The item that has been read from the proper path has an id that contains the path
   // Try do devise a file name that hints of the content
   let id;
-  let uniq = Util.uniqueId();
+  let generate = generator || Util.uniqueId;
+  let uniq = generate();
   id = (path.startsWith('/') ? '' : '/') + path + '/';
   id += nameBasedId ? nameBasedId + "-" + uniq.substring(uniq.length - 2) : uniq;
   id += '.md';
