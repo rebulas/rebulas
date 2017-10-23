@@ -1,6 +1,6 @@
 const slugify = require('transliteration').slugify;
 let marked = require('marked'),
-    Util = require('../extra/util');
+    Util = require('extra/util');
 
 function toEntryName(id) {
   let split = id.split('/');
