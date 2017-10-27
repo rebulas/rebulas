@@ -6,6 +6,9 @@ let dropboxCatalog = {
   id: 1,
   uri: 'dropbox.com',
   path: 'rebulas-unittest',
+<<<<<<< HEAD
+=======
+>>>>>>> 4dcf2e127680fa55341a3ff214bc16a38b05177b
 };
 
 async function clearDropboxFolder() {
