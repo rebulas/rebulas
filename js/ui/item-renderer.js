@@ -51,21 +51,26 @@ module.exports = {
 
 		var detailContainer = Elements.div("details-container-inner");
 
-		//var textarea = Elements.textArea("item-details-textarea");
-		//textarea.append(item.rawContent);
 		var textarea = Elements.div("item-details-textarea");
 		textarea.attr("id", "texteditor");
 		textarea.append(item.rawContent);
+
+		var previewArea = Elements.div();
+		previewArea.html(marked(item.rawContent));
 
 		// Remember the default state and initilize the screen with it
 		var defaultState = localStorage.getItem("default-details-state");
 
 		// Allow default to html only if the item exists, new items enter text mode
 		if (defaultState == "html" && item.id) {
-			detailContainer.html(marked(item.rawContent));
+			previewArea.show();
+			textarea.hide();
 		} else {
-			detailContainer.append(textarea);
+			previewArea.hide();
+			textarea.show();
 		}
+		detailContainer.append(previewArea);
+		detailContainer.append(textarea);
 
 		container.append(detailContainer);
 
@@ -117,13 +122,18 @@ module.exports = {
 		previewButton.append(defaultState == "html" ? "Markdown" : "Preview");
 		previewButton.click(function() {
 			if (previewButton.hasClass("md")) {
-				detailContainer.empty().html(marked(editor.getValue()));
+				previewArea.empty().html(marked(editor.getValue()));
+				textarea.hide();
+				previewArea.show();
+
 				previewButton.removeClass("md").addClass("html");
 				previewButton.empty().append("Markdown");
 
 				localStorage.setItem("default-details-state", "html");
 			} else {
-				detailContainer.empty().append(textarea);
+				previewArea.hide();
+				textarea.show();
+
 				previewButton.removeClass("html").addClass("md");
 				previewButton.empty().append("Preview");
 
