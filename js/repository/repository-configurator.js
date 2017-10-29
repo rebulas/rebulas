@@ -3,7 +3,6 @@ var Repositories = require("repository/repository-manager").Repositories;
 var Util = require("extra/util");
 var Elements = require("ui/elements");
 var RepositoryController = require("repository/repository-controller");
-var Keymap = require("ui/keymap");
 
 module.exports = {
 
@@ -115,21 +114,6 @@ module.exports = {
 			} else {
 				catalogContainer.hide();
 			}
-
-
-			// Stop listening to keyboard shortcuts when the menues open
-			catalogContainer.on('show.bs.dropdown', function() {
-				Keymap.deActivateShortcuts();
-			});
-			repositoryContainer.on('show.bs.dropdown', function() {
-				Keymap.deActivateShortcuts();
-			});
-			catalogContainer.on('hide.bs.dropdown', function() {
-				Keymap.activateShortcuts();
-			});
-			repositoryContainer.on('hide.bs.dropdown', function() {
-				Keymap.activateShortcuts();
-			});
 		},
 
 		buildCatalogDropdown : function(args, currentCatalog, repository) {

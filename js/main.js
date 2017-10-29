@@ -1,7 +1,6 @@
 var Util = require("extra/util");
 var QueryExecutor = require("query/query-executor");
 var Terminal = require("terminal/terminal");
-var Keymap = require("ui/keymap");
 var RepositoryConfigurator = require("repository/repository-configurator");
 var ResultRenderer = require("ui/result-renderer");
 
@@ -70,17 +69,15 @@ $(document).ready(function() {
   		queryExecutor.addListener(terminal);
   		queryExecutor.addListener(resultRenderer);
 
-  		var keymap = Keymap.create({
-  			"terminal" : terminal
-  		});
-
-  		// Remap the shortcuts when the result changes
-  		queryExecutor.addListener(keymap);
-
       $("#new-button").click(e => {
         newItemListener(result.catalog);
       });
+
+      Mousetrap.bind(['command+m', 'ctrl+m'], function(e) {
+          terminal.focus();
+      });
   	});
+
 
   	RepositoryConfigurator.render({
   		"repositoryContainer" : $("#repository-button"),

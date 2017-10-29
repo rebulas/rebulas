@@ -1,6 +1,5 @@
 var ItemRenderer = require("ui/item-renderer");
 var FacetRenderer = require("ui/facet-renderer");
-var Keymap = require("ui/keymap");
 var Elements = require("ui/elements");
 var Util = require("extra/util");
 var model = require("backend/model");
@@ -56,16 +55,10 @@ module.exports = {
 			"details" : function(existingItem, catalog) {
 				var item = existingItem ? existingItem : {};
 
-				// We don't want shortcuts triggering while we edit
-				Keymap.deActivateShortcuts();
-
 				var saveCallback = function(item, newContent, close = true) {
 					if (close) {
 						detailsContainer.empty().hide();
 						itemsContainer.fadeIn();
-
-						// We don't want shortcuts triggering while we edit
-						Keymap.activateShortcuts();
 					}
 
 					if (newContent) {

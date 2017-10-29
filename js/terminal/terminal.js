@@ -1,4 +1,3 @@
-var Keymap = require("ui/keymap");
 var Util = require("extra/util");
 var Query = require("query/query");
 var RebulasBackend = require("backend/rebulas-backend");
@@ -18,30 +17,10 @@ module.exports = {
 		this.introListener = args.introListener;
 		this.catalog = args.initialResult.catalog;
 
-		var lastCtrlKeyPress = 0;
 		var settings = {
 			"greetings" : 'Welcome to Rebulas. Enter [[i;;]help] or [[i;;]h] for list of commands, [[i;;]intro] for a guide',
 			"name" : 'rebulas',
-			"prompt": this.calculatePrompt(this.currentResult),
-			"keymap" : {
-				"CTRL" : function() {
-					let now = new Date().getTime();
-					if (now - lastCtrlKeyPress > 300) {
-						lastCtrlKeyPress = now;
-					} else {
-						// Double Ctrl key press
-						terminal.focus(false);
-
-						// Show the keyboard navigation shortcuts when we blur the terminal
-						Keymap.activateShortcuts();
-					}
-				}
-			},
-
-			"onFocus" : function(terminal) {
-				// We don't want shortcuts triggering while typing in the terminal
-				Keymap.deActivateShortcuts();
-			}
+			"prompt": this.calculatePrompt(this.currentResult)
 		};
 
 		var height = this.getHeight();
