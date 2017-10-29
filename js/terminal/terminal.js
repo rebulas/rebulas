@@ -18,7 +18,7 @@ module.exports = {
 		this.catalog = args.initialResult.catalog;
 
 		var settings = {
-			"greetings" : 'Welcome to Rebulas. Enter [[i;;]help] or [[i;;]h] for list of commands, [[i;;]intro] for a guide',
+			"greetings" : 'Welcome to Rebulas. Enter [[i;;]help] for list of commands, [[i;;]intro] for a guide',
 			"name" : 'rebulas',
 			"prompt": this.calculatePrompt(this.currentResult)
 		};
@@ -91,7 +91,7 @@ module.exports = {
   		var q = new Query(queryObject.q);
 
       var c = this.parseCommand(command);
-      if (c.command == "h" || c.command == "help") {
+      if (c.command == "help") {
 				this.helpListener();
 				resolve();
 			} else if (c.command == "intro") {
