@@ -147,6 +147,10 @@ ul.item-list > li.changed {
   margin: 0; /* body margin */
 }
 
+#new-button {
+    margin: 10px 10px 0 0;
+}
+
 #repository-button {
     margin: 10px 10px 0 0;
 }

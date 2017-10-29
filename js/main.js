@@ -77,6 +77,9 @@ $(document).ready(function() {
   		// Remap the shortcuts when the result changes
   		queryExecutor.addListener(keymap);
 
+      $("#new-button").click(e => {
+        newItemListener(result.catalog);
+      });
   	});
 
   	RepositoryConfigurator.render({
