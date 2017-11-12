@@ -1,10 +1,18 @@
 language: node_js
 node_js:
-  - "8"
-before_script:
-  - npm test
-script: npm build
+- '8'
 cache:
   bundler: true
   directories:
-    - node_modules
+  - node_modules
+before_script:
+- npm test
+script: npm run-script build
+deploy:
+  provider: releases
+  api_key:
+    secure: TD+JFVWgwxHlS0ikVJBX3/Ibac4JwDyHv7Qp1xqBSJVxZtDArbVk/gcM8c09K8Sx5Guf7qbvOv6QDbY+x+viBAF7O+ZoCOZ6XodTupYntK7leJK+Yr2cyT4O3Rj/1zs1VijxkawFbAEt2PYQIGPwchGJjzc0IV26eRpL61MIuHvPH0hmY7DsK6BP9Ph1TRfpKQ0N4l9rzyC2mCeJwuQL3LhoMxNdzBHThaM4T3PZtiorXc/qkIgzhulfO6ctE9OdneJQXabvpOvBcSomwCTetjT4TWeA6uMn6D3Xs5rndXv7lmIBEamdcOjgMcB6/WaVbmfNfjASQSQbN2+Cg/73WtUwkDD0ffYTujEZGmBbw9aokoeFnjXsS4w9YMpctD+TDfbEfTCzNb3X+zYxPd8WvSn5/sAhZy1p3HCoSoZXtNiLHIPfeRyHRFeuEIBWIzFdjsjFxUQUwqzOCnZY21/jj3k0BNOwJ/t0dUbifAdfWX1iKuseYZesUh047KXkT/ZEL7BMf7dWvKCWlj5j8Qn7F/kmpMNYLEaP2J51wscM08nHqr+bsZaAa1Kd7MzSi+LJiCErqTxQj3tODyoERV4rYDSOQV3S2a3LEpE0KAAGTtLqkv1+eLeAhH6gJXH3gh9pNqgNCy7XdPAxwFJnt+YfObbJu4e/+zaU5rs89lnX3iU=
+  file: dist.tgz
+  on:
+    repo: rebulas/rebulas
+  skip_cleanup: true

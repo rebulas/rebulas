@@ -2,3 +2,5 @@ testdata*
 bundle.js
 node_modules
 package-lock.json
+dist/
+dist-*tgz
