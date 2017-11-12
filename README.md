@@ -12,7 +12,12 @@ Rebulas is a smart note collecting application geared for efficiency and privacy
 * Support for Dropbox and OneDrive storage backends
 
 ### Install ###
-`git clone https://github.com/rebulas/rebulas`
-`npm install && npm start`
+```sh
+git clone https://github.com/rebulas/rebulas
+```
+And then:
+```sh
+npm install && npm start
+```
 
 This will start a local copy of Rebulas, point your browser to http://localhost:8080/
