@@ -144,7 +144,7 @@ module.exports = {
             container.append(div);
             container.append(divShortened);
 
-            var moreLink = Elements.div("pull-right more-link-" + facet.id);
+            var moreLink = Elements.div("pull-right more-link more-link-" + facet.id);
             moreLink.css("cursor", "pointer");
             moreLink.click({"id" : facet.id, "total" : total}, function(ev) {
                 var divShort = container.find(".facet-values-short-" + ev.data.id).first();
