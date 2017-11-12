@@ -4,3 +4,7 @@ node_js:
 before_script:
   - npm test
 script: npm build
+cache:
+  bundler: true
+  directories:
+    - node_modules
