@@ -1,7 +1,8 @@
 {
   "name": "rebulas",
   "version": "0.0.1",
-  "description": "Rebulas - Productivity for the technically minded",
+  "description": "Rebulas - Smart Notes for Developers",
+  "license" : "Apache-2.0",
   "scripts": {
     "watch": "cross-env NODE_PATH=./js watchify js/main.js -o bundle.js -dv",
     "server": "node js/server.js",
